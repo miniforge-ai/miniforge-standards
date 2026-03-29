@@ -1,0 +1,79 @@
+---
+dewey: "050"
+description: Localization — all user-facing strings via i18n resource files, no raw string literals
+alwaysApply: true
+---
+
+# Localization (ALWAYS)
+
+**No raw string literals in views, templates, or user-facing output.** All user-visible text comes from a localization resource file.
+
+## The rule
+
+Every string a user sees — labels, headings, error messages, button text, empty-state copy, units — must be looked up via the i18n system, not written inline.
+
+```clojure
+;; BAD — raw string literals in view code
+[:h3 "No Workflows Yet"]
+[:p "Workflows will appear here when you run a workflow"]
+[:button "Pause"]
+(str "Duration: " duration "ms")
+
+;; GOOD — keys resolved via i18n
+[:h3 (msg/t :workflow/none-heading)]
+[:p  (msg/t :workflow/none-body)]
+[:button (msg/t :cp/btn-pause)]
+(str (msg/t :metric/duration-prefix) duration (msg/t :duration/ms-suffix))
+```
+
+## en-US.edn is the canonical source
+
+The primary resource file is `resources/config/web-dashboard/messages/en-US.edn` (or the equivalent `messages/en-US.edn` for the component). This is the canonical record of every user-visible string. New strings go here first.
+
+```edn
+;; en-US.edn — add new keys here
+{:web-dashboard/messages
+ {:workflow/none-heading "No Workflows Yet"
+  :workflow/none-body    "Workflows will appear here when you run a workflow"
+  :workflow/none-hint    "Try running a workflow to see real-time progress tracking."
+  :duration/ms-suffix    "ms"
+  :duration/s-suffix     "s"
+  :duration/min-suffix   "m"}}
+```
+
+## Key naming conventions
+
+- Namespace by component/feature: `:workflow/`, `:cp/`, `:metric/`
+- Use domain semantics, not UI position: `:workflow/none-heading` not `:sidebar/empty-title`
+- Suffixes: `-heading`, `-body`, `-hint`, `-label`, `-prefix`, `-suffix`, `-placeholder`
+- Error messages: `:error/<component>-<condition>` (e.g., `:error/agent-not-found`)
+
+## What requires localization
+
+| Category | Example | Requires l10n |
+|----------|---------|---------------|
+| UI labels | "Pause", "Submit", "Cancel" | Yes |
+| Headings and body copy | "No agents registered" | Yes |
+| Error messages shown to user | "Agent not found" | Yes |
+| Units and suffixes shown in UI | "ms", "s", " tokens" | Yes |
+| Placeholder / hint text | "Type your response..." | Yes |
+| Log messages (developer-facing) | "Error reading file" | No |
+| Code comments | | No |
+| Test assertions | | No |
+| EDN/config keys | | No |
+
+## Agent behavior
+
+When writing or reviewing view/template code:
+1. Every string literal in a view namespace is a violation — replace with `(msg/t :key)`.
+2. When adding a new user-visible string, add the key to `en-US.edn` first, then reference it.
+3. When reviewing a PR, grep for string literals in `views/` or `templates/` namespaces — each is a missing l10n key.
+4. Format strings that combine a label + value use separate keys: `(str (msg/t :label) value)` not `(str "Label: " value)`.
+
+## Anti-patterns to reject
+
+- Inline strings in Hiccup: `[:p "Loading..."]` — use `(msg/t :some/loading)`
+- String interpolation with hardcoded copy: `(str "Error: " msg)` — localize the prefix
+- `"—"` as a nil placeholder inline — use `(msg/t :time/none)` or equivalent
+- Format strings with embedded units: `(format "%.1fs" n)` — extract the `s` suffix
+- Duplicate strings across files — one key, referenced in multiple places

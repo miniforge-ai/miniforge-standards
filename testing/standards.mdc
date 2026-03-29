@@ -1,0 +1,114 @@
+---
+dewey: "400"
+description: Testing standards — factory functions, same code quality as production, no duplication
+alwaysApply: true
+---
+
+# Testing Standards (ALWAYS)
+
+**Test code is production code.** Every standard that applies to implementation code applies to test code. No exceptions.
+
+## Factory functions over inline maps
+
+Test data construction must use factory functions. Never build event maps, entity maps, or request fixtures inline.
+
+```clojure
+;; BAD — inline map construction repeated in every test
+(def event1
+  {:event/type      :workflow/started
+   :event/id        (random-uuid)
+   :event/timestamp (java.util.Date/from (java.time.Instant/parse "2026-01-01T00:00:00Z"))
+   :workflow/id     "wf-123"})
+
+;; Same map rebuilt again in another test
+{:event/type      :workflow/completed
+ :event/id        (random-uuid)
+ :event/timestamp (java.util.Date/from (java.time.Instant/parse "2026-01-01T01:00:00Z"))
+ :workflow/id     "wf-123"}
+
+;; GOOD — factory function
+(defn- parse-ts [s]
+  (java.util.Date/from (java.time.Instant/parse s)))
+
+(defn- wf-event
+  [event-type wf-id timestamp & {:as extra}]
+  (merge {:event/type      event-type
+          :event/id        (random-uuid)
+          :event/timestamp (parse-ts timestamp)
+          :workflow/id     wf-id}
+         extra))
+
+;; Usage — readable and DRY
+(wf-event :workflow/started    "wf-123" "2026-01-01T00:00:00Z")
+(wf-event :workflow/completed  "wf-123" "2026-01-01T01:00:00Z" :workflow/status :success)
+(wf-event :workflow/phase-started "wf-123" "2026-01-01T00:05:00Z" :workflow/phase :implement)
+```
+
+**When to create a factory:**
+- Any test data map constructed more than once — extract immediately
+- Any map with more than 3 fields — factory even if used once (for readability)
+- Any map that varies by a few fields across tests — factory with keyword args for the varying parts
+
+## Same structural standards as production code
+
+Tests are organized by the same stratified-design and code quality rules:
+
+- **Layered structure**: Layer 0 for helpers and factories, Layer 1 for individual tests, Layer 2 for integration scenarios
+- **No nested conditionals** in test helpers
+- **No magic numbers**: extract constants (`(def ^:private timeout-ms 5000)`)
+- **No raw strings** in test data that represents user-facing copy — use the same message keys
+- **Named test helpers**: a function that sets up a specific scenario should have a clear, descriptive name
+- **DRY**: shared test helpers for a component go in a `test_helpers.clj` or `fixtures.clj` alongside the tests
+
+## Test file layout
+
+```clojure
+(ns ai.miniforge.foo.bar-test
+  (:require [clojure.test :refer [deftest is testing]]
+            [ai.miniforge.foo.bar :as sut]))
+
+;------------------------------------------------------------------------------ Layer 0
+;; Test fixtures and factories
+
+(def ^:private sample-id "test-wf-001")
+
+(defn- make-event [type & {:as extra}]
+  (merge {:event/type type :event/id (random-uuid)} extra))
+
+;------------------------------------------------------------------------------ Layer 1
+;; Unit tests
+
+(deftest test-specific-behavior
+  (testing "given condition → expected result"
+    (is (= expected (sut/fn-under-test input)))))
+```
+
+## What tests must NOT do
+
+- **No LLM calls**: mock or stub at the interface boundary
+- **No filesystem reads** (except integration tests explicitly marked as such): use `with-open` on temp files or in-memory fixtures
+- **No real network calls**: stub HTTP clients
+- **No sleep**: use deterministic time injection or fast-forward mechanisms
+- **No `println` in test bodies**: use `testing` blocks with descriptive strings
+
+## Naming conventions
+
+- Test ns: `<component-ns>-test` or `<component-ns>.<concern>-test`
+- Test fn: `test-<behavior-under-test>` (not `test-function-name`)
+- `testing` description: `"given <setup> → <expected outcome>"` format
+
+## Agent behavior
+
+When writing tests:
+1. Before writing the first `deftest`, ask: what factory functions does this test file need?
+2. Extract them immediately at Layer 0, not after the fact.
+3. Apply the same code review lens to tests as to production code — no magic numbers, no nested conditionals, no raw string literals.
+4. If a test helper is used in more than one test file in the same component, move it to a shared `fixtures.clj`.
+
+## Anti-patterns to reject
+
+- Inline map construction that repeats more than once
+- `(Thread/sleep 100)` in tests — eliminate or use test-controlled time
+- `(str "test-" (random-uuid))` repeated everywhere — extract to a factory
+- Tests named after functions: `test-wf-status` → name for behavior: `test-stale-workflow-detection`
+- 100-line `deftest` functions — split into smaller, focused tests

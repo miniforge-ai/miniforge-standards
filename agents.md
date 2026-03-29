@@ -19,6 +19,11 @@ as a git submodule at `.standards/` in each repo.
 |------------|-----------|
 | Understand architecture | `foundations/stratified-design` |
 | Apply design philosophy | `foundations/simple-made-easy` |
+| Structure functions / avoid duplication | `foundations/code-quality` |
+| Handle success/failure results | `foundations/result-handling` |
+| Know where to put validation | `foundations/validation-boundaries` |
+| Add user-facing strings | `foundations/localization` |
+| Write tests | `testing/standards` |
 | Write Clojure code | `languages/clojure` |
 | Write Python code | `languages/python` |
 | Work with Polylith | `frameworks/polylith` |
@@ -38,36 +43,42 @@ Rules live at the root of this repo with slug-based filenames. Dewey codes are
 in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 
 ```
-.standards/                         # submodule root in consuming repos
-├── index.mdc                       # Master catalog (dewey: "000")
+.standards/                              # submodule root in consuming repos
+├── index.mdc                            # Master catalog (dewey: "000")
 ├── foundations/
-│   ├── stratified-design.mdc       # dewey: "001"
-│   ├── simple-made-easy.mdc        # dewey: "010"
-│   └── specification-standards.mdc # dewey: "020"
+│   ├── stratified-design.mdc            # dewey: "001"  alwaysApply: true
+│   ├── code-quality.mdc                 # dewey: "002"  alwaysApply: true
+│   ├── result-handling.mdc              # dewey: "003"  alwaysApply: true
+│   ├── validation-boundaries.mdc        # dewey: "004"  alwaysApply: true
+│   ├── simple-made-easy.mdc             # dewey: "010"  alwaysApply: true
+│   ├── specification-standards.mdc      # dewey: "020"
+│   └── localization.mdc                 # dewey: "050"  alwaysApply: true
 ├── languages/
-│   ├── clojure.mdc                 # dewey: "210"
-│   └── python.mdc                  # dewey: "220"
+│   ├── clojure.mdc                      # dewey: "210"  alwaysApply: true
+│   └── python.mdc                       # dewey: "220"
 ├── frameworks/
-│   ├── polylith.mdc                # dewey: "300"
-│   └── kubernetes.mdc              # dewey: "320"
+│   ├── polylith.mdc                     # dewey: "300"
+│   └── kubernetes.mdc                   # dewey: "320"
+├── testing/
+│   └── standards.mdc                    # dewey: "400"  alwaysApply: true
 ├── workflows/
-│   ├── git-branch-management.mdc   # dewey: "710"
-│   ├── pre-commit-discipline.mdc   # dewey: "715"
-│   ├── git-worktrees.mdc           # dewey: "720"
-│   ├── pr-documentation.mdc        # dewey: "721"
-│   ├── pr-layering.mdc             # dewey: "722"
-│   └── datever.mdc                 # dewey: "730"
+│   ├── git-branch-management.mdc        # dewey: "710"
+│   ├── pre-commit-discipline.mdc        # dewey: "715"  alwaysApply: true
+│   ├── pr-documentation.mdc             # dewey: "721"
+│   ├── pr-layering.mdc                  # dewey: "722"  alwaysApply: true
+│   ├── git-worktrees.mdc                # dewey: "725"
+│   └── datever.mdc                      # dewey: "730"
 ├── project/
-│   └── header-copyright.mdc        # dewey: "810"
+│   └── header-copyright.mdc             # dewey: "810"  alwaysApply: true
 └── meta/
-    └── rule-format.mdc             # dewey: "900"
+    └── rule-format.mdc                  # dewey: "900"
 ```
 
 ## Dewey Classification
 
 | Range | Category |
 |-------|----------|
-| 000-099 | Foundations — architecture, design philosophy |
+| 000-099 | Foundations — architecture, design philosophy, code quality |
 | 100-199 | Tools — linters, formatters, build tools |
 | 200-299 | Languages — Clojure, Python, JS/TS, Go, Rust |
 | 300-399 | Frameworks — Polylith, K8s, web, databases |
@@ -79,6 +90,34 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 | 900-999 | Meta — templates, indexes |
 
 ## Core Principles (Always Apply)
+
+All rules marked `alwaysApply: true` are pre-injected into every agent prompt.
+The following are the highest-priority, always-on principles:
+
+### Code Structure
+- **Composable pipelines** — every function reads as a pipeline; compose small fns up
+- **No nested conditionals** — max one level; use `cond`, guard clauses, or dispatch maps
+- **DRY** — shared logic goes in a component and is imported via its interface
+- See: `foundations/code-quality`
+
+### Result Handling
+- **Use predicates** — `success?`/`failed?`, never `(:success? result)`
+- **Use constructors** — `(schema/success ...)`, never `{:success? true ...}`
+- See: `foundations/result-handling`
+
+### Validation
+- **Schemas at boundaries only** — `interface.clj` and external entry points
+- **Trust internal data** — no validation inside components
+- See: `foundations/validation-boundaries`
+
+### Localization
+- **No raw strings** in views/templates — use `(msg/t :key)` and `en-US.edn`
+- See: `foundations/localization`
+
+### Testing
+- **Factory functions** over inline map construction
+- **Same standards** as production code (no magic numbers, no nested conditionals)
+- See: `testing/standards`
 
 ### Stratified Design
 - Dependencies flow **downward only**: Adapters → Application → Domain → Foundations
@@ -92,7 +131,7 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 
 ### PR Discipline
 - Each PR = one stratum, <400 lines, independently mergeable
-- Branch from `main` (never from another feature branch)
+- PR dependencies form a DAG — never a monolith
 - **NEVER** bypass pre-commit hooks — investigate failures, fix root causes
 
 ### Specification-Driven Development
@@ -109,7 +148,7 @@ git submodule add git@github.com:miniforge-ai/miniforge-standards.git .standards
 ```
 
 Each repo's `CLAUDE.md` should reference `.standards/agents.md` and
-`.standards/claude.md`. Project-specific overrides go in the repo's own
+`.standards/CLAUDE.md`. Project-specific overrides go in the repo's own
 `project/` rules directory — never in this shared repo.
 
 | Repository | Product |

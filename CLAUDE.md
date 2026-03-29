@@ -22,6 +22,11 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 |------------|---------|
 | Understand architecture | `foundations/stratified-design` |
 | Apply design philosophy | `foundations/simple-made-easy` |
+| Structure functions / avoid duplication | `foundations/code-quality` |
+| Handle success/failure results | `foundations/result-handling` |
+| Know where to put validation | `foundations/validation-boundaries` |
+| Add user-facing strings | `foundations/localization` |
+| Write tests | `testing/standards` |
 | Write Clojure code | `languages/clojure` |
 | Write Python code | `languages/python` |
 | Work with Polylith | `frameworks/polylith` |
@@ -43,18 +48,24 @@ Rules live at the repo root with slug filenames. Dewey codes are in frontmatter
 ```
 foundations/
   stratified-design.mdc       dewey: "001"
+  code-quality.mdc            dewey: "002"
+  result-handling.mdc         dewey: "003"
+  validation-boundaries.mdc   dewey: "004"
   simple-made-easy.mdc        dewey: "010"
   specification-standards.mdc dewey: "020"
+  localization.mdc            dewey: "050"
 languages/
   clojure.mdc                 dewey: "210"
   python.mdc                  dewey: "220"
 frameworks/
   polylith.mdc                dewey: "300"
   kubernetes.mdc              dewey: "320"
+testing/
+  standards.mdc               dewey: "400"
 workflows/
   git-branch-management.mdc   dewey: "710"
   pre-commit-discipline.mdc   dewey: "715"
-  git-worktrees.mdc           dewey: "720"
+  git-worktrees.mdc           dewey: "725"
   pr-documentation.mdc        dewey: "721"
   pr-layering.mdc             dewey: "722"
   datever.mdc                 dewey: "730"
@@ -67,16 +78,36 @@ meta/
 ## Dewey Ranges
 
 ```
-000-099  Foundations     Architecture, design philosophy
+000-099  Foundations     Architecture, design philosophy, code quality
+  001      Stratified Design
+  002      Code Quality (composable fns, pipelines, DRY)
+  003      Result Handling (success?/failed? predicates, constructors)
+  004      Validation Boundaries (schemas at interfaces/external only)
+  010      Simple Made Easy
+  020      Specification Standards
+  050      Localization (i18n, en-US.edn)
 100-199  Tools           Linters, formatters, build tools
 200-299  Languages       Clojure, Python, JS/TS, Go, Rust
+  210      Clojure (Polylith, stratified files, map access patterns)
+  220      Python
 300-399  Frameworks      Polylith, K8s, web frameworks, databases
+  300      Polylith
+  320      Kubernetes
 400-499  Testing         Unit, integration, E2E, code review
+  400      Testing Standards (factory fns, same quality as prod)
 500-599  Operations      CI/CD, monitoring, security
 600-699  Documentation   API docs, architecture docs
 700-799  Workflows       Git, PRs, releases
+  710      Git Branch Management
+  715      Pre-Commit Discipline
+  721      PR Documentation
+  722      PR Layering (DAG, stratified PRs)
+  725      Git Worktrees
+  730      Datever
 800-899  Project         Reserved for project-specific overrides
+  810      Copyright Header
 900-999  Meta            Templates, indexes
+  900      Rule Format
 ```
 
 ## Core Principles (Always Apply)

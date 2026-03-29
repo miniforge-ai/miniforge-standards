@@ -1,0 +1,95 @@
+---
+dewey: "004"
+description: Validation at boundaries — schemas and validation only at interface/external entry points
+alwaysApply: true
+---
+
+# Validation at Boundaries (ALWAYS)
+
+**Validate once, at the edge. Trust everything inside.**
+
+## The rule
+
+Schemas and input validation belong at **two places only**:
+
+1. **Interface boundaries** — the `interface.clj` of a Polylith component. Data entering a component is validated here. Inside the component, trust the data.
+2. **External entry points** — HTTP handlers, CLI argument parsing, event ingestion, file reads. Anything arriving from outside the JVM process.
+
+Everywhere else — inside components, between internal namespaces — **no validation**. Data flowing through internal calls is already valid by construction.
+
+## Why
+
+Validation is expensive to read and to run. Redundant internal validation:
+- Adds noise that obscures business logic
+- Creates false confidence ("everything is validated") while actually missing real boundaries
+- Leads to defensive programming anti-patterns (`when (some? x) ...` everywhere)
+- Diverges: schemas at the top and bottom of a call chain often disagree silently
+
+If internal data is invalid, the bug is in the caller — not in the callee's missing check. Fix the caller. Don't hide it with a check.
+
+## Interface boundary pattern
+
+```clojure
+;; components/task/src/ai/miniforge/task/interface.clj
+;------------------------------------------------------------------------------ Layer 0
+;; Public API — validate here, then forward
+
+(defn create-task
+  "Create a new task. Validates input at the component boundary."
+  [task-data]
+  (let [valid (m/validate TaskSchema task-data)]
+    (when-not valid
+      (throw (ex-info "Invalid task-data" {:data task-data
+                                           :errors (m/explain TaskSchema task-data)})))
+    (core/create-task-impl task-data)))  ; inside core: no re-validation
+```
+
+```clojure
+;; components/task/src/ai/miniforge/task/core.clj
+;------------------------------------------------------------------------------ Layer 0
+;; Internal implementation — no validation
+
+(defn create-task-impl
+  "Create a task record. Input is pre-validated by interface."
+  [task-data]
+  (-> task-data
+      (assoc :task/id (random-uuid))
+      (assoc :task/created-at (Instant/now))))
+```
+
+## External boundary pattern
+
+```clojure
+;; bases/api/src/ai/miniforge/api/handlers.clj
+;------------------------------------------------------------------------------ Layer 0
+;; HTTP boundary — validate incoming JSON here
+
+(defn handle-create-task [req]
+  (let [body (parse-body req)]
+    (if-let [errors (validate-create-task-request body)]
+      (bad-request errors)
+      (task/create-task body))))  ; component interface takes it from here
+```
+
+## What does NOT need validation
+
+- Function calls between files within the same component
+- Function calls from `core.clj` to other internal namespaces
+- Data threading through a pipeline (`->`, `->>`, `as->`)
+- Return values of pure functions (they can't be invalid by construction)
+
+## Agent behavior
+
+When writing code inside a component:
+1. Do NOT add `(when (nil? x) ...)` or schema checks on internal data.
+2. If you feel the urge to validate internal data, ask: is this arriving from outside the component? If no, delete the check.
+3. If arriving from outside (via `interface.clj`), add the validation there — and remove it from the internals.
+4. The schema lives in `schema.clj` or `spec.clj` — not scattered across `core.clj` with `when-let` guards.
+
+## Anti-patterns to reject
+
+- Validating in both `interface.clj` and `core.clj` — pick one (interface)
+- `(when (some? x) (do-thing x))` inside pure functions — caller is responsible
+- Schema validation inside pipeline stages (`->`) — validate before the pipeline
+- HTTP handler calling `valid?` AND the component interface calling `valid?` again
+- Defensive `(get m :key "default")` sprinkled through internals — that's validation in disguise

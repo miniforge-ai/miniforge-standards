@@ -1,0 +1,115 @@
+---
+dewey: "002"
+description: Code quality — composable pipelines, no nested conditionals, DRY component extraction
+alwaysApply: true
+---
+
+# Code Quality (ALWAYS)
+
+## Composable functions — small and pipeline-oriented
+
+Every function must read as a **pipeline**: data enters, transforms, exits. No hidden branches, no side effects buried in the middle, no implicit state mutations.
+
+**Design rule:** Write the smallest function that does one thing. Compose up.
+
+```clojure
+;; BAD — one function does discovery, filtering, and formatting
+(defn process-results [items]
+  (let [results []]
+    (doseq [item items]
+      (when (valid? item)
+        (when-let [x (transform item)]
+          (conj results (format x)))))
+    results))
+
+;; GOOD — three pure functions, each one concern
+(defn valid-items   [items]   (filter valid? items))
+(defn transform-all [items]   (keep transform items))
+(defn format-all    [items]   (mapv format items))
+
+;; Composed pipeline — reads as data flow
+(defn process-results [items]
+  (-> items valid-items transform-all format-all))
+```
+
+The composed form is **the function** — not a "main" that calls helpers. There is no incidental complexity.
+
+## No nested conditionals
+
+Nested `if`/`cond`/`when` blocks are a signal that control flow and data transformation are entangled. Restructure instead.
+
+**Prefer:**
+- Guard clauses (`when`/`if` at the top, return early via `nil` or exception)
+- `cond->` / `cond->>` for conditional transformation chains
+- Lookup tables / dispatch maps over `cond` branches
+- `some->` / `some->>` for optional-chain patterns
+
+```clojure
+;; BAD — nested conditionals
+(defn classify [evt]
+  (if (= :workflow/started (:event/type evt))
+    (if-let [id (:workflow/id evt)]
+      (if (valid-id? id)
+        :valid-start
+        :bad-id)
+      :missing-id)
+    :not-a-start))
+
+;; GOOD — flat cond
+(defn classify [evt]
+  (let [type (:event/type evt)
+        id   (:workflow/id evt)]
+    (cond
+      (not= :workflow/started type) :not-a-start
+      (nil? id)                     :missing-id
+      (not (valid-id? id))          :bad-id
+      :else                         :valid-start)))
+```
+
+A maximum of **one level of conditional nesting** is the goal. Two levels demands a refactor. Three is never acceptable.
+
+## DRY — extract to a component, import the interface
+
+Duplication of logic is a signal that a component boundary is missing.
+
+**Rules:**
+- If two components share more than one helper function, that logic belongs in a third component.
+- Never copy-paste implementations across namespaces. If you find yourself doing so, stop and create a shared component.
+- The shared component exposes an `interface.clj`. Consumers depend on the interface, never on the internal namespace.
+
+```
+;; BAD: same timestamp normalization in events.clj and workflows.clj
+(defn normalize-ts [ts] ...)  ; duplicated!
+
+;; GOOD: shared component
+components/temporal/src/ai/miniforge/temporal/interface.clj
+  (def normalize-ts core/normalize-ts)
+
+;; Consumers:
+(:require [ai.miniforge.temporal.interface :as temporal])
+(temporal/normalize-ts ts)
+```
+
+**What belongs in a component:**
+- Any pure function used in more than one component
+- Any protocol/schema referenced across components
+- Any formatting or parsing utility with multiple callers
+
+**What stays local:**
+- Functions called only within one component's internal namespaces
+
+## Agent behavior
+
+When writing or reviewing code:
+1. If a function exceeds one screen, ask: can this be split into named pipeline stages?
+2. If you see nested `if`/`when` blocks, refactor to `cond` or guard clauses.
+3. If you find yourself duplicating a function from another namespace, stop — create or identify the right component and add it to the interface.
+4. Composition is the design. Don't name composed pipelines "main" or "run" — name them for what they produce.
+
+## Anti-patterns to reject
+
+- Functions with multiple concerns named after a verb (e.g., `process-and-save`, `load-and-validate`)
+- `let` bindings that grow to 10+ forms — split the function
+- `cond` branches with `let` bodies — extract each branch to a named function
+- Utility functions copied between components instead of extracted
+- "Helper" files that grow without bound because no component owns them
