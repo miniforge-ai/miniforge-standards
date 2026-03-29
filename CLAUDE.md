@@ -6,71 +6,71 @@ git submodule at `.standards/` in each repo.
 
 ## How Consuming Repos Use This
 
-Each repo includes this as a submodule and has its own root `CLAUDE.md` that
-imports these shared rules plus repo-specific additions:
-
 ```
 my-repo/
-  .standards/          -> git submodule (this repo)
-  .cursor/rules/       -> symlink to .standards/.cursor/rules/
-  CLAUDE.md            -> repo-specific, references .standards/CLAUDE.md
+  .standards/   # git submodule (this repo)
+  CLAUDE.md     # repo-specific, references .standards/CLAUDE.md and agents.md
+  agents.md     # repo-specific, references .standards/agents.md
 ```
+
+The knowledge loader reads rules from `.standards/` by default.
+Project-specific rules go in a local `project/` directory alongside `.standards/`.
 
 ## Quick Reference
 
 | Need to... | Consult |
 |------------|---------|
-| Understand architecture | `001-stratified-design`, `010-simple-made-easy` |
-| Write Clojure code | `210-clojure` |
-| Write Python code | `220-python` |
-| Work with Polylith | `310-polylith` |
-| Work with Kubernetes | `320-kubernetes` |
-| Create a branch | `710-git-branch-management` |
-| **Commit code** | **`715-pre-commit-discipline`** (CRITICAL) |
-| Use git worktrees | `720-git-worktrees` |
-| Plan a PR | `720-pr-layering` |
-| Document a PR | `721-pr-documentation` |
-| Version a release | `730-datever` |
-| Add copyright header | `810-header-copyright` |
-| Create a new rule | `900-rule-format` |
+| Understand architecture | `foundations/stratified-design` |
+| Apply design philosophy | `foundations/simple-made-easy` |
+| Write Clojure code | `languages/clojure` |
+| Write Python code | `languages/python` |
+| Work with Polylith | `frameworks/polylith` |
+| Work with Kubernetes | `frameworks/kubernetes` |
+| Create a branch | `workflows/git-branch-management` |
+| **Commit code** | **`workflows/pre-commit-discipline`** (CRITICAL) |
+| Use git worktrees | `workflows/git-worktrees` |
+| Plan a PR | `workflows/pr-layering` |
+| Document a PR | `workflows/pr-documentation` |
+| Version a release | `workflows/datever` |
+| Add copyright header | `project/header-copyright` |
+| Create a new rule | `meta/rule-format` |
 
-## Rules Catalog (Dewey Classification)
+## Rules Catalog
 
-Rules live in `.cursor/rules/` with Dewey-style numeric prefixes.
+Rules live at the repo root with slug filenames. Dewey codes are in frontmatter
+(`dewey: "NNN"`), not encoded in filenames or paths.
 
 ```
-.cursor/rules/
-├── 000-index.mdc                        # Master catalog
-├── 000-foundations/
-│   ├── 001-stratified-design.mdc        # One-way DAG dependencies
-│   ├── 010-simple-made-easy.mdc         # Simplicity over familiarity
-│   └── 020-specification-standards.mdc  # Normative spec conventions
-├── 200-languages/
-│   ├── 210-clojure.mdc                  # Clojure + Polylith conventions
-│   └── 220-python.mdc                   # Python + Poetry conventions
-├── 300-frameworks/
-│   ├── 310-polylith.mdc                # Polylith workspace rules
-│   └── 320-kubernetes.mdc              # K8s/Kustomize/ArgoCD
-├── 700-workflows/
-│   ├── 710-git-branch-management.mdc   # Branch from main, single-purpose
-│   ├── 715-pre-commit-discipline.mdc   # NEVER bypass hooks (CRITICAL)
-│   ├── 720-git-worktrees.mdc           # AI agent worktree isolation
-│   ├── 720-pr-layering.mdc             # PRs by stratum, <400 lines
-│   ├── 721-pr-documentation.mdc        # PR living docs
-│   └── 730-datever.mdc                 # DateVer versioning
-├── 800-project/
-│   └── 810-header-copyright.mdc        # Miniforge.ai copyright header
-└── 900-meta/
-    └── 900-rule-format.mdc             # Template for new rules
+foundations/
+  stratified-design.mdc       dewey: "001"
+  simple-made-easy.mdc        dewey: "010"
+  specification-standards.mdc dewey: "020"
+languages/
+  clojure.mdc                 dewey: "210"
+  python.mdc                  dewey: "220"
+frameworks/
+  polylith.mdc                dewey: "300"
+  kubernetes.mdc              dewey: "320"
+workflows/
+  git-branch-management.mdc   dewey: "710"
+  pre-commit-discipline.mdc   dewey: "715"
+  git-worktrees.mdc           dewey: "720"
+  pr-documentation.mdc        dewey: "721"
+  pr-layering.mdc             dewey: "722"
+  datever.mdc                 dewey: "730"
+project/
+  header-copyright.mdc        dewey: "810"
+meta/
+  rule-format.mdc             dewey: "900"
 ```
 
-### Dewey Ranges
+## Dewey Ranges
 
 ```
 000-099  Foundations     Architecture, design philosophy
 100-199  Tools           Linters, formatters, build tools
 200-299  Languages       Clojure, Python, JS/TS, Go, Rust
-300-399  Frameworks      K8s, Polylith, web frameworks, databases
+300-399  Frameworks      Polylith, K8s, web frameworks, databases
 400-499  Testing         Unit, integration, E2E, code review
 500-599  Operations      CI/CD, monitoring, security
 600-699  Documentation   API docs, architecture docs
@@ -82,9 +82,9 @@ Rules live in `.cursor/rules/` with Dewey-style numeric prefixes.
 ## Core Principles (Always Apply)
 
 ### Stratified Design
-- Dependencies flow **downward only**: Adapters -> Application -> Domain -> Foundations
-- No cycles in the import graph
-- Pure core (Domain layer has no I/O)
+- Dependencies flow **downward only**: Adapters → Application → Domain → Foundations
+- No cycles in the import graph; no layer reaches up
+- Pure core — the Domain layer has no I/O
 
 ### Simple Made Easy
 - Prefer **simple** (unbraided) over **easy** (familiar)
@@ -93,36 +93,25 @@ Rules live in `.cursor/rules/` with Dewey-style numeric prefixes.
 
 ### PR Discipline
 - Each PR = one stratum, <400 lines, independently mergeable
-- Branch from main (never from feature branches unless explicit)
-- **NEVER** bypass pre-commit hooks
+- Branch from `main` (never from another feature branch)
+- **NEVER** bypass pre-commit hooks — investigate failures, fix root causes
 
 ### Specification-Driven
 - Normative specs (N-series) are implementation contracts
 - Specs are extracted from strategic documents, not from code
 - Code conforms to specs; specs do not describe code
 
-## For Agents: How to Use These Standards
-
-1. **Before writing code**: Check relevant rules (language, framework, architecture)
-2. **Before creating branches**: Consult `710-git-branch-management`
-3. **Before committing**: Follow `715-pre-commit-discipline` (CRITICAL)
-4. **Before opening PRs**: Follow `720-pr-layering` and `721-pr-documentation`
-5. **When creating rules**: Follow `900-rule-format` with Dewey numbering
-6. **When in doubt**: Apply `001-stratified-design` and `010-simple-made-easy`
-
 ## Consuming Repos
 
-This standards repo is used across:
+| Repository | Product |
+|------------|---------|
+| `miniforge` | Miniforge Core + Software Factory |
+| `data-foundry` | Data pipeline framework |
+| `miniforge-fleet-specs` | Enterprise fleet extensions |
+| `risk-core` | Risk analytics kernel |
+| `risk-data-plane` | Risk data infrastructure |
+| `risk-apple-app` | Apple platform risk client |
+| `marketwatch` | Market data platform |
 
-| Repository | Product | Status |
-|------------|---------|--------|
-| `miniforge` | Miniforge Core + Software Factory | Active |
-| `data-foundry` | Data pipeline framework | Active |
-| `miniforge-fleet-specs` | Enterprise fleet extensions | Active |
-| `risk-core` | Risk analytics kernel | Active |
-| `risk-data-plane` | Risk data infrastructure | Active |
-| `risk-apple-app` | Apple platform risk client | Active |
-| `marketwatch` | Market data platform | Onboarding |
-
-Project-specific overrides go in each repo's own `800-project/` rules or
-repo-level `CLAUDE.md`, never in this shared repo.
+Project-specific overrides go in each repo's own `project/` rules directory,
+never in this shared repo.
