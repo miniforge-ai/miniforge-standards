@@ -1,0 +1,95 @@
+---
+dewey: "003"
+description: Result handling — use success?/failed? predicates and success/anomaly constructors
+alwaysApply: true
+---
+
+# Result Handling (ALWAYS)
+
+Operations that can fail return a **result map**. Always use the provided predicates and constructors — never build result maps by hand or reach into their structure directly.
+
+## Predicates over structure inspection
+
+**Never** examine the shape of a result to determine success or failure. Use the predicates.
+
+```clojure
+;; BAD — reaching into the result map's internals
+(if (:success? result)
+  ...)
+
+(when (= :ok (:status result))
+  ...)
+
+(when (nil? (:error result))
+  ...)
+
+;; GOOD — use predicates
+(if (schema/succeeded? result)
+  ...)
+
+(when (schema/succeeded? result)
+  ...)
+```
+
+The internal shape of a result map is an **implementation detail**. Code that depends on `:success?` being a boolean key breaks when the result format evolves. Predicates are the stable API.
+
+## Constructors over hand-built maps
+
+**Never** construct result maps with `{:success? true ...}` or `{:status :error ...}` literals. Use the provided constructors.
+
+```clojure
+;; BAD — hand-building result maps
+{:success? true  :data value  :errors nil}
+{:success? false :error "Something went wrong"}
+{:success? false :errors [{:msg "invalid"}]}
+
+;; GOOD — use schema constructors
+(schema/success :data value {:errors nil})
+(schema/failure :data error-message)
+(schema/failure-with-errors :data [{:msg "invalid"}])
+```
+
+Constructors enforce the canonical shape. They are also self-documenting: `(schema/failure-with-errors :pack errors)` communicates intent; `{:success? false :pack nil :errors errors}` does not.
+
+## Propagation — thread results through, don't unwrap
+
+When passing a result to a caller, propagate the result map — don't unwrap it and re-wrap it.
+
+```clojure
+;; BAD — unwrapping and re-wrapping
+(let [{:keys [success? data error]} (load-pack path)]
+  (if success?
+    {:ok true :pack data}
+    {:ok false :msg error}))
+
+;; GOOD — propagate
+(let [result (load-pack path)]
+  (if (schema/succeeded? result)
+    (process (:pack result))
+    result))  ; return the failure as-is for the caller
+```
+
+## What counts as an "anomaly"
+
+Use anomaly constructors (failure forms) for:
+- Validation failures (invalid input at a boundary)
+- Missing required resources (file not found, entity not found)
+- Downstream errors caught at a boundary
+
+Do NOT wrap expected nil return values as anomalies. A function that legitimately returns nil for "not found" is not failing — it's answering the question.
+
+## Agent behavior
+
+When writing code that returns a result:
+1. Use `schema/success` or `schema/failure` — never `{:success? true ...}`.
+2. When checking a result from a called function, use `schema/succeeded?` or `schema/failed?` — never `:success?` key access.
+3. If the result type comes from a different component, check what predicates that component's interface exports. If none exist, that's a gap to flag.
+4. When propagating failures up the call stack, return the result map unchanged — don't add new keys or translate the error.
+
+## Anti-patterns to reject
+
+- `(when (:success? result) ...)` — use predicate
+- `(assoc result :success? false)` — use constructor
+- `(if (nil? (:error result)) ...)` — use predicate
+- `(not (:failed? result))` — use `(succeeded? result)`
+- Mixing result-map checks with exception handling in the same function — separate concerns
