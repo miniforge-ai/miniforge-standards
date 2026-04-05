@@ -29,6 +29,8 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Write tests | `testing/standards` |
 | Write Clojure code | `languages/clojure` |
 | Write Python code | `languages/python` |
+| Write Rust code | `languages/rust` |
+| Write Swift code | `languages/swift` |
 | Work with Polylith | `frameworks/polylith` |
 | Work with Kubernetes | `frameworks/kubernetes` |
 | Create a branch | `workflows/git-branch-management` |
@@ -57,6 +59,8 @@ foundations/
 languages/
   clojure.mdc                 dewey: "210"
   python.mdc                  dewey: "220"
+  rust.mdc                    dewey: "230"
+  swift.mdc                   dewey: "240"
 frameworks/
   polylith.mdc                dewey: "300"
   kubernetes.mdc              dewey: "320"
@@ -87,9 +91,11 @@ meta/
   020      Specification Standards
   050      Localization (i18n, en-US.edn)
 100-199  Tools           Linters, formatters, build tools
-200-299  Languages       Clojure, Python, JS/TS, Go, Rust
+200-299  Languages       Clojure, Python, JS/TS, Go, Rust, Swift
   210      Clojure (Polylith, stratified files, map access patterns)
   220      Python
+  230      Rust (error handling, rule tables, context structs, linting)
+  240      Swift (stratified views, access control, optionals, closures)
 300-399  Frameworks      Polylith, K8s, web frameworks, databases
   300      Polylith
   320      Kubernetes

@@ -1,0 +1,255 @@
+---
+dewey: "240"
+description: Swift and SwiftUI style and idioms
+globs:
+  - "**/*.swift"
+  - "**/Package.swift"
+---
+
+# Swift and SwiftUI style guide
+
+See also: `foundations/stratified-design` and `foundations/simple-made-easy` — those rules apply in
+Swift without exception. This file covers Swift-specific idioms that sit on top of those foundations.
+
+## General
+
+- Prefer value types (`struct`, `enum`) and immutable data flow. Reach for `class` when identity
+  semantics or reference sharing are genuinely required.
+- Use `async`/`await` for network and refresh flows; avoid callback pyramids.
+- Keep `swift build` and `swift test` green.
+- Mark all classes `final` unless you intend subclassing. Only use `open` when subclassing outside
+  the module is intentional.
+
+## Stratified view decomposition
+
+Organize SwiftUI code into a one-way DAG of layers. Each file belongs to exactly one layer; imports
+flow downward only. (This is the Swift application of `foundations/stratified-design`.)
+
+| Layer | Contents | Example files |
+|-------|----------|---------------|
+| L0 Foundations | Pure display-mapping functions, data tables, formatters, design tokens | `DashboardDisplayMappers.swift`, `DesignSystem.swift` |
+| L1 Domain | Pure domain logic (assessment, classification, risk evaluation) | `HoldingRiskAssessment.swift` |
+| L2 Views | Small, single-purpose views composing L0/L1 | `SummaryCard.swift`, `FamilyViews.swift` |
+| L3 Workspaces | Tab-level containers composing L2 views | `ProfileWorkspace.swift`, `ContentView.swift` |
+
+### Concrete rules
+
+- **No God files**: a single `.swift` file should not contain all views for a tab or feature.
+  Decompose into focused files by domain concept.
+- **Extract computed properties**: break complex view bodies into named computed properties
+  (`portfolioDetailCard`, `sleeveBreakdown`). Each should fit in a single screen.
+- **Pure display mappers**: color selection, badge labels, formatting, and name lookups belong in
+  stateless functions or data tables — not inline in view bodies.
+- **Data tables over switch jungles**: replace `switch sleeve { case "equities": ... }` with
+  `Dictionary` lookups. Centralize the mapping. (See simple-made-easy "rules live in one place".)
+
+```swift
+// Good: data table
+private let sleeveNames: [String: String] = [
+    "equities": "Equities",
+    "defensive_equities": "Defensive Equities",
+    "bonds": "Core Bonds",
+]
+func sleeveDisplayName(_ key: String) -> String {
+    sleeveNames[key] ?? key.capitalized
+}
+
+// Bad: scattered switch
+switch sleeve {
+case "equities": return "Equities"
+case "defensive_equities": return "Defensive Equities"
+// ...
+}
+```
+
+## Naming
+
+Follow the [Swift API Design Guidelines](https://swift.org/documentation/api-design-guidelines/#naming).
+
+- Include type information in UI component names to disambiguate at usage sites:
+  `settingsViewController: SettingsViewController`, `nameTextField: UITextField`.
+- Names should read as grammatical phrases at call sites. Omit redundant type names that are
+  already clear from context.
+- Use `lowerCamelCase` for properties and functions; `UpperCamelCase` for types and protocols.
+- Prefer American English spelling throughout.
+
+## Access control
+
+- **Default to `private`**. Anything that can be fully private should be. Widen access only when
+  there is a concrete need.
+- Use `private(set)` when external read access is needed but mutation should stay internal.
+- Use `fileprivate` only to share access between types in the same file, not as a substitute for
+  thinking about module boundaries.
+- Never write `internal` explicitly — it is the default and the annotation adds noise.
+- Only use `public` when a symbol must be used outside its defining module.
+
+## Optionals
+
+- Use optionals when the absence of a value has distinct meaning or when initialization is
+  genuinely deferred. Avoid them otherwise.
+- Do not make `Bool`s optional — a tri-state belongs in a named `enum`.
+- Do not make `Array`s optional unless an empty array has different semantics from nil.
+- Always handle unwrapping safely. Prefer `guard let` for early exit when a value is required;
+  prefer `if let` for branching when both paths have substance.
+- Avoid `flatMap` for optional unwrapping; use conditional binding instead.
+- Force-unwrap (`!`) is only acceptable when nil is a programmer error (e.g., storyboard outlets
+  that must exist). Add a comment explaining the invariant.
+
+```swift
+// Good: guard for required value, early exit
+guard let user = session.currentUser else {
+    return showLoginScreen()
+}
+
+// Bad: nested if-let pyramid
+if let session = session {
+    if let user = session.currentUser {
+        // ...
+    }
+}
+```
+
+## Control flow
+
+- Use `guard` for early returns when a condition must hold for the function to proceed. This keeps
+  the happy path unindented.
+- Prefer `guard let` / `guard let ... else` over nested `if let` chains.
+- Keep `switch` exhaustive; avoid `default:` clauses when the enum is under your control —
+  exhaustive switches catch future cases at compile time.
+
+## Protocols and extensions
+
+- Declare protocol conformance in a separate `extension` in the same file as the type:
+
+```swift
+// Good
+class UserViewModel { ... }
+
+extension UserViewModel: Equatable {
+    static func == (lhs: UserViewModel, rhs: UserViewModel) -> Bool { ... }
+}
+
+// Bad — mixed in with the type body
+class UserViewModel: Equatable {
+    static func == (...) { ... }
+    // ... other members ...
+}
+```
+
+- Use `MARK: - ProtocolName` inside conformance extensions for navigability.
+- Use protocols to wrap dependencies and enable substitution in tests.
+- Avoid `Any` and `AnyObject` — they discard type information and push errors to runtime. Prefer
+  a protocol with the required interface instead.
+- Only declare a protocol `open` when subclassing outside the module is intentional.
+
+## Computed properties vs methods
+
+Use a computed property when:
+- The computation is O(1) with no side effects.
+- The result depends only on instance state.
+- There is no meaningful failure mode.
+
+Use a method when:
+- The computation is expensive or has side effects.
+- The operation involves I/O, mutation of external state, or can fail.
+- The semantics are more "do something" than "what is this thing".
+
+## Closures
+
+- Use trailing closure syntax when the closure is the last argument and its purpose is clear from
+  context.
+- Always include explicit capture lists (`[weak self]`, `[unowned self]`) when capturing `self` in
+  a closure stored by the captured object, to prevent retain cycles.
+- Prefer `[weak self]` over `[unowned self]` unless you have a strong proof of lifetime.
+
+```swift
+// Good: trailing syntax with explicit capture list
+networkClient.fetch(request) { [weak self] result in
+    guard let self else { return }
+    self.handleResult(result)
+}
+```
+
+## File and type organization
+
+### One major type per file
+
+A file should contain one major type declaration. Supporting types (small enums, helper structs,
+associated protocols) may accompany the primary type in the same file when they are not reused
+elsewhere.
+
+### Property and function ordering within a type
+
+```
+1. Property wrappers (@StateObject, @State, @AppStorage, @Binding, @ObservedObject)
+   grouped by wrapper kind, marked private
+2. Other stored properties — public/internal, then private
+3. Initializers
+4. deinit (if present, after last initializer)
+5. Overridden declarations (MARK: - SuperclassName)
+6. Protocol conformance (MARK: - ProtocolName)
+7. Type-specific declarations (MARK: - TypeName)
+   — public/internal, then private
+8. Extension conformances (each in a separate extension block)
+```
+
+Use `MARK: -` to separate the above groups when a file has overrides or conformances. Use `MARK:`
+(no dash) for secondary groupings inside a section.
+
+### Extension file naming
+
+General-purpose extensions on external types live in their own files named
+`ExtendedType+Purpose.swift` (e.g., `Array+MergeSort.swift`).
+
+### SwiftUI file order
+
+Within a SwiftUI `View`:
+1. Property wrappers grouped by type
+2. Other stored properties
+3. `init` (when explicitly written)
+4. `// MARK: - View` then `var body: some View`
+5. Computed property helpers
+
+## State management
+
+- Keep view models thin and explicit. Views receive data; they do not compute policy.
+- If a view needs to decide "is this risky?" or "which regime applies?", that logic belongs in L1
+  domain or in a lower-level core (e.g., Rust core over FFI).
+- Do not duplicate engine logic in Swift when another layer owns the policy.
+- Keep UI state (`@State`, `@StateObject`) scoped as locally as possible; lift state only when
+  multiple views genuinely share it.
+
+## Localization
+
+Every user-facing string must go through a `Strings.*` namespace (backed by `NSLocalizedString` +
+`Localizable.strings`). No hardcoded English strings in views or view models. This is the Swift
+application of simple-made-easy "rules (and data) live in one place".
+
+## Documentation and comments
+
+- Document all `internal` and higher access-level declarations with `///` doc comments.
+- `private` declarations may be documented for clarity but it is not required.
+- Document `enum` cases with a single line each. Document associated values as parameters.
+- Write comments to explain *why*, not *what*. Code that needs a comment to explain what it does
+  should usually be refactored into a named function or property.
+- Start comments with `//` followed by a space. Write complete sentences.
+- Do not leave `// TODO:` without a corresponding issue reference.
+
+## Testing
+
+- Use dependency injection (protocol types) to make view models and controllers testable in
+  isolation.
+- Test error and edge-case paths, not only happy paths.
+- Prefer small, focused unit tests for domain logic (L1 layer).
+- Integration tests cover the wiring between layers.
+
+## What NOT to do
+
+- Do not scatter policy conditionals across view files. Pull them into L0/L1 tables.
+- Do not use `Any` or `AnyObject` — use typed protocols.
+- Do not force-unwrap optionals in production code without documenting the invariant.
+- Do not put business logic into view bodies or computed view properties.
+- Do not mix UI state and network/storage concerns in the same type (see stratified-design).
+- Do not use `default:` in `switch` statements over enums you control.
+- Do not introduce retain cycles by capturing `self` strongly in stored closures.
+- Do not hardcode user-facing strings; route all copy through `Strings.*`.
