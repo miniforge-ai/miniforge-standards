@@ -1,0 +1,355 @@
+---
+dewey: "230"
+description: Rust style and idioms
+globs:
+  - "**/*.rs"
+  - "**/Cargo.toml"
+---
+
+# Rust style guide
+
+See also: `foundations/stratified-design` and `foundations/simple-made-easy` — those rules apply in Rust
+without exception. This file covers Rust-specific idioms that sit on top of those foundations.
+
+## Crate and module structure
+
+- Use Cargo workspaces with small crates and explicit boundaries.
+- Keep domain logic in crates that have no dependency on transport or framework crates (Axum, tonic,
+  etc.). Adapters live in their own crates.
+- Keep FFI surfaces narrow, stable, and JSON-schema aligned.
+- Prefer `struct`/`enum` data modeling over trait-heavy abstractions. Reach for traits when you need
+  open polymorphism; do not create trait hierarchies as a substitute for thinking about data shapes.
+- One major type per module is a useful default; group supporting types nearby, not scattered.
+
+## Naming
+
+Follow standard Rust conventions:
+
+| Item | Convention | Example |
+|------|-----------|---------|
+| Types (struct, enum, trait) | `UpperCamelCase` | `CautionContext` |
+| Functions and methods | `snake_case` | `evaluate_regime` |
+| Local variables | `snake_case` | `family_buckets` |
+| Modules | `snake_case` | `rule_engine` |
+| Constants and statics | `SCREAMING_SNAKE_CASE` | `MAX_RETRIES` |
+| Type parameters | Short `UpperCamelCase` | `T`, `Err` |
+
+Use long, descriptive names for locals — code completion makes short names a false economy. Default
+variable names to use consistently:
+
+- `res` — result being built
+- `ctx` — context bundle
+- `acc` — accumulator
+- `it` — iteration variable when the name does not matter
+
+Avoid ad-hoc abbreviations. Use the established set (`db`, `ctx`, `acc`) or spell it out.
+
+Names that clash with keywords: mangle rather than use raw identifiers (`r#`):
+
+```
+crate  → krate
+enum   → enum_
+fn     → func
+impl   → imp
+mod    → module
+struct → strukt
+trait  → trait_
+type   → ty
+```
+
+## Data-driven policy patterns
+
+Centralize business rules as data, not scattered conditionals — the Rust application of
+simple-made-easy's "rules live in one place" principle.
+
+### Context structs
+
+Bundle related evaluation inputs into a named struct. Functions that share the same inputs should
+share the same context type.
+
+```rust
+// Good: context bundles related state
+struct CautionContext<'a> {
+    style_id: &'a str,
+    regime: &'a str,
+    family_buckets: BTreeMap<&'a str, Option<&'a str>>,
+}
+
+// Bad: six loose parameters threaded through call chains
+fn evaluate(regime: &str, conc: bool, families: &[F], confidence: &str, ...) -> R
+```
+
+### Rule tables over conditional chains
+
+Replace `if`/`match` chains that encode policy with `const` rule tables. Each entry is a
+predicate + payload. This applies equally to large `match` expressions — when the arms are
+encoding policy, pull them into a table.
+
+```rust
+// Good: policy as data
+struct CautionRule {
+    predicate: fn(&CautionContext) -> bool,
+    message: &'static str,
+}
+
+const CAUTION_RULES: &[CautionRule] = &[
+    CautionRule { predicate: |ctx| ctx.family_is_red("valuation"), message: CAUTION_VALUATION },
+    CautionRule { predicate: |ctx| ctx.regime == "defensive",     message: CAUTION_EDUCATIONAL },
+];
+
+fn cautions(ctx: &CautionContext) -> Vec<String> {
+    CAUTION_RULES.iter().filter(|r| (r.predicate)(ctx)).map(|r| r.message.to_string()).collect()
+}
+
+// Bad: scattered if-chains
+if family_is_red("valuation") { cautions.push(...) }
+if family_is_red("yield_curve") { cautions.push(...) }
+if regime == "defensive" { cautions.push(...) }
+```
+
+### Resolution structs
+
+When a function selects from alternatives, return a named struct — not a tuple.
+
+```rust
+// Good
+struct PlaybookResolution { regime: String, thesis: String, targets: BTreeMap<String, f64> }
+
+// Bad: positional tuple leaking internal ordering
+let (regime, thesis, targets, id, rationale) = resolve(...);
+```
+
+### String constants
+
+All user-facing and advisory text lives in a `strings.rs` module as `pub const`. Domain logic
+references `crate::strings::*` — never inline string literals in business logic.
+
+## Error handling
+
+### Library crates: use `thiserror`
+
+Define typed error enums for each crate. `thiserror` derives `std::error::Error`, `Display`, and
+`From` with minimal boilerplate:
+
+```rust
+#[derive(Debug, thiserror::Error)]
+pub enum ServiceError {
+    #[error("Database error: {0}")]
+    Db(#[from] DbError),
+    #[error("Invalid data: {0}")]
+    InvalidData(String),
+    #[error(transparent)]
+    Serialization(#[from] serde_json::Error),
+}
+```
+
+For layered systems, nest error enums with `#[from]` to preserve context at each boundary.
+
+### Binary crates: `anyhow` is acceptable
+
+`anyhow::Result` is appropriate in `main`, CLI entry points, and test helpers where ergonomic
+propagation matters more than precise error types. Do not use `anyhow` in library crates — it
+erases type context that callers need.
+
+Use `anyhow::format_err!` rather than `anyhow::anyhow` (less stuttering).
+
+### General error rules
+
+- Prefer `Result`; avoid `panic!` except for genuine programmer errors (`unreachable!`, `todo!`,
+  test assertions).
+- Do not use `.unwrap()` or `.expect()` in production code paths. Prefer `let Ok(x) = ... else`
+  for early returns, `?` for bubbling, or combinator methods (`unwrap_or`, `unwrap_or_else`).
+- Use `?` to propagate errors rather than verbose `match` chains.
+- Async errors that cross `.await` boundaries must implement `Send + Sync + 'static`.
+- Separate parse failures, transport failures, and stale-cache behavior explicitly — do not collapse
+  them into a single opaque error variant.
+- Test error paths: check `err.to_string()` when `PartialEq` is not available.
+
+## Type idioms
+
+### Prefer general borrowed types on function boundaries
+
+Use the more general borrowed form:
+
+| Prefer | Over |
+|--------|------|
+| `&str` | `&String` |
+| `&[T]` | `&Vec<T>` |
+| `Option<&T>` | `&Option<T>` |
+| `&Path` | `&PathBuf` |
+
+### `Copy` types
+
+Derive `Copy` for small plain-data structs (up to ~3 words / 24 bytes) whose fields are all `Copy`.
+Do not derive `Copy` on types containing `String`, `Vec`, or other heap-owning fields.
+
+### Constructors
+
+Prefer `#[derive(Default)]` over a zero-argument `new()` when the zero value is correct. Avoid
+inventing "dummy" default states just to satisfy `Default`.
+
+### Getters
+
+If a field has an invariant, make it `private`, enforce it in the constructor, and expose a getter
+that returns a borrowed form:
+
+```rust
+// Good
+fn first_name(&self) -> &str { self.first_name.as_str() }
+fn middle_name(&self) -> Option<&str> { self.middle_name.as_ref() }
+
+// Bad — clones unnecessarily, or leaks container type
+fn first_name(&self) -> String { self.first_name.clone() }
+fn middle_name(&self) -> &Option<String> { &self.middle_name }
+```
+
+Never provide setters. If mutation is needed after construction, provide a builder or use
+`pub` fields when there are no invariants to protect.
+
+## `impl Trait` vs generics vs `dyn Trait`
+
+- Prefer `impl Trait` in function arguments when the caller's concrete type is unimportant and you
+  want zero-cost static dispatch without spelling out a type parameter.
+- Use explicit `<T: Trait>` when you need to name `T` elsewhere in the signature (return type,
+  multiple parameters of the same type).
+- Reserve `dyn Trait` for cases where you genuinely need runtime polymorphism: heterogeneous
+  collections, plugin boundaries, or abstracting internals behind a stable interface. Avoid boxing
+  too early inside structs.
+- Prefer `&dyn Trait` over `Box<dyn Trait>` when ownership is not required.
+- Avoid `AsRef` polymorphism in non-library code — it inflates compile times without meaningful
+  benefit at call sites.
+
+## Functions and control flow
+
+### Preconditions in types
+
+Express preconditions in types; do not check in the callee what the caller should have provided:
+
+```rust
+// Good — caller must supply a Walrus
+fn frobnicate(walrus: Walrus) { ... }
+
+// Bad — callee silently no-ops on None
+fn frobnicate(walrus: Option<Walrus>) {
+    let Some(walrus) = walrus else { return };
+    ...
+}
+```
+
+### Early returns
+
+Use early returns to reduce cognitive nesting. Use `return Err(...)` explicitly rather than `Err(...)?`:
+
+```rust
+// Good
+fn foo() -> Option<Bar> {
+    if !condition() {
+        return None;
+    }
+    Some(...)
+}
+```
+
+### Functions with many parameters
+
+Replace boolean flags and long parameter lists with a `Config` struct:
+
+```rust
+// Good
+pub struct AnnotationConfig {
+    pub binary_target: bool,
+    pub annotate_runnables: bool,
+    pub annotate_impls: bool,
+}
+
+pub fn annotations(db: &RootDatabase, file_id: FileId, config: AnnotationConfig) -> Vec<Annotation>
+
+// Bad
+pub fn annotations(db: &RootDatabase, file_id: FileId, binary_target: bool,
+                   annotate_runnables: bool, annotate_impls: bool) -> Vec<Annotation>
+```
+
+Do not implement `Default` for `Config` structs; require callers to be explicit about every field.
+
+### Avoid "doer" objects
+
+Prefer a plain function over a struct constructed solely to call one method:
+
+```rust
+// Good
+do_thing(arg1, arg2);
+
+// Bad
+ThingDoer::new(arg1, arg2).do();
+```
+
+When an operation has genuine internal state, hide the struct behind a public function:
+
+```rust
+pub fn do_thing(arg1: Arg1, arg2: Arg2) -> Res {
+    Ctx { arg1, arg2 }.run()
+}
+```
+
+### Helper variables
+
+Introduce named variables for complex conditions rather than inline expressions. Single-use
+variables are cognitively cheap and aid debugging.
+
+## Linting
+
+- Keep `cargo clippy --all-targets --all-features -- -D warnings` clean.
+- Fix warnings; do not silence them with `#[allow(...)]` unless you understand the lint and document
+  why suppression is correct. Prefer `#[expect(...)]` with a comment — it re-warns if the lint
+  becomes inapplicable.
+- Do not add `#[allow(dead_code)]` to suppress incomplete work; remove the dead code or add a
+  tracked issue.
+- Configure lint levels in `Cargo.toml` `[workspace.lints]` rather than per-file attributes.
+
+## Memory and allocation
+
+- Borrow (`&T`) rather than clone (`T::clone()`) by default. Clone deliberately when you need
+  an owned copy.
+- Do not clone inside iterator chains — use `.cloned()` or `.copied()` at the chain boundary.
+- Avoid collecting into a `Vec` when an iterator suffices.
+- For recursive collection-building functions, use an accumulator parameter instead of returning
+  and merging fresh collections on each recursion.
+- Avoid monomorphizing large functions across crate boundaries — use a thin generic wrapper that
+  delegates to a `&dyn Fn` implementation.
+
+## Import style
+
+Group imports separated by blank lines in this order: `std`, external crates, `crate::`, `super::`
+/ `self::`. Re-exports should be rare and placed after imports. Avoid local `use MyEnum::*`.
+
+## Documentation
+
+- Write `///` doc comments on all public items (functions, structs, traits, enums, constants).
+- Include a `# Errors` section when a function returns `Result`, a `# Panics` section when it can
+  panic, and a `# Safety` section when it contains `unsafe`.
+- Write runnable `# Examples` in doc comments — they become `cargo test` test cases.
+- Use `//!` module/crate-level comments at the top of `lib.rs` or `mod.rs`.
+- Inline `//` comments explain *why*, not *what*. Start comments with a capital letter and end with
+  a period. Named comment kinds (`// SAFETY:`, `// CONTEXT:`, `// INVARIANT:`) signal intent.
+- Do not leave `// TODO` without a tracked issue reference.
+
+## Testing
+
+- Prefer fixture-based parity tests for contract compatibility (golden files, snapshot testing).
+- Add focused unit tests for pure domain functions: reducers, evaluators, regime logic.
+- Keep synthetic tests small and deterministic. Use `cargo insta` for snapshot tests.
+- Tests must exercise error paths, not just happy paths.
+- Do not use `#[should_panic]`; check `Err`/`None` explicitly.
+- Do not `#[ignore]` tests; assert the wrong behavior with a `// FIXME` if it is not yet correct.
+- Test snippets should be minimal — remove boilerplate not relevant to what is being tested.
+
+## What NOT to do
+
+- Do not scatter policy conditionals across modules. See rule tables above.
+- Do not use `unwrap`/`expect` in production call paths.
+- Do not use `anyhow` in library crates.
+- Do not add `#[allow(dead_code)]` to paper over incomplete work.
+- Do not create trait hierarchies as a substitute for reasoning about data shapes.
+- Do not clone prematurely inside loops or iterator chains.
+- Do not use `Box<dyn Trait>` inside structs unless runtime polymorphism is genuinely required.
+- Do not mix domain logic with transport concerns in the same crate (see stratified-design).
