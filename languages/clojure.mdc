@@ -129,6 +129,63 @@ When a file exceeds 3 layers:
   (or (:tokens result) total-tokens)           ; → (get result :tokens total-tokens)
   ```
 
+## Anonymous functions (ALWAYS)
+
+Anonymous functions (`fn` / `#(...)`) should be used **only when they enhance
+the clarity of the surrounding code** — not as a default for every callback.
+
+**Prefer named functions when:**
+
+- The logic has a name worth expressing (extract to `defn-`)
+- The body is more than one non-trivial expression
+- The function is used more than once
+- The parent expression already reads at a high level of abstraction and the
+  anonymous body forces the reader to shift mental levels mid-expression
+
+**Acceptable anonymous function uses:**
+
+```clojure
+;; Short, self-evident predicate inline — intent is clear from context
+(filter :active? users)
+(remove nil? results)
+(keep :name items)
+
+;; Simple structural transform that names itself through context
+(map #(assoc % :processed? true) records)
+
+;; One-off adaptor that has no reusable name
+(sort-by #(get key->cat %) rule-ids)
+```
+
+**Extract to a named function when the body obscures intent:**
+
+```clojure
+;; BAD — the anon fn body is complex and the parent reads poorly
+(into {} (map (fn [[k vs]]
+                [k (get (first vs) :rule/category "0")])
+              groups))
+
+;; GOOD — named fn expresses the intent; parent reads as a pipeline
+(defn- key->category-entry [[k vs]]
+  [k (get (first vs) :rule/category "0")])
+
+(into {} (map key->category-entry groups))
+```
+
+**Never embed anonymous functions in data maps as configuration values.**
+Configuration maps should reference named functions so the config remains
+data and the behavior is separately testable:
+
+```clojure
+;; BAD — anonymous fn buried in a map; untestable, hard to read
+{:file-pred (fn [path] (str/ends-with? path ".clj"))}
+
+;; GOOD — named fn at the correct stratum; referenced by the config
+(defn- clojure-file? [path] (str/ends-with? path ".clj"))
+
+{:file-pred clojure-file?}
+```
+
 ## Agent behavior
 
 When creating/editing a namespace:
