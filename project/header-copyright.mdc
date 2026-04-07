@@ -1,7 +1,19 @@
 ---
 dewey: "810"
 description: Enforce Miniforge.ai header and copyright on published content
-globs: **/*.{md,mdx,html}
+globs:
+  - "docs/*.md"
+  - "docs/**/*.md"
+  - "specs/*.md"
+  - "specs/**/*.md"
+  - "*.md"
+detection.mode: negative
+detection.pattern: 'Christopher Lester'
+detection.emailPattern: 'christopher@miniforge\.ai'
+remediation.strategy: mechanical
+remediation.type: prepend
+remediation.template: '<!--\n  Title: Miniforge.ai\n  Author: Christopher Lester (christopher@miniforge.ai)\n  Copyright 2025-2026 Christopher Lester. Licensed under Apache 2.0.\n-->'
+remediation.autoFixable: true
 ---
 
 # Miniforge.ai Header & Copyright
