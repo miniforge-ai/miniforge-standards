@@ -5,6 +5,12 @@ globs:
   - "build.clj"
   - "**/version.edn"
   - ".github/workflows/*.yml"
+  - ".github/workflows/*.yaml"
+detection.mode: positive
+detection.pattern: '\b(\d+)\.(\d+)\.(\d+)\b(?!\.\d)'
+remediation.strategy: mechanical
+remediation.replacement: '$1.$2.$3.0'
+remediation.autoFixable: false
 ---
 # DateVer Versioning (ALWAYS)
 

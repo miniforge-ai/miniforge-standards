@@ -9,6 +9,18 @@ globs:
   - "bases/**/src/**/*.cljc"
   - "projects/**/src/**/*.clj"
   - "projects/**/src/**/*.cljc"
+detection.mode: positive
+detection.pattern: '\(or \((:[a-zA-Z][a-zA-Z0-9?!_*+<>-]*)\s+([a-zA-Z][a-zA-Z0-9_-]*)\)\s+((?:nil|true|false|"[^"]*"|-?\d+(?:\.\d+)?|\[\]|\{\}|:[a-zA-Z][a-zA-Z0-9_-]*))\)'
+remediation.strategy: mechanical
+remediation.replacement: '(get $2 $1 $3)'
+remediation.autoFixable: true
+remediation.excludePathContains:
+  - "server/"
+remediation.excludeCurrentContains:
+  - ":type"
+  - ":priority"
+  - ":status"
+  - ";; JSON"
 ---
 # Clojure style guidelines
 
