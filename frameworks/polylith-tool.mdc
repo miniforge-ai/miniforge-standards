@@ -1,0 +1,296 @@
+---
+dewey: "312"
+description: Treat Polylith as an architectural control tool — preflight reasoning, canonical workflow, role-specific operational requirements
+globs:
+  - components/**
+  - bases/**
+  - projects/**
+  - development/**
+  - workspace.edn
+  - deps.edn
+  - .github/workflows/**
+---
+
+# Polylith Workspace Architecture Tool (MDC `mdc.tool.polylith`)
+
+## Purpose
+
+The Polylith tool governs **legal structural changes** in a Polylith workspace.
+Agents MUST treat Polylith as a structural reasoning and validation tool, not
+merely as a code generation context.
+
+It is used to inspect workspace structure; identify bricks and projects;
+determine where new logic belongs; enforce interface-based composition;
+validate dependency legality; determine affected projects; support
+project-context testing; and gate downstream review, release, and packaging
+workflows.
+
+This MDC is the **operational companion** to the normative rule at
+`frameworks/polylith-composition` (dewey 311). The rule defines what is
+normatively true; this MDC defines how agents must behave to comply. If the
+MDC conflicts with the normative rule, the rule wins.
+
+---
+
+## When agents MUST invoke Polylith reasoning
+
+Before any of the following, agents MUST use this MDC:
+
+- adding new production functionality
+- modifying component interfaces
+- introducing or changing cross-brick dependencies
+- creating a new component or base
+- deciding whether a change belongs in a base, component, project, or development
+- running workspace validation
+- determining test or release scope
+- explaining project impact of a change
+- reviewing PRs that modify workspace structure
+
+## When agents MUST NOT proceed without this reasoning
+
+<critical>
+Agents MUST NOT proceed to implementation when:
+- ownership of the change is unclear
+- a component interface might need to change
+- a new cross-brick dependency might be introduced
+- a deployable project appears to be gaining production code
+- the change may affect multiple projects
+- a release or test workflow depends on workspace validity
+</critical>
+
+In any of these, perform the preflight reasoning below first.
+
+---
+
+## Inviolable invariants (summary)
+
+Full detail in `frameworks/polylith-composition` (dewey 311).
+
+1. Production logic belongs in bricks — not `projects/*/src`.
+2. Bases are boundary adapters — not homes for reusable domain logic.
+3. Components are consumed only through interfaces.
+4. Interface changes are contract changes.
+5. Structural validation is a hard gate before downstream workflows.
+6. Testing must reflect deployable project composition.
+7. Release scope must be change-derived against a stable reference point.
+
+---
+
+## Required preflight reasoning
+
+Before implementing a non-trivial change, answer these questions. Include
+the answers in planning metadata or review output when feasible.
+
+### Ownership
+- Which existing brick owns this responsibility?
+- If none does, is a new component or base warranted — or would that just be convenient?
+
+### Placement
+- Is this reusable production logic, boundary logic, project composition, or dev-only?
+- Should it live in a component, base, project, or `development/`?
+
+### Interface impact
+- Does this require a new interface function?
+- Is it purely internal to the component?
+- Will it alter a contract used by other bricks?
+
+### Dependency legality
+- Will this introduce a cross-brick dependency?
+- If so, does that dependency target an interface namespace?
+- Does this create an illegal architectural edge?
+
+### Project impact
+- Which deployable projects include the changed brick?
+- Which projects are affected transitively?
+- Which tests and workflows must run because of that impact?
+
+### Validation readiness
+- What structural checks must pass before the change is valid?
+- What evidence will demonstrate the workspace remains compliant?
+
+---
+
+## Canonical workflow
+
+1. **Inspect the workspace** — relevant components, bases, projects, interfaces, current dependency shape.
+2. **Determine ownership** — existing brick, new brick (with justification), `development/`, or project composition only.
+3. **Determine contract impact** — interface change, implementation-only change, composition change, or affected-project expansion.
+4. **Implement only in legal locations** — components for reusable behavior, bases for boundary concerns, `development/` for dev-only, projects for composition/configuration.
+5. **Validate structure** — run `poly check` (or equivalent) before progressing.
+6. **Validate behavior** — brick tests + affected-project tests + project-level runtime tests as appropriate.
+7. **Report impact** — changed bricks, interface changes, affected projects, validation status, test scope executed, residual risk.
+
+---
+
+## Operational requirements by agent role
+
+### Implementation agents
+- MUST determine owning brick before writing code.
+- MUST prefer modifying an existing brick over creating a new one without reason.
+- MUST preserve interface boundaries.
+- MUST NOT place production business logic in deployable projects.
+- MUST NOT import another component's implementation namespaces.
+- SHOULD minimize interface surface area.
+- SHOULD keep bases thin and delegating.
+
+### Review agents
+- MUST inspect new and changed cross-brick dependencies.
+- MUST fail changes that bypass component interfaces.
+- MUST flag production logic introduced under `projects/*/src`.
+- MUST elevate review scope when interfaces change.
+- SHOULD identify bases that have accumulated reusable domain logic.
+- SHOULD distinguish implementation-only changes from contract changes.
+
+Review output SHOULD state whether: interface boundaries were preserved,
+ownership placement was correct, any illegal dependency edges exist, and
+project impact scope is accurate.
+
+### Test agents
+- MUST validate changed bricks in the context of affected projects where material.
+- MUST distinguish brick-level tests from project-level tests.
+- SHOULD prefer real component composition over excessive mocking.
+- SHOULD mock only true external boundaries or impractical side effects.
+- MUST NOT claim completeness if only isolated namespace testing was performed when project composition is material.
+
+Test output SHOULD state: changed bricks tested, affected projects
+considered, whether project-context validation was performed, and known
+gaps between isolated and composed testing.
+
+### Release agents
+- MUST require successful structural validation before release progression.
+- SHOULD determine scope from changed-and-affected projects relative to a stable or release tag.
+- MUST NOT treat a structurally invalid workspace as releasable.
+- MUST NOT release arbitrary project subsets without impact reasoning.
+
+Release output SHOULD state: comparison anchor used, changed projects,
+affected projects, tests/validation completed, and remaining release risk.
+
+---
+
+## Allowed and disallowed moves
+
+### Allowed
+- Add reusable domain logic to an existing component.
+- Add a new interface function to support intentional component collaboration.
+- Add boundary translation logic to a base.
+- Create a new component when responsibility does not fit an existing one.
+- Move exploratory code into `development/` first.
+- Derive release scope from affected-project analysis.
+- Widen review/test scope when an interface changes.
+
+### Disallowed
+- Add general production logic under `projects/*/src`.
+- Import another component's internal implementation namespace.
+- Use a base as a shared business-logic utility library.
+- Create a new brick without checking for an existing owner.
+- Bypass structural validation because local tests passed.
+- Assume isolated tests are sufficient when project composition is the delivery contract.
+- Release based only on touched files without affected-project reasoning.
+
+---
+
+## Tool-facing structured outputs
+
+When this MDC is used, agents SHOULD produce structured outputs that include
+as many of the following as are relevant. These are especially useful for
+compilation into EDN policy or workflow evidence.
+
+- `owningBrick`
+- `changeKind` — one of `implementation` | `interface` | `base-boundary` | `project-composition` | `development-only`
+- `newDependencies`
+- `illegalDependencies`
+- `affectedProjects`
+- `requiresValidation`
+- `requiresProjectContextTesting`
+- `stableReference`
+- `releaseImpact`
+- `architecturalRiskNotes`
+
+---
+
+## Recommended prompt framing
+
+When an agent is about to make a change in a Polylith workspace, it SHOULD
+internally frame the task as:
+
+> Determine the owning brick, determine whether the interface contract
+> changes, preserve legal dependency edges, validate workspace structure,
+> and verify affected project behavior.
+
+That framing is architecturally correct. Do NOT frame as:
+
+> Add the requested code somewhere appropriate.
+
+That framing erodes the model over time.
+
+---
+
+## Example decision patterns
+
+<example>
+**Adding new reusable business behavior**
+
+Correct:
+- Identify owning component.
+- Extend component internals.
+- Add or modify interface only if needed.
+- Update affected callers through the interface.
+- Validate structure.
+- Test in affected project context.
+</example>
+
+<example type="invalid">
+**Adding new reusable business behavior — anti-pattern**
+
+- Add a helper directly to a project namespace.
+- Import component internals from another brick.
+- Skip impact analysis because local tests passed.
+</example>
+
+<example>
+**Adding a new HTTP endpoint**
+
+Correct:
+- Add route and translation logic in the relevant base.
+- Delegate domain behavior to a component interface.
+- Keep business rules in a component.
+- Test endpoint behavior in project context.
+</example>
+
+<example type="invalid">
+**HTTP endpoint — anti-pattern**
+
+- Implement endpoint and business logic entirely in the base.
+- Duplicate domain behavior already present in another component.
+</example>
+
+<example>
+**Temporary integration logic during exploration**
+
+Correct:
+- Place temporary orchestration or exploratory workflow code under `development/`.
+- Promote only intentional, production-worthy logic into a brick later.
+</example>
+
+<example type="invalid">
+**Exploration — anti-pattern**
+
+- Leave exploratory code embedded in a production component or project indefinitely.
+</example>
+
+---
+
+## Detection signals (for policy compilation)
+
+Compilers or downstream policy systems MAY derive enforcement signals such as:
+
+- new namespace under `projects/*/src`
+- import of non-interface namespace from another brick
+- interface namespace modification (elevates review scope)
+- base namespace accumulating excessive domain behavior
+- missing workspace validation step before downstream workflow
+- missing affected-project analysis in release/test pipeline
+- mismatch between changed bricks and executed project-context tests
+
+These signals support enforcement of the architecture rule but do not
+substitute for architectural reasoning.

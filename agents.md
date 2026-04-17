@@ -59,6 +59,7 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 ├── frameworks/
 │   ├── polylith.mdc                     # dewey: "300"
 │   ├── polylith-composition.mdc         # dewey: "311"
+│   ├── polylith-tool.mdc                # dewey: "312"
 │   └── kubernetes.mdc                   # dewey: "320"
 ├── testing/
 │   └── standards.mdc                    # dewey: "400"  alwaysApply: true
