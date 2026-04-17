@@ -1,0 +1,213 @@
+---
+dewey: "311"
+description: Enforce Polylith architectural integrity — bricks hold production logic, interfaces are contracts, validation gates workflows
+globs:
+  - components/**
+  - bases/**
+  - projects/**
+  - development/**
+  - .github/workflows/**
+  - workspace.edn
+  - deps.edn
+---
+
+# Polylith Architecture and Composition (Rule `arch.polylith.structure-and-composition`)
+
+## Intent
+
+Preserve Polylith architectural integrity by enforcing brick-oriented production
+code, interface-based composition, boundary isolation in bases, and
+project-context validation/testing. Polylith is not just a folder layout — it
+encodes an architectural model that only holds if components are reusable,
+bases are boundary adapters, interfaces are stable contracts, and workflows are
+gated by structural validation.
+
+---
+
+## 1. Production code belongs in bricks
+
+Production application logic MUST live in bases and components. Deployable
+projects MUST NOT become general-purpose homes for production business logic.
+
+- Reusable business logic MUST be implemented in components.
+- Boundary and entrypoint logic MUST be implemented in bases.
+- Projects SHOULD primarily compose bricks and configure deployment/runtime concerns.
+
+<critical>
+Do NOT introduce production namespaces under `projects/*/src`. Do NOT use
+project namespaces as a substitute for missing components. Do NOT duplicate
+production logic across projects instead of extracting a component.
+</critical>
+
+---
+
+## 2. Bases are boundary adapters
+
+A base MUST act as a bridge between the outside world and component interfaces.
+
+Bases MAY own: application entrypoints, framework adapters, transport wiring,
+request/response translation, infrastructure-facing orchestration, side-effect
+initiation at system boundaries.
+
+- Bases MUST delegate business behavior to components.
+- Bases SHOULD isolate framework-specific or runtime-specific concerns.
+
+<critical>
+Bases MUST NOT become the primary home of reusable business logic. Bases MUST
+NOT depend on internals of other components. Bases MUST NOT be treated as
+shared libraries.
+</critical>
+
+---
+
+## 3. Components are accessed only through interfaces
+
+A component MUST be consumed through its interface namespace(s), not through
+its internal implementation namespaces. **This is an inviolable boundary.**
+
+- Cross-component calls MUST target interface namespaces only.
+- Component internals MAY change freely as long as interface contracts hold.
+- Interface namespaces SHOULD define a small, intentional public contract.
+
+<critical>
+Never reach into another brick's `src` namespaces. Never bypass an interface
+because it is "simpler" or "faster" during local development. Polylith's
+`poly check` Error 101 exists to catch this — it must pass.
+</critical>
+
+---
+
+## 4. Interfaces are contracts
+
+An interface change MUST be treated as a contract change.
+
+- Interface changes SHOULD trigger broader review and impact analysis.
+- Compatibility-sensitive changes SHOULD be made explicit in review metadata.
+- Component public surface area SHOULD stay small and intentional.
+- Do NOT expose internal helpers as public interface for convenience.
+- Do NOT make silent interface changes without updating dependents.
+
+---
+
+## 5. Development code belongs in the development workspace
+
+Scratch code, REPL support, exploratory integration, and temporary developer
+utilities SHOULD live under the `development/` workspace rather than being
+embedded in production bricks.
+
+- Experimental or workflow-driving dev code SHOULD start in `development/`.
+- Only promoted, intentional production code SHOULD move into bricks.
+- Do NOT leave temporary exploratory code inside production bricks.
+
+---
+
+## 6. Validation is a workflow gate
+
+Workspace validation MUST succeed before deeper automation proceeds. A
+structurally invalid workspace MUST stop downstream workflows.
+
+<critical>
+`poly check` (or equivalent structural validation) MUST pass before test,
+review, release, or packaging workflows continue. Validation failures are
+hard failures, never informational warnings.
+</critical>
+
+Policy pipelines SHOULD surface illegal dependencies and structural violations
+early. Do NOT continue release preparation when validation fails.
+
+---
+
+## 7. Testing reflects project composition
+
+Brick tests MUST be evaluated in the context of the deployable projects that
+include those bricks. Testing only in local isolation is insufficient when
+the shipped artifact is a project composition.
+
+- Brick tests MUST stay colocated with the brick they validate.
+- Test execution SHOULD reflect affected deployable project contexts.
+- Project-level tests SHOULD validate composed runtime behavior.
+
+**Prefer real composition over excessive mocking.** Mock only true externals,
+unstable boundaries, or impractical side effects. Use the workspace's
+composability to test integrated behavior directly where feasible.
+
+Do NOT rely exclusively on isolated unit tests when deployable composition is
+the actual contract. Do NOT replace ordinary component collaboration with
+mocks by default.
+
+---
+
+## 8. Selective CI/release scope must be change-derived
+
+Build, test, and release scope SHOULD be derived from changed and affected
+projects relative to a **stable reference point** — a tag where the workspace
+was known-good.
+
+- CI SHOULD use stable or release tags as comparison anchors.
+- Changed-or-affected projects SHOULD determine selective scope.
+- Do NOT deploy arbitrary project subsets without impact analysis.
+- Do NOT fall back to full-repo rebuilds when change analysis is available.
+- Do NOT use "most recently touched file" as a release heuristic.
+
+---
+
+## Enforcement
+
+### Hard-fail (errors)
+1. Production business logic introduced under `projects/*/src`.
+2. Cross-component dependency on non-interface namespaces (`poly check` Error 101).
+3. Validation failure prior to test/release workflow continuation.
+4. Illegal dependency edges between bricks.
+5. Release/build targeting that ignores changed-or-affected analysis where the workflow contract requires it.
+
+### Advisory (warnings, may escalate)
+1. Excessive domain logic in bases.
+2. Overgrown interfaces with convenience exports.
+3. High-mock tests where real composition is feasible.
+4. Exploratory code left in production bricks without promotion intent.
+5. Project-level orchestration that substitutes for a missing component.
+
+---
+
+## Examples
+
+<example>
+**Compliant**
+- A project composes `bases/api` with `components/user`, `components/auth`, `components/db`.
+- `bases/api` translates HTTP and delegates domain actions to component interfaces.
+- `components/user` exposes a small interface namespace; implementation stays private.
+- CI identifies affected projects since the last stable tag and tests those compositions.
+</example>
+
+<example type="invalid">
+**Non-compliant**
+- Business logic added under `projects/customer-app/src`.
+- `components/order` directly requires `components/inventory.src.core`.
+- `bases/web` contains large amounts of reusable domain logic that belongs in a component.
+- Release workflow proceeds despite failed workspace validation.
+- Test workflow validates only isolated namespaces without checking affected project compositions.
+</example>
+
+---
+
+## Agent implications
+
+### Implementation agent
+- MAY create or modify code in bases and components.
+- MUST NOT introduce business logic into deployable projects.
+- MUST preserve interface boundaries across components.
+
+### Review agent
+- MUST inspect dependency edges across bricks.
+- MUST fail changes that bypass component interfaces.
+- SHOULD elevate review scope when interfaces change.
+
+### Test agent
+- MUST validate affected bricks in project context.
+- SHOULD distinguish brick-level from project-level test intent.
+- SHOULD prefer real component composition where practical.
+
+### Release agent
+- MUST require successful validation before release progression.
+- SHOULD derive release scope from changed-and-affected projects relative to a stable tag.
+- MUST NOT treat structurally invalid workspaces as releasable.

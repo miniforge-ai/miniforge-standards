@@ -63,6 +63,7 @@ languages/
   swift.mdc                   dewey: "240"
 frameworks/
   polylith.mdc                dewey: "300"
+  polylith-composition.mdc    dewey: "311"
   kubernetes.mdc              dewey: "320"
 testing/
   standards.mdc               dewey: "400"
@@ -98,6 +99,7 @@ meta/
   240      Swift (stratified views, access control, optionals, closures)
 300-399  Frameworks      Polylith, K8s, web frameworks, databases
   300      Polylith
+  311      Polylith Composition (bricks/bases/interfaces, validation gates, CI scope)
   320      Kubernetes
 400-499  Testing         Unit, integration, E2E, code review
   400      Testing Standards (factory fns, same quality as prod)

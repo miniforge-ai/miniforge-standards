@@ -42,6 +42,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   └── python.mdc                       # dewey: "220"
 ├── frameworks/
 │   ├── polylith.mdc                     # dewey: "300"
+│   ├── polylith-composition.mdc         # dewey: "311"
 │   └── kubernetes.mdc                   # dewey: "320"
 ├── testing/
 │   └── standards.mdc                    # dewey: "400"  alwaysApply: true
@@ -84,6 +85,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | Dewey | File | Always | Description |
 |-------|------|--------|-------------|
 | 300 | `polylith` |  | Polylith workspace conventions |
+| 311 | `polylith-composition` |  | Brick-oriented production code, interface contracts, validation gates, change-derived CI scope |
 | 320 | `kubernetes` |  | K8s/Kustomize/ArgoCD conventions |
 
 ### testing/
