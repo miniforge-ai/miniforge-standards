@@ -66,6 +66,62 @@ This boundary typically aligns with:
 - Tests should primarily target the interface contract
 - Components depend only on other component interfaces, never internals
 
+## Unique Interface Names (CRITICAL)
+
+<critical>
+**Components MUST NOT overload the same interface name.** Each component has
+its own unique `:poly/interface`. Runtime backend swapping happens via
+multimethod dispatch or adapter selection — NEVER by having two components
+claim the same interface.
+</critical>
+
+Polylith profiles exist to bundle dev/test variants, **not** to work around
+overloaded interface names. If `poly check` reports Error 106 (multi-impl
+interfaces), the fix is to rename interfaces, not to add a profile.
+
+### Correct patterns for "multiple implementations"
+
+**Pattern A — Multimethod dispatch inside a canonical interface component**
+
+One component owns the canonical interface and a `(defmulti ... dispatch-fn)`.
+Other components register backend methods against that multimethod. Each
+backend-provider component still has its OWN unique interface name.
+
+```
+components/tool-pubsub/             interface: :tool-pubsub  (canonical + defmulti)
+components/tool-pubsub-coreasync/   interface: :tool-pubsub-coreasync
+components/adapter-pubsub-gcp/      interface: :adapter-pubsub
+```
+
+No two components share `:poly/interface`. Projects pick which backend
+component to include; runtime dispatch resolves the active implementation.
+
+**Pattern B — Adapter components with distinct interfaces**
+
+Each adapter exposes its own interface; a consumer depends on the interface
+it actually wants. Swapping happens by changing which adapter the project
+includes, not by overloading.
+
+**Pattern C — Extension, not replacement**
+
+A specialization component (e.g., `phase-software-factory`) gets its OWN
+interface (`:phase-software-factory`) and depends on the canonical
+`:phase` interface. It extends, rather than claiming to re-implement, the
+base interface.
+
+<example type="invalid">
+**Bad**: `phase`, `phase-deployment`, and `phase-software-factory` all declare
+`:poly/interface :phase` in their `deps.edn`. `poly check` reports Error 106.
+Adding a profile does not fix this — it hides the conflict.
+</example>
+
+<example>
+**Good**: `phase` keeps `:phase` and owns shared multimethods. `phase-deployment`
+declares `:phase-deployment`. `phase-software-factory` declares
+`:phase-software-factory`. Projects include whichever they need; `poly check`
+reports zero multi-impl errors.
+</example>
+
 ## Build Tasks
 
 ```bash
