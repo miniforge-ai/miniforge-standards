@@ -140,15 +140,13 @@ meta/
 
 ## Consuming Repos
 
-| Repository | Product |
-|------------|---------|
-| `miniforge` | Miniforge Core + Software Factory |
-| `data-foundry` | Data pipeline framework |
-| `miniforge-fleet-specs` | Enterprise fleet extensions |
-| `risk-core` | Risk analytics kernel |
-| `risk-data-plane` | Risk data infrastructure |
-| `risk-apple-app` | Apple platform risk client |
-| `marketwatch` | Market data platform |
+Any repository that wants this rule set consumes it as a git submodule at
+`.standards/`:
 
-Project-specific overrides go in each repo's own `project/` rules directory,
-never in this shared repo.
+```bash
+git submodule add git@github.com:miniforge-ai/miniforge-standards.git .standards
+```
+
+Project-specific additions layer on top via each repo's own policy-pack
+mechanism (`:policy-packs {:extra-search-paths [...]}`) — they do not
+override or modify this shared repo.

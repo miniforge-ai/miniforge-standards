@@ -148,15 +148,5 @@ git submodule add git@github.com:miniforge-ai/miniforge-standards.git .standards
 ```
 
 Each repo's `CLAUDE.md` should reference `.standards/agents.md` and
-`.standards/CLAUDE.md`. Project-specific overrides go in the repo's own
-`project/` rules directory — never in this shared repo.
-
-| Repository | Product |
-|------------|---------|
-| `miniforge` | Miniforge Core + Software Factory |
-| `data-foundry` | Data pipeline framework |
-| `miniforge-fleet-specs` | Enterprise fleet extensions |
-| `risk-core` | Risk analytics kernel |
-| `risk-data-plane` | Risk data infrastructure |
-| `risk-apple-app` | Apple platform risk client |
-| `marketwatch` | Market data platform |
+`.standards/CLAUDE.md`. Project-specific additions layer on top via each
+repo's own policy-pack mechanism — never by modifying this shared repo.
