@@ -55,6 +55,7 @@ foundations/
   validation-boundaries.mdc   dewey: "004"
   simple-made-easy.mdc        dewey: "010"
   specification-standards.mdc dewey: "020"
+  work-spec-authoring.mdc     dewey: "021"
   localization.mdc            dewey: "050"
 languages/
   clojure.mdc                 dewey: "210"
@@ -91,6 +92,7 @@ meta/
   004      Validation Boundaries (schemas at interfaces/external only)
   010      Simple Made Easy
   020      Specification Standards
+  021      Work-Spec Authoring (priority, theme, testable criteria)
   050      Localization (i18n, en-US.edn)
 100-199  Tools           Linters, formatters, build tools
 200-299  Languages       Clojure, Python, JS/TS, Go, Rust, Swift

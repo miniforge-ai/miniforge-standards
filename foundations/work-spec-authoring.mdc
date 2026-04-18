@@ -1,0 +1,225 @@
+---
+dewey: "021"
+description: Author work specs with required priority, theme, normative-refs, and testable acceptance criteria
+globs:
+  - work/**/*.spec.edn
+alwaysApply: false
+---
+
+# Work-Spec Authoring
+
+## Context
+
+Work specs (`work/*.spec.edn`) are the unit of autonomous implementation
+for miniforge: a well-formed work spec is sufficient for a miniforge
+workflow (or a human-driven agent) to plan, implement, verify, review,
+and release a coherent change. A poorly-formed work spec silently
+wastes tokens and agent cycles.
+
+This rule applies whenever an agent (or a human) creates or edits a
+file matching `work/*.spec.edn`.
+
+**Parent authority:** `foundations/specification-standards` (Dewey 020)
+governs the normative specs this rule's work specs implement against.
+This rule is scoped specifically to the work-spec authoring format.
+
+## Required fields
+
+<required>
+Every `work/*.spec.edn` file MUST contain the following top-level keys:
+
+- `:spec/title` — short imperative string
+- `:spec/description` — full prose description of what + why + how
+- `:spec/intent` — `{:type <keyword> :scope [<path-glob> ...]}`
+  - `:type` MUST be one of `:refactor :feature :bugfix :general :chore
+    :docs :test :performance`
+  - `:scope` MUST be a vector of file paths or glob patterns, NOT a
+    prose description
+- `:spec/constraints` — vector of short constraint strings
+- `:spec/acceptance-criteria` — vector of testable assertions
+- `:spec/priority` — see below
+- `:spec/workflow-type` — a keyword identifying the workflow chain
+  (e.g., `:canonical-sdlc`)
+</required>
+
+## Required `:spec/priority` block
+
+<required>
+Every spec MUST carry:
+
+```clojure
+:spec/priority
+{:tier       :blocker | :high | :medium | :low
+ :axes       #{:dogfood-enabler :token-conservation :observation
+               :correctness :scale :ux ...}   ; at least one
+ :theme      <theme-id-keyword>                ; MUST exist in work/themes.edn
+ :rationale  "One sentence — why this tier"
+ :blocks     [<filename-string> ...]           ; specs this unblocks
+ :blocked-by [<filename-string> ...]}          ; specs that must land first
+```
+
+Tier semantics:
+
+- `:blocker` — nothing above it moves forward until this lands. Use
+  sparingly. Reserved for things that cost real tokens or block the
+  release path.
+- `:high` — next-in-line when blockers clear; compounds blocker value.
+- `:medium` — default. Useful but not critical-path.
+- `:low` — discretionary. Nice-to-have.
+
+Axis semantics:
+
+- `:dogfood-enabler` — makes miniforge more capable of running miniforge
+- `:token-conservation` — cuts cost per successful run
+- `:observation` — improves what humans + automation can see
+- `:correctness` — closes a correctness gap (a bug, a silent failure)
+- `:scale` — enables a larger deployment or use case
+- `:ux` — improves human-facing experience (CLI, TUI, dashboard)
+
+Pick all that apply — most specs are multi-axis.
+</required>
+
+## Required theme membership
+
+<required>
+`:spec/priority :theme` MUST be a key in `work/themes.edn`. A spec
+referencing an unknown theme is rejected at review time.
+
+Themes carry the authoritative `:theme/informative-spec` pointer + the
+`:theme/normative-refs`. A spec inherits those anchors from its theme,
+but MAY add spec-specific `:normative-refs` as well (see below).
+</required>
+
+## Normative anchor
+
+<required>
+Every work spec MUST have a normative anchor. Satisfied when EITHER:
+
+- The theme has one or more `:theme/normative-refs`, OR
+- The spec declares its own `:normative-refs` (map with
+  `:primary` + optional `:secondary`, or a flat vector of strings —
+  matches the existing `rn-*` pattern)
+
+Specs with no normative anchor are rejected. This enforces the N-series
+principle that implementation conforms to strategy, not the other way.
+</required>
+
+## Testable acceptance criteria
+
+<required>
+Each entry in `:spec/acceptance-criteria` MUST be a single assertion a
+test or a human can check. Prefer criteria that become test names.
+
+Good examples:
+
+- `"poly check reports 0 errors on main"`
+- `":workflow/dag-considered event emitted on every plan phase"`
+- `"A killed run resumes with no re-run of successful phases"`
+
+Bad examples (rejected at review):
+
+- `"Implementation complete"` (not testable)
+- `"System works"` (what does works mean?)
+- `"Improves performance"` (by how much?)
+</required>
+
+## Invalid examples
+
+<example type="invalid">
+No priority block:
+
+```clojure
+{:spec/title "Fix thing"
+ :spec/description "..."
+ :spec/intent {:type :bugfix :scope ["..."]}
+ :spec/acceptance-criteria ["Works better"]
+ :spec/workflow-type :canonical-sdlc}
+```
+
+Issues: no `:spec/priority`, untestable acceptance criterion, no
+normative anchor, no theme.
+</example>
+
+<example type="invalid">
+Prose scope:
+
+```clojure
+:spec/intent {:type :feature
+              :scope "Refactor the agent module and related areas"}
+```
+
+`:scope` MUST be a vector of file paths or globs — otherwise tooling
+cannot compute affected bricks, change-classifiers cannot filter, and
+the plan phase cannot decompose the change.
+</example>
+
+<example type="invalid">
+Unknown theme:
+
+```clojure
+:spec/priority {:tier :medium
+                :axes #{:scale}
+                :theme :supercool-epic-2026   ; NOT in work/themes.edn
+                :rationale "..."}
+```
+
+Rejected. Add the theme to `work/themes.edn` first, or pick an existing
+theme.
+</example>
+
+## Good example
+
+<example>
+```clojure
+{:spec/title "Agent stream watchdog + session-resume"
+ :spec/description "..."
+ :spec/intent
+ {:type :refactor
+  :scope ["components/agent/src"
+          "components/workflow-runner/src"
+          "components/self-healing/src"
+          "resources/config/default-user-config.edn"]}
+ :spec/constraints
+ ["Watchdog must not block event emission"
+  "Default gap threshold 90s; per-backend override in config"]
+ :spec/acceptance-criteria
+ ["A synthetic backend that stops responding triggers a watchdog kill within 90s"
+  "Kill emits :agent/stream-stalled with accurate gap duration"
+  "Resumed agent continues from last checkpoint"]
+ :spec/priority
+ {:tier :blocker
+  :axes #{:dogfood-enabler :token-conservation}
+  :theme :dogfood-resilience
+  :rationale "Without this, a provider stall costs us the full phase budget. Minutes saved per interrupt."
+  :blocks []
+  :blocked-by ["event-log-tool-visibility.spec.edn"]}
+ :spec/workflow-type :canonical-sdlc}
+```
+
+The spec inherits its normative-refs from the `:dogfood-resilience`
+theme's `:theme/normative-refs` (N2-delta + N3 §3.17). No additional
+`:normative-refs` needed on the spec itself unless it cites a specific
+section not covered by the theme.
+</example>
+
+## Agent behavior
+
+When you create or modify a `work/*.spec.edn`:
+
+1. Check `work/themes.edn` first — pick the existing theme that fits,
+   or propose a new theme entry (with `:theme/informative-spec`) in the
+   same PR
+2. Set `:spec/priority :tier` honestly — do not inflate tier to jump
+   the queue; the `bb work:queue` renderer reveals this to reviewers
+3. Write acceptance criteria as testable assertions — one per line
+4. Set `:scope` as file paths/globs, never prose
+5. After editing, run `bb work:queue` to regenerate `work/QUEUE.md`
+   and confirm your spec appears in the expected theme at the
+   expected tier
+
+When reviewing a work spec:
+
+- If any required field is missing, reject
+- If the theme doesn't exist, reject (or propose its addition)
+- If acceptance criteria are untestable, reject
+- If normative anchor is missing, reject

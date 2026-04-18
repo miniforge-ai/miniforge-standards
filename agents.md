@@ -52,6 +52,7 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 │   ├── validation-boundaries.mdc        # dewey: "004"  alwaysApply: true
 │   ├── simple-made-easy.mdc             # dewey: "010"  alwaysApply: true
 │   ├── specification-standards.mdc      # dewey: "020"
+│   ├── work-spec-authoring.mdc          # dewey: "021"
 │   └── localization.mdc                 # dewey: "050"  alwaysApply: true
 ├── languages/
 │   ├── clojure.mdc                      # dewey: "210"  alwaysApply: true

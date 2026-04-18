@@ -36,6 +36,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   ├── validation-boundaries.mdc        # dewey: "004"  alwaysApply: true
 │   ├── simple-made-easy.mdc             # dewey: "010"  alwaysApply: true
 │   ├── specification-standards.mdc      # dewey: "020"
+│   ├── work-spec-authoring.mdc          # dewey: "021"
 │   └── localization.mdc                 # dewey: "050"  alwaysApply: true
 ├── languages/
 │   ├── clojure.mdc                      # dewey: "210"  alwaysApply: true
@@ -72,6 +73,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 004 | `validation-boundaries` | ✓ | Schemas at interface/external boundaries only |
 | 010 | `simple-made-easy` | ✓ | Simplicity over familiarity, uncomplected artifacts |
 | 020 | `specification-standards` |  | Normative specs (N1-N6), spec governance, conformance |
+| 021 | `work-spec-authoring` |  | `work/*.spec.edn` format: priority, theme, normative-refs, testable acceptance criteria |
 | 050 | `localization` | ✓ | No raw strings in views; msg/t + en-US.edn always |
 
 ### languages/
