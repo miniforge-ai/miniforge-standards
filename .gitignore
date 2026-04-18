@@ -1,1 +1,16 @@
-.cursor.zip.rename-me.zip
+# macOS
+.DS_Store
+
+# Editor / IDE detritus
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local environment scratch
+.env
+.env.local
+
+# Archives / misc
+*.zip
