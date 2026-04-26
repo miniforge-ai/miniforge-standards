@@ -21,6 +21,47 @@ without exception. This file covers Rust-specific idioms that sit on top of thos
   open polymorphism; do not create trait hierarchies as a substitute for thinking about data shapes.
 - One major type per module is a useful default; group supporting types nearby, not scattered.
 
+### Thin orchestration index modules
+
+When a module is the public face of a bounded area with multiple sub-surfaces, the index file
+(`<name>.rs` or `mod.rs`) routes, delegates, and re-exports. It does not also own helpers.
+Sub-surfaces live in named submodules; the split is by bounded concern, not by file size.
+
+```rust
+// Good — index file routes by mode, submodules own concerns
+mod chrome;
+mod detail;
+mod monitor;
+
+pub fn render(app: &App, frame: &mut Frame) {
+    match app.mode {
+        Mode::Monitor => monitor::render(app, frame),
+        Mode::Detail  => detail::render(app, frame),
+    }
+}
+
+// Bad — index file accretes helpers across surfaces
+pub fn render(app: &App, frame: &mut Frame) { /* 300 lines mixing modes */ }
+fn fmt_workflow_row(...) { ... }
+fn fmt_agent_row(...) { ... }
+fn correlate_pr_state(...) { ... }
+// ...
+```
+
+Reasons:
+
+- Index files document the surface set. New reviewers find the entry points without scrolling.
+- Visibility and `pub use` discipline is a design choice, not an afterthought.
+- Submodules can be moved or split without rewriting orchestration.
+
+The underlying "no god modules" principle is in `foundations/stratified-design` and
+`foundations/code-quality`. The Rust-specific addendum is the index-file shape and the
+`pub use` discipline.
+
+Do not create `utils.rs` or `helpers.rs` dumping grounds. The first extraction target is a
+named bounded concern (`encoding`, `correlation`, `formatting`), not an unnamed bucket. If
+you cannot name what binds the helpers together, they do not yet belong in a shared module.
+
 ## Naming
 
 Follow standard Rust conventions:
@@ -343,6 +384,68 @@ Constraints:
 - Content files MUST be checked into the repo alongside their consumer. They are not
   configuration; they are data.
 
+### Derived context at boundary seams
+
+When a boundary needs correlated data from several entity families and more than one
+sibling consumer would otherwise repeat the same join, build one immutable derived context
+once at the seam and pass it downward.
+
+Trigger (both must hold):
+
+- response or surface shape spans **two or more entity families**, AND
+- **two or more sibling consumers** would otherwise repeat the same correlation logic.
+
+Below the trigger, this pattern is overkill — a three-field response does not need a
+parameter object.
+
+```rust
+// Good — one builder owns the correlation; renderers take the derived view
+pub struct RunDossier {
+    pub anchor: WorkflowRun,
+    pub workflows: Vec<WorkflowRun>,
+    pub agents: Vec<AgentSession>,
+    pub pending_decisions: Vec<DecisionCard>,
+}
+
+pub fn build_run_dossier(anchor: &WorkflowRun, state: &SupervisoryState) -> RunDossier {
+    // collect once, sort once, correlate once
+}
+
+pub fn render_summary(dossier: &RunDossier, theme: &Theme) -> Vec<Line<'static>> { /* ... */ }
+pub fn render_agents(dossier: &RunDossier, theme: &Theme)  -> Vec<Line<'static>> { /* ... */ }
+
+// Bad — sibling renderers each rescan root state, each invent fallback joins
+pub fn render_summary(state: &SupervisoryState, run_id: Uuid, theme: &Theme) -> Vec<Line<'static>> {
+    let workflows = state.workflows.values().filter(|w| w.correlation_id == run_id).collect();
+    let agents    = state.agents.values().filter(|a| /* same join, slightly different */).collect();
+    /* ... */
+}
+pub fn render_agents(state: &SupervisoryState, run_id: Uuid, theme: &Theme)  -> Vec<Line<'static>> {
+    let agents    = state.agents.values().filter(|a| /* same join, drifted */).collect();
+    /* ... */
+}
+```
+
+Constraints:
+
+- The builder is a pure function over the authoritative state plus a small anchor input.
+- Join policy lives in the builder. Sibling consumers do not invent fallback correlation rules.
+- Downstream consumers take the context object, not root state.
+- Context types stay boundary-local. They do not become domain state, contract DTOs, or
+  cross-crate types — those have stricter compatibility rules and a derived view is the
+  wrong shape for either.
+
+Reasons:
+
+- Single source of truth for the join produces consistent results across siblings; drift
+  between renderers (one filters by `correlation_id`, another by `workflow_key`) becomes
+  impossible.
+- Builder is the natural test seam: a few fixture states, a few expected dossiers, done.
+- Adding a section to the surface adds a field to the context, not a fourth full state scan.
+
+Watch for the god-context anti-shape: if the context grows fields used by exactly one
+unrelated consumer, or starts replacing domain/state boundaries, split it.
+
 ## `impl Trait` vs generics vs `dyn Trait`
 
 - Prefer `impl Trait` in function arguments when the caller's concrete type is unimportant and you
@@ -472,6 +575,9 @@ Group imports separated by blank lines in this order: `std`, external crates, `c
 
 ## Testing
 
+The factory-function principle and "tests are production code" rule live in
+`testing/standards` (Dewey 400). This section covers the Rust mechanics on top of those.
+
 - Prefer fixture-based parity tests for contract compatibility (golden files, snapshot testing).
 - Add focused unit tests for pure domain functions: reducers, evaluators, regime logic.
 - Keep synthetic tests small and deterministic. Use `cargo insta` for snapshot tests.
@@ -479,6 +585,32 @@ Group imports separated by blank lines in this order: `std`, external crates, `c
 - Do not use `#[should_panic]`; check `Err`/`None` explicitly.
 - Do not `#[ignore]` tests; assert the wrong behavior with a `// FIXME` if it is not yet correct.
 - Test snippets should be minimal — remove boilerplate not relevant to what is being tested.
+
+### `test_support` modules
+
+When a second test module in a crate starts hand-building the same entity shape, extract
+a `test_support` module that owns canonical valid fixtures.
+
+```rust
+// crate/src/test_support.rs (or pub(crate) mod test_support; in lib.rs under #[cfg(test)])
+pub(crate) fn workflow_run(id: Uuid) -> WorkflowRun { /* valid defaults */ }
+pub(crate) fn pr_fleet_entry(repo: &str, number: u64) -> PrFleetEntry { /* valid defaults */ }
+```
+
+Mechanics:
+
+- `pub(crate)` visibility is the default; cross-crate fixture sharing is rare and the
+  default is **not** to expose factories beyond the crate.
+- Factories produce valid defaults. Tests override only the fields relevant to the scenario,
+  using struct-update syntax: `WorkflowRun { status: WorkflowRunStatus::Failed, ..test_support::workflow_run(id) }`.
+- Shared status / priority / glyph vocabularies live in helpers, not duplicated `match`
+  ladders across test modules.
+- `test_support` is production-quality code: named constants, no copy-pasted constructors,
+  no giant anonymous maps. The same standards apply.
+- Place `test_support.rs` at the crate root for crate-wide reuse. Use `#[cfg(test)] mod
+  test_support;` if the fixtures must not be reachable from non-test builds.
+- Cross-crate test fixtures only become a separate `<crate>-test-support` workspace member
+  once duplication has persisted across two or more crates long enough to justify it.
 
 ## What NOT to do
 
@@ -501,3 +633,11 @@ Group imports separated by blank lines in this order: `std`, external crates, `c
   or distinct types) when behavior depends on lifecycle state.
 - Do not add a crate-wide `prelude` module that pub-uses everything. Explicit imports are
   the convention; rust-analyzer auto-import handles the ergonomic case.
+- Do not create `utils.rs` / `helpers.rs` / `common.rs` dumping grounds. The first
+  extraction target is a named bounded concern (`encoding`, `correlation`, `formatting`).
+- Do not let an index module (`mod.rs` / `<name>.rs`) own helpers across surfaces. Index
+  modules route, delegate, and re-export.
+- Do not promote a derived context object (e.g. `RunDossier`) into domain state, contract
+  DTOs, or cross-crate types. Derived contexts stay boundary-local.
+- Do not hand-build the same entity shape across test modules. Extract a `test_support`
+  factory the second time you reach for it.
