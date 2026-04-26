@@ -21,6 +21,47 @@ without exception. This file covers Rust-specific idioms that sit on top of thos
   open polymorphism; do not create trait hierarchies as a substitute for thinking about data shapes.
 - One major type per module is a useful default; group supporting types nearby, not scattered.
 
+### Thin orchestration index modules
+
+When a module is the public face of a bounded area with multiple sub-surfaces, the index file
+(`<name>.rs` or `mod.rs`) routes, delegates, and re-exports. It does not also own helpers.
+Sub-surfaces live in named submodules; the split is by bounded concern, not by file size.
+
+```rust
+// Good — index file routes by mode, submodules own concerns
+mod chrome;
+mod detail;
+mod monitor;
+
+pub fn render(app: &App, frame: &mut Frame) {
+    match app.mode {
+        Mode::Monitor => monitor::render(app, frame),
+        Mode::Detail  => detail::render(app, frame),
+    }
+}
+
+// Bad — index file accretes helpers across surfaces
+pub fn render(app: &App, frame: &mut Frame) { /* 300 lines mixing modes */ }
+fn fmt_workflow_row(...) { ... }
+fn fmt_agent_row(...) { ... }
+fn correlate_pr_state(...) { ... }
+// ...
+```
+
+Reasons:
+
+- Index files document the surface set. New reviewers find the entry points without scrolling.
+- Visibility and `pub use` discipline is a design choice, not an afterthought.
+- Submodules can be moved or split without rewriting orchestration.
+
+The underlying "no god modules" principle is in `foundations/stratified-design` and
+`foundations/code-quality`. The Rust-specific addendum is the index-file shape and the
+`pub use` discipline.
+
+Do not create `utils.rs` or `helpers.rs` dumping grounds. The first extraction target is a
+named bounded concern (`encoding`, `correlation`, `formatting`), not an unnamed bucket. If
+you cannot name what binds the helpers together, they do not yet belong in a shared module.
+
 ## Naming
 
 Follow standard Rust conventions:
@@ -206,6 +247,249 @@ fn middle_name(&self) -> &Option<String> { &self.middle_name }
 Never provide setters. If mutation is needed after construction, provide a builder or use
 `pub` fields when there are no invariants to protect.
 
+## Boundary commands and pipeline selection
+
+Rules that govern how requests cross a boundary into a Rust crate, and how phases or modes
+select among pure pipelines. Both rules sit on top of the data-driven policy patterns above
+— they are the boundary-layer applications of the same principle.
+
+### Typed boundary commands
+
+A boundary that accepts more than one operation MUST express the operation set as an enum
+in `contracts`. The dispatch site MUST be an exhaustive `match` over that enum with no `_`
+arm. JSON or other wire formats are decoded into the typed enum at the boundary, once.
+
+```rust
+// Good — typed boundary, exhaustive match
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "command", content = "params", rename_all = "snake_case")]
+pub enum Command {
+    Ping,
+    ListPortfolios(ListPortfoliosParams),
+    EvaluateAlerts(EvaluateAlertsParams),
+}
+
+pub fn route(ctx: &Ctx, cmd: Command) -> Response {
+    match cmd {
+        Command::Ping => ping(ctx),
+        Command::ListPortfolios(p) => portfolio::list(ctx, p),
+        Command::EvaluateAlerts(p) => alerts::evaluate(ctx, p),
+    }
+}
+
+// Bad — stringly-typed dispatch with non-exhaustive match
+match envelope.command.as_str() {
+    "ping"             => ping(ctx),
+    "list_portfolios"  => portfolio::list(ctx, &envelope.params),
+    other              => Response::error(format!("unknown: {other}")),
+}
+```
+
+Reasons:
+
+- Adding a command becomes a compile error in every dispatch site until handled.
+- Parameter decoding is centralized in `Deserialize` impls, not scattered across
+  `params.get("...").and_then(|v| v.as_str())` chains in handlers.
+- The wire-format string set is single-sourced from the `#[serde(rename_all)]` derive.
+
+When the operation list is itself dynamic (plugins, packs, pluggable adapters), prefer a
+typed envelope wrapping a registry lookup over an open string match.
+
+### Pipeline selection by enum
+
+When a phase, mode, tier, or policy determines which sequence of pure functions runs,
+encode the selector as an enum and define one pipeline function per variant. Stages
+themselves do not branch on the selector — the *pipeline function* picks the stage variant.
+
+```rust
+// Good — pipeline selection lives in one place
+pub enum Phase { IngestOnly, Score, Full }
+
+pub fn run(phase: Phase, ctx: &Ctx, input: Raw) -> Result<Out, PipelineError> {
+    match phase {
+        Phase::IngestOnly => ingest_only(ctx, input).map(Out::Ingest),
+        Phase::Score      => score(ctx, input).map(Out::Scored),
+        Phase::Full       => full(ctx, input).map(Out::Signal),
+    }
+}
+
+fn full(ctx: &Ctx, input: Raw) -> Result<Signal, PipelineError> {
+    let a = ingest::run(ctx, input)?;
+    let b = extract::run(ctx, a)?;
+    let c = canonicalize::run(ctx, b)?;
+    score::run(ctx, c).and_then(|s| signal::run(ctx, s))
+}
+
+// Bad — phase branching scattered through stages
+fn extract(ctx: &Ctx, x: A) -> Result<B, PipelineError> {
+    if ctx.phase == Phase::IngestOnly { return Ok(B::skipped()); }
+    if ctx.policy == InferencePolicy::LocalOnly { ... } else { ... }
+    ...
+}
+```
+
+Reasons:
+
+- Adding a phase = one new variant + one new function + one new arm. No grep across stages.
+- Stages stay pure and composable: their type signature is `(&Ctx, In) -> Result<Out, _>`,
+  not `(&Ctx, In, Phase, Tier, Policy) -> Result<Out, _>`.
+- Test surface is tractable — each pipeline function is a tested unit; stages are tested
+  independently of phase composition.
+
+### Bounded data-driven content
+
+When a static table holds *operational content* that is tuned by domain owners (numeric
+thresholds, weights, metric definitions, layout/composition metadata, selectors), it lives
+in a RON or TOML file under `<crate>/resources/`, loaded once and cached. When a table
+holds *structural* identifiers referenced from code (cluster IDs, source-type tags,
+schema-version strings), it stays as `pub const &'static str` in a Rust module.
+
+User-facing or advisory copy is **out of scope** for this rule and stays in `strings.rs`
+(see "String constants" earlier). Content files reference stable keys or enum variants
+into `strings.rs` rather than embedding display text directly.
+
+Heuristic: if a non-engineer would reasonably want to edit the value without changes to
+handlers, it is content; move it. If editing it requires changes to handlers that key on
+it, it is structure; keep it as `const`.
+
+The two viable load mechanisms — pick deliberately:
+
+- `include_str!` — embeds the file at compile time. The owning crate rebuilds when the
+  file changes; consumers do not re-source against new code. Use when the binary must be
+  self-contained (desktop apps, signed bundles).
+- Filesystem read at startup — file ships alongside the binary and is read at process
+  start. Edits do not require a rebuild of the owning crate. Use when ops can swap the
+  resource file without redeploying the binary.
+
+Either mechanism MUST validate at startup and fail loudly on malformed input via a typed
+error, not via `panic`/`expect`. Lazy initialization via `OnceLock::get_or_init` is
+acceptable, but eager validation at process start is preferred so format errors surface
+before the first request.
+
+```rust
+// Good — typed error, eager startup validation, no expect/panic
+#[derive(Debug, thiserror::Error)]
+pub enum RegistryLoadError {
+    #[error("registry: malformed TOML: {0}")]
+    Parse(#[from] toml::de::Error),
+}
+
+#[derive(Debug, Deserialize)]
+struct RegistryFile { metric: Vec<SourceEntry> }
+
+pub fn load_registry() -> Result<&'static [SourceEntry], RegistryLoadError> {
+    static REGISTRY: OnceLock<Vec<SourceEntry>> = OnceLock::new();
+    if let Some(loaded) = REGISTRY.get() {
+        return Ok(loaded.as_slice());
+    }
+    let raw = include_str!("../resources/registry.toml");
+    let parsed: RegistryFile = toml::from_str(raw)?;
+    Ok(REGISTRY.get_or_init(|| parsed.metric).as_slice())
+}
+
+// Process startup calls load_registry() once and bails on error before serving traffic.
+
+// Bad — 36 hand-typed `SourceEntry { ... }` literals inside a fn
+pub fn default_registry() -> Vec<SourceEntry> {
+    vec![
+        SourceEntry { id: "shiller_pe", warn_threshold: 30.0, alert_threshold: 35.0, ... },
+        SourceEntry { id: "vix", warn_threshold: 20.0, alert_threshold: 30.0, ... },
+        // 34 more
+    ]
+}
+
+// Bad — panics on malformed input, violates the "no expect in production" rule
+pub fn registry() -> &'static [SourceEntry] {
+    static REGISTRY: OnceLock<Vec<SourceEntry>> = OnceLock::new();
+    REGISTRY.get_or_init(|| {
+        let raw = include_str!("../resources/registry.toml");
+        toml::from_str::<RegistryFile>(raw).expect("malformed").metric  // ← do not
+    })
+}
+```
+
+Reasons:
+
+- Tunable content edits are localized to the resource file. No handler / API surface
+  changes ripple into consuming crates.
+- Domain owners can review/diff a TOML file without reading Rust.
+- Format errors fail at startup with a typed error, not at the first call site and not
+  via panic.
+- Pick of `include_str!` vs filesystem read is an explicit deployment decision rather
+  than an implicit one.
+
+Constraints:
+
+- Content files MUST be loaded once and cached. Do not re-read on every call.
+- Content files MUST be validated against the deserialized type. A malformed file is a
+  startup error returned via `Result`, not an `unwrap()`/`expect()` panic.
+- Content files MUST be checked into the repo alongside their consumer. They are not
+  configuration; they are data.
+- The load mechanism (compile-time embed vs runtime read) MUST be a deliberate choice,
+  documented at the loader.
+
+### Derived context at boundary seams
+
+When a boundary needs correlated data from several entity families and more than one
+sibling consumer would otherwise repeat the same join, build one immutable derived context
+once at the seam and pass it downward.
+
+Trigger (both must hold):
+
+- response or surface shape spans **two or more entity families**, AND
+- **two or more sibling consumers** would otherwise repeat the same correlation logic.
+
+Below the trigger, this pattern is overkill — a three-field response does not need a
+parameter object.
+
+```rust
+// Good — one builder owns the correlation; renderers take the derived view
+pub struct RunDossier {
+    pub anchor: WorkflowRun,
+    pub workflows: Vec<WorkflowRun>,
+    pub agents: Vec<AgentSession>,
+    pub pending_decisions: Vec<DecisionCard>,
+}
+
+pub fn build_run_dossier(anchor: &WorkflowRun, state: &SupervisoryState) -> RunDossier {
+    // collect once, sort once, correlate once
+}
+
+pub fn render_summary(dossier: &RunDossier, theme: &Theme) -> Vec<Line<'static>> { /* ... */ }
+pub fn render_agents(dossier: &RunDossier, theme: &Theme)  -> Vec<Line<'static>> { /* ... */ }
+
+// Bad — sibling renderers each rescan root state, each invent fallback joins
+pub fn render_summary(state: &SupervisoryState, run_id: Uuid, theme: &Theme) -> Vec<Line<'static>> {
+    let workflows = state.workflows.values().filter(|w| w.correlation_id == run_id).collect();
+    let agents    = state.agents.values().filter(|a| /* same join, slightly different */).collect();
+    /* ... */
+}
+pub fn render_agents(state: &SupervisoryState, run_id: Uuid, theme: &Theme)  -> Vec<Line<'static>> {
+    let agents    = state.agents.values().filter(|a| /* same join, drifted */).collect();
+    /* ... */
+}
+```
+
+Constraints:
+
+- The builder is a pure function over the authoritative state plus a small anchor input.
+- Join policy lives in the builder. Sibling consumers do not invent fallback correlation rules.
+- Downstream consumers take the context object, not root state.
+- Context types stay boundary-local. They do not become domain state, contract DTOs, or
+  cross-crate types — those have stricter compatibility rules and a derived view is the
+  wrong shape for either.
+
+Reasons:
+
+- Single source of truth for the join produces consistent results across siblings; drift
+  between renderers (one filters by `correlation_id`, another by `workflow_key`) becomes
+  impossible.
+- Builder is the natural test seam: a few fixture states, a few expected dossiers, done.
+- Adding a section to the surface adds a field to the context, not a fourth full state scan.
+
+Watch for the god-context anti-shape: if the context grows fields used by exactly one
+unrelated consumer, or starts replacing domain/state boundaries, split it.
+
 ## `impl Trait` vs generics vs `dyn Trait`
 
 - Prefer `impl Trait` in function arguments when the caller's concrete type is unimportant and you
@@ -335,6 +619,9 @@ Group imports separated by blank lines in this order: `std`, external crates, `c
 
 ## Testing
 
+The factory-function principle and "tests are production code" rule live in
+`testing/standards` (Dewey 400). This section covers the Rust mechanics on top of those.
+
 - Prefer fixture-based parity tests for contract compatibility (golden files, snapshot testing).
 - Add focused unit tests for pure domain functions: reducers, evaluators, regime logic.
 - Keep synthetic tests small and deterministic. Use `cargo insta` for snapshot tests.
@@ -342,6 +629,32 @@ Group imports separated by blank lines in this order: `std`, external crates, `c
 - Do not use `#[should_panic]`; check `Err`/`None` explicitly.
 - Do not `#[ignore]` tests; assert the wrong behavior with a `// FIXME` if it is not yet correct.
 - Test snippets should be minimal — remove boilerplate not relevant to what is being tested.
+
+### `test_support` modules
+
+When a second test module in a crate starts hand-building the same entity shape, extract
+a `test_support` module that owns canonical valid fixtures.
+
+```rust
+// crate/src/test_support.rs (or pub(crate) mod test_support; in lib.rs under #[cfg(test)])
+pub(crate) fn workflow_run(id: Uuid) -> WorkflowRun { /* valid defaults */ }
+pub(crate) fn pr_fleet_entry(repo: &str, number: u64) -> PrFleetEntry { /* valid defaults */ }
+```
+
+Mechanics:
+
+- `pub(crate)` visibility is the default; cross-crate fixture sharing is rare and the
+  default is **not** to expose factories beyond the crate.
+- Factories produce valid defaults. Tests override only the fields relevant to the scenario,
+  using struct-update syntax: `WorkflowRun { status: WorkflowRunStatus::Failed, ..test_support::workflow_run(id) }`.
+- Shared status / priority / glyph vocabularies live in helpers, not duplicated `match`
+  ladders across test modules.
+- `test_support` is production-quality code: named constants, no copy-pasted constructors,
+  no giant anonymous maps. The same standards apply.
+- Place `test_support.rs` at the crate root for crate-wide reuse. Use `#[cfg(test)] mod
+  test_support;` if the fixtures must not be reachable from non-test builds.
+- Cross-crate test fixtures only become a separate `<crate>-test-support` workspace member
+  once duplication has persisted across two or more crates long enough to justify it.
 
 ## What NOT to do
 
@@ -353,3 +666,22 @@ Group imports separated by blank lines in this order: `std`, external crates, `c
 - Do not clone prematurely inside loops or iterator chains.
 - Do not use `Box<dyn Trait>` inside structs unless runtime polymorphism is genuinely required.
 - Do not mix domain logic with transport concerns in the same crate (see stratified-design).
+- Do not dispatch boundary commands by `match s.as_str()`. Use a typed `Command` enum in
+  `contracts` with an exhaustive match.
+- Do not branch on phase / mode / tier / policy inside individual stage functions. Encode
+  the selector as an enum and select the pipeline once at the top.
+- Do not adopt an ECS (legion, bevy_ecs, hecs, specs) for service code. Service entity
+  counts and capability shapes do not justify it. Reserve ECS for genuine real-time
+  simulation; if it appears, prefer Bevy.
+- Do not encode "capability by component presence". Use Rust typestate (`PhantomData<Tag>`
+  or distinct types) when behavior depends on lifecycle state.
+- Do not add a crate-wide `prelude` module that pub-uses everything. Explicit imports are
+  the convention; rust-analyzer auto-import handles the ergonomic case.
+- Do not create `utils.rs` / `helpers.rs` / `common.rs` dumping grounds. The first
+  extraction target is a named bounded concern (`encoding`, `correlation`, `formatting`).
+- Do not let an index module (`mod.rs` / `<name>.rs`) own helpers across surfaces. Index
+  modules route, delegate, and re-export.
+- Do not promote a derived context object (e.g. `RunDossier`) into domain state, contract
+  DTOs, or cross-crate types. Derived contexts stay boundary-local.
+- Do not hand-build the same entity shape across test modules. Extract a `test_support`
+  factory the second time you reach for it.
