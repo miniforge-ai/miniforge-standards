@@ -82,6 +82,8 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 |-------|------|--------|-------------|
 | 210 | `clojure` | ✓ | Polylith + per-file stratified design, map access patterns |
 | 220 | `python` |  | Poetry, functional Python |
+| 230 | `rust` |  | Workspaces, typed boundary commands, pipeline selection, data-driven content |
+| 240 | `swift` |  | Swift conventions |
 
 ### frameworks/
 

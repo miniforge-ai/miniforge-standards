@@ -206,6 +206,143 @@ fn middle_name(&self) -> &Option<String> { &self.middle_name }
 Never provide setters. If mutation is needed after construction, provide a builder or use
 `pub` fields when there are no invariants to protect.
 
+## Boundary commands and pipeline selection
+
+Rules that govern how requests cross a boundary into a Rust crate, and how phases or modes
+select among pure pipelines. Both rules sit on top of the data-driven policy patterns above
+— they are the boundary-layer applications of the same principle.
+
+### Typed boundary commands
+
+A boundary that accepts more than one operation MUST express the operation set as an enum
+in `contracts`. The dispatch site MUST be an exhaustive `match` over that enum with no `_`
+arm. JSON or other wire formats are decoded into the typed enum at the boundary, once.
+
+```rust
+// Good — typed boundary, exhaustive match
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "command", content = "params", rename_all = "snake_case")]
+pub enum Command {
+    Ping,
+    ListPortfolios(ListPortfoliosParams),
+    EvaluateAlerts(EvaluateAlertsParams),
+}
+
+pub fn route(ctx: &Ctx, cmd: Command) -> Response {
+    match cmd {
+        Command::Ping => ping(ctx),
+        Command::ListPortfolios(p) => portfolio::list(ctx, p),
+        Command::EvaluateAlerts(p) => alerts::evaluate(ctx, p),
+    }
+}
+
+// Bad — stringly-typed dispatch with non-exhaustive match
+match envelope.command.as_str() {
+    "ping"             => ping(ctx),
+    "list_portfolios"  => portfolio::list(ctx, &envelope.params),
+    other              => Response::error(format!("unknown: {other}")),
+}
+```
+
+Reasons:
+
+- Adding a command becomes a compile error in every dispatch site until handled.
+- Parameter decoding is centralized in `Deserialize` impls, not scattered across
+  `params.get("...").and_then(|v| v.as_str())` chains in handlers.
+- The wire-format string set is single-sourced from the `#[serde(rename_all)]` derive.
+
+When the operation list is itself dynamic (plugins, packs, pluggable adapters), prefer a
+typed envelope wrapping a registry lookup over an open string match.
+
+### Pipeline selection by enum
+
+When a phase, mode, tier, or policy determines which sequence of pure functions runs,
+encode the selector as an enum and define one pipeline function per variant. Stages
+themselves do not branch on the selector — the *pipeline function* picks the stage variant.
+
+```rust
+// Good — pipeline selection lives in one place
+pub enum Phase { IngestOnly, Score, Full }
+
+pub fn run(phase: Phase, ctx: &Ctx, input: Raw) -> Result<Out, PipelineError> {
+    match phase {
+        Phase::IngestOnly => ingest_only(ctx, input).map(Out::Ingest),
+        Phase::Score      => score(ctx, input).map(Out::Scored),
+        Phase::Full       => full(ctx, input).map(Out::Signal),
+    }
+}
+
+fn full(ctx: &Ctx, input: Raw) -> Result<Signal, PipelineError> {
+    let a = ingest::run(ctx, input)?;
+    let b = extract::run(ctx, a)?;
+    let c = canonicalize::run(ctx, b)?;
+    score::run(ctx, c).and_then(|s| signal::run(ctx, s))
+}
+
+// Bad — phase branching scattered through stages
+fn extract(ctx: &Ctx, x: A) -> Result<B, PipelineError> {
+    if ctx.phase == Phase::IngestOnly { return Ok(B::skipped()); }
+    if ctx.policy == InferencePolicy::LocalOnly { ... } else { ... }
+    ...
+}
+```
+
+Reasons:
+
+- Adding a phase = one new variant + one new function + one new arm. No grep across stages.
+- Stages stay pure and composable: their type signature is `(&Ctx, In) -> Result<Out, _>`,
+  not `(&Ctx, In, Phase, Tier, Policy) -> Result<Out, _>`.
+- Test surface is tractable — each pipeline function is a tested unit; stages are tested
+  independently of phase composition.
+
+### Bounded data-driven content
+
+When a static table holds *content* that is tuned by domain owners (thresholds, weights,
+metric definitions, lens templates), it lives in a RON or TOML file under
+`<crate>/resources/`, loaded once at startup via `OnceLock` and `include_str!`. When a
+table holds *structural* identifiers referenced from code (cluster IDs, source-type tags,
+schema-version strings), it stays as `pub const &'static str` in a Rust module.
+
+Heuristic: if a non-engineer would reasonably want to edit the value without a Rust release,
+it is content; move it. If editing it requires changes to handlers that key on it, it is
+structure; keep it as `const`.
+
+```rust
+// Good — content loaded from a resource file
+pub fn registry() -> &'static [SourceEntry] {
+    static REGISTRY: OnceLock<Vec<SourceEntry>> = OnceLock::new();
+    REGISTRY.get_or_init(|| {
+        let raw = include_str!("../resources/registry.toml");
+        toml::from_str::<RegistryFile>(raw)
+            .expect("registry.toml is malformed; build artifact regression")
+            .metric
+    })
+}
+
+// Bad — 36 hand-typed `SourceEntry { ... }` literals inside a fn
+pub fn default_registry() -> Vec<SourceEntry> {
+    vec![
+        SourceEntry { id: "shiller_pe", warn_threshold: 30.0, alert_threshold: 35.0, ... },
+        SourceEntry { id: "vix", warn_threshold: 20.0, alert_threshold: 30.0, ... },
+        // 34 more
+    ]
+}
+```
+
+Reasons:
+
+- Tunable content edits do not require the consuming crates to recompile.
+- Domain owners can review/diff a TOML file without reading Rust.
+- Format errors fail at startup with a clear message, not at the first call site.
+
+Constraints:
+
+- Content files MUST be loaded once and cached. Do not re-read on every call.
+- Content files MUST be validated against the deserialized type. A malformed file is a
+  startup error, not a `unwrap()` panic in a hot path.
+- Content files MUST be checked into the repo alongside their consumer. They are not
+  configuration; they are data.
+
 ## `impl Trait` vs generics vs `dyn Trait`
 
 - Prefer `impl Trait` in function arguments when the caller's concrete type is unimportant and you
@@ -353,3 +490,14 @@ Group imports separated by blank lines in this order: `std`, external crates, `c
 - Do not clone prematurely inside loops or iterator chains.
 - Do not use `Box<dyn Trait>` inside structs unless runtime polymorphism is genuinely required.
 - Do not mix domain logic with transport concerns in the same crate (see stratified-design).
+- Do not dispatch boundary commands by `match s.as_str()`. Use a typed `Command` enum in
+  `contracts` with an exhaustive match.
+- Do not branch on phase / mode / tier / policy inside individual stage functions. Encode
+  the selector as an enum and select the pipeline once at the top.
+- Do not adopt an ECS (legion, bevy_ecs, hecs, specs) for service code. Service entity
+  counts and capability shapes do not justify it. Reserve ECS for genuine real-time
+  simulation; if it appears, prefer Bevy.
+- Do not encode "capability by component presence". Use Rust typestate (`PhantomData<Tag>`
+  or distinct types) when behavior depends on lifecycle state.
+- Do not add a crate-wide `prelude` module that pub-uses everything. Explicit imports are
+  the convention; rust-analyzer auto-import handles the ergonomic case.
