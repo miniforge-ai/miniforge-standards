@@ -338,27 +338,56 @@ Reasons:
 
 ### Bounded data-driven content
 
-When a static table holds *content* that is tuned by domain owners (thresholds, weights,
-metric definitions, lens templates), it lives in a RON or TOML file under
-`<crate>/resources/`, loaded once at startup via `OnceLock` and `include_str!`. When a
-table holds *structural* identifiers referenced from code (cluster IDs, source-type tags,
+When a static table holds *operational content* that is tuned by domain owners (numeric
+thresholds, weights, metric definitions, layout/composition metadata, selectors), it lives
+in a RON or TOML file under `<crate>/resources/`, loaded once and cached. When a table
+holds *structural* identifiers referenced from code (cluster IDs, source-type tags,
 schema-version strings), it stays as `pub const &'static str` in a Rust module.
 
-Heuristic: if a non-engineer would reasonably want to edit the value without a Rust release,
-it is content; move it. If editing it requires changes to handlers that key on it, it is
-structure; keep it as `const`.
+User-facing or advisory copy is **out of scope** for this rule and stays in `strings.rs`
+(see "String constants" earlier). Content files reference stable keys or enum variants
+into `strings.rs` rather than embedding display text directly.
+
+Heuristic: if a non-engineer would reasonably want to edit the value without changes to
+handlers, it is content; move it. If editing it requires changes to handlers that key on
+it, it is structure; keep it as `const`.
+
+The two viable load mechanisms — pick deliberately:
+
+- `include_str!` — embeds the file at compile time. The owning crate rebuilds when the
+  file changes; consumers do not re-source against new code. Use when the binary must be
+  self-contained (desktop apps, signed bundles).
+- Filesystem read at startup — file ships alongside the binary and is read at process
+  start. Edits do not require a rebuild of the owning crate. Use when ops can swap the
+  resource file without redeploying the binary.
+
+Either mechanism MUST validate at startup and fail loudly on malformed input via a typed
+error, not via `panic`/`expect`. Lazy initialization via `OnceLock::get_or_init` is
+acceptable, but eager validation at process start is preferred so format errors surface
+before the first request.
 
 ```rust
-// Good — content loaded from a resource file
-pub fn registry() -> &'static [SourceEntry] {
-    static REGISTRY: OnceLock<Vec<SourceEntry>> = OnceLock::new();
-    REGISTRY.get_or_init(|| {
-        let raw = include_str!("../resources/registry.toml");
-        toml::from_str::<RegistryFile>(raw)
-            .expect("registry.toml is malformed; build artifact regression")
-            .metric
-    })
+// Good — typed error, eager startup validation, no expect/panic
+#[derive(Debug, thiserror::Error)]
+pub enum RegistryLoadError {
+    #[error("registry: malformed TOML: {0}")]
+    Parse(#[from] toml::de::Error),
 }
+
+#[derive(Debug, Deserialize)]
+struct RegistryFile { metric: Vec<SourceEntry> }
+
+pub fn load_registry() -> Result<&'static [SourceEntry], RegistryLoadError> {
+    static REGISTRY: OnceLock<Vec<SourceEntry>> = OnceLock::new();
+    if let Some(loaded) = REGISTRY.get() {
+        return Ok(loaded.as_slice());
+    }
+    let raw = include_str!("../resources/registry.toml");
+    let parsed: RegistryFile = toml::from_str(raw)?;
+    Ok(REGISTRY.get_or_init(|| parsed.metric).as_slice())
+}
+
+// Process startup calls load_registry() once and bails on error before serving traffic.
 
 // Bad — 36 hand-typed `SourceEntry { ... }` literals inside a fn
 pub fn default_registry() -> Vec<SourceEntry> {
@@ -368,21 +397,36 @@ pub fn default_registry() -> Vec<SourceEntry> {
         // 34 more
     ]
 }
+
+// Bad — panics on malformed input, violates the "no expect in production" rule
+pub fn registry() -> &'static [SourceEntry] {
+    static REGISTRY: OnceLock<Vec<SourceEntry>> = OnceLock::new();
+    REGISTRY.get_or_init(|| {
+        let raw = include_str!("../resources/registry.toml");
+        toml::from_str::<RegistryFile>(raw).expect("malformed").metric  // ← do not
+    })
+}
 ```
 
 Reasons:
 
-- Tunable content edits do not require the consuming crates to recompile.
+- Tunable content edits are localized to the resource file. No handler / API surface
+  changes ripple into consuming crates.
 - Domain owners can review/diff a TOML file without reading Rust.
-- Format errors fail at startup with a clear message, not at the first call site.
+- Format errors fail at startup with a typed error, not at the first call site and not
+  via panic.
+- Pick of `include_str!` vs filesystem read is an explicit deployment decision rather
+  than an implicit one.
 
 Constraints:
 
 - Content files MUST be loaded once and cached. Do not re-read on every call.
 - Content files MUST be validated against the deserialized type. A malformed file is a
-  startup error, not a `unwrap()` panic in a hot path.
+  startup error returned via `Result`, not an `unwrap()`/`expect()` panic.
 - Content files MUST be checked into the repo alongside their consumer. They are not
   configuration; they are data.
+- The load mechanism (compile-time embed vs runtime read) MUST be a deliberate choice,
+  documented at the loader.
 
 ### Derived context at boundary seams
 

@@ -6,9 +6,10 @@ Adds three new sections to `languages/rust.mdc` (dewey 230) capturing patterns
 extracted from a cross-repo Rust pattern review (`miniforge-control`,
 `risk-dashboard/theseus-engine`, `risk-dashboard/thesium-data-plane`,
 `thesium-career/theseus-engine`, `thesium-career/thesium-data-plane`).
-No new files. Six new entries in the existing "What NOT to do" list make the
-rejections explicit. `index.mdc` gains the previously-missing Rust (230) and
-Swift (240) entries.
+No new rule files under `languages/`. Six new entries in the existing
+"What NOT to do" list make the rejections explicit. `index.mdc` gains the
+previously-missing Rust (230) and Swift (240) entries. The PR also adds the
+living-PR-doc file under `docs/pull-requests/` per workflow rule 721.
 
 ## Motivation
 
