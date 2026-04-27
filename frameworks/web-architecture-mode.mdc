@@ -11,9 +11,9 @@ globs:
 # Web architecture mode
 
 This rule decides which technology a web surface SHOULD be built in.
-Fleet (and any miniforge product with a browser surface) defaults to
-**Fulcro for stateful product UI**, **server-rendered HTML for simple
-pages**, and **no new browser frameworks without an ADR**.
+Miniforge products with a browser surface default to **Fulcro for
+stateful product UI**, **server-rendered HTML for simple pages**, and
+**no new browser frameworks without an ADR**.
 
 The Fulcro details live in `frameworks/fulcro.mdc`. The JavaScript /
 CSS / HTML / browser-security details live in their own files. This
@@ -23,7 +23,7 @@ rule is the *router* that says which set of standards applies.
 
 | Surface | Standard |
 |---|---|
-| Fleet control plane | Fulcro |
+| Product control plane | Fulcro |
 | Workflow / evidence / policy screens | Fulcro |
 | Complex admin screens | Fulcro |
 | Simple docs / status / landing pages | Server-rendered HTML/CSS |
@@ -103,7 +103,8 @@ feature-by-feature when *any* of these is true:
 - the page needs retries / repair workflows
 - the page needs route-driven workflow state
 - the page has recurring bugs from ad-hoc JavaScript
-- the page participates in Fleet governance workflows
+- the page participates in product governance workflows (approvals,
+  audit, policy enforcement)
 
 When converting, retain the existing JSON / REST endpoints (per
 `frameworks/api-surface-classes.mdc`) — Fulcro consumes them via Pathom

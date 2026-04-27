@@ -9,7 +9,7 @@ globs:
 ---
 # Browser security standards
 
-Four invariants for any browser-facing surface in Fleet or miniforge.
+Four invariants for any browser-facing surface in a miniforge product.
 These are *blocker* severity — a violation MUST NOT merge.
 
 ## BSEC-001 — Server enforces authorization
@@ -35,7 +35,7 @@ authentication mechanism makes CSRF structurally impossible (e.g.
 Authorization header with a token NOT auto-attached by the browser).
 
 Cookie-based sessions MUST use one of:
-- synchroniser-token pattern (CSRF token in form / header, validated
+- synchronizer token pattern (CSRF token in form / header, validated
   server-side)
 - double-submit cookie pattern
 - `SameSite=Strict` or `SameSite=Lax` on the session cookie *plus* a

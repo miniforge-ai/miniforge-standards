@@ -9,9 +9,9 @@ globs:
 
 Fulcro RAD (Rapid Application Development; see
 https://book.fulcrologic.com/RAD.html) is an *attribute-driven* layer
-on top of Fulcro for CRUD-shaped surfaces. RAD is **optional** in
-Fleet — useful for conventional admin forms and reports, harmful when
-forced onto bespoke workflow surfaces.
+on top of Fulcro for CRUD-shaped surfaces. RAD is **optional** —
+useful for conventional admin forms and reports, harmful when forced
+onto bespoke workflow surfaces.
 
 This rule sits alongside `frameworks/fulcro.mdc` (which always
 applies to CLJS / CLJC). RAD adds rules; it does not replace any
@@ -20,7 +20,7 @@ Fulcro rule.
 ## RAD-001 — RAD is optional
 
 Fulcro RAD MAY be used where it reduces boilerplate without hiding
-important Fleet behaviour. RAD is never required; a hand-written
+important product behaviour. RAD is never required; a hand-written
 Fulcro screen is always a valid choice.
 
 ## RAD-002 — Use RAD for conventional forms and reports
@@ -42,12 +42,12 @@ where explicit Fulcro components are clearer.
 
 Examples that belong in bespoke Fulcro, not RAD:
 
-- live workflow execution graph (Fleet's Phase A SVG view)
+- live workflow execution graph
 - PR train visualisation
 - evidence bundle diff / review
 - policy failure triage
 - agent orchestration console
-- recommendation + control panel (Fleet's Phase C dashboard)
+- recommendation + control panel
 
 When the surface is more bespoke than CRUD, the RAD ergonomics fight
 the design rather than helping.

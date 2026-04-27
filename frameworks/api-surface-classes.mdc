@@ -109,21 +109,24 @@ contract. Mitigate by:
 - rate-limiting or path-prefixing internal endpoints (e.g. `/_internal/`)
   so accidental adoption is visible and cheap to break
 
-## API-006 — Match miniforge's existing boundaries
+## API-006 — Boundary patterns to recognise
 
-Concrete references for current code:
+Patterns that recur across miniforge products. Use these to classify
+surfaces in your own repo:
 
-- **miniforge OSS event envelope** (`{"type":"event","event_type":...}`
-  on the wire) — class 2. Stable, JSON-flat, consumed by Fleet and
-  any third-party dashboard.
-- **fleet-server REST** (`GET /dag`, `GET /recommendations`,
-  `POST /control/instances/.../workflows/...`) — class 2. Flat JSON,
-  consumed by the Fulcro UI, native apps, and customer SREs.
-- **Fleet Fulcro internal Pathom / Transit surface** (when introduced)
-  — class 1. May use EQL, may use Transit, MUST NOT replace the
-  class-2 REST surface.
-- **Fleet ↔ miniforge in-process Clojure dependency** — class 1.
-  Namespaces, protocols, EDN commands. No HTTP.
+- **OSS event envelope on the wire** (`{"type":"event","event_type":...}`)
+  — class 2. Stable JSON-flat shape, intended for any consumer in any
+  language.
+- **Server REST** (`GET /<resource>`, `POST /<resource>/<id>/<action>`)
+  consumed by both first-party UIs and customer-side scripts — class 2.
+  Flat JSON, versioned, no namespaced keys on the wire.
+- **Fulcro internal Pathom / Transit surface** between a Fulcro UI and
+  its server — class 1. May use EQL, may use Transit, MUST NOT
+  replace the class-2 REST surface that other clients consume.
+- **In-process Clojure dependency** between two products in the same
+  workspace — class 1. Namespaces, protocols, EDN commands. No HTTP.
+- **Webhook / signed callback** delivered to customer-controlled
+  endpoints — class 3. Long-lived shape, signed payload, versioned.
 
 ## Agent behaviour
 

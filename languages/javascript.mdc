@@ -7,9 +7,9 @@ globs:
 ---
 # JavaScript (browser) standards
 
-JavaScript in Fleet and adjacent miniforge web surfaces is a *progressive
-enhancement* tool, not an application-architecture substrate. Stateful
-product UI belongs in Fulcro (`frameworks/fulcro.mdc`), not in JS modules.
+JavaScript in any miniforge web surface is a *progressive enhancement*
+tool, not an application-architecture substrate. Stateful product UI
+belongs in Fulcro (`frameworks/fulcro.mdc`), not in JS modules.
 
 ## JS-001 — Use JavaScript sparingly
 
@@ -128,18 +128,31 @@ el.textContent = response.message;
 
 For structured markup, build the tree explicitly with
 `document.createElement` + `appendChild`, or use a `<template>` element
-with text-only insertion points. If a sanitiser is genuinely required
-(e.g. rendering Markdown), use a vetted library such as DOMPurify and
-isolate the call to a single boundary module.
+with text-only insertion points.
 
-Reject any PR that introduces a write to `innerHTML` from a non-literal
-source.
+### Sanitiser escape hatch
+
+If a sanitizer is genuinely required (e.g. rendering trusted Markdown
+to HTML), the use MUST satisfy ALL of:
+
+1. Sanitization goes through a single vetted library (DOMPurify or
+   equivalent) with a default-deny configuration.
+2. The sanitizer call lives in ONE boundary module per repo, named
+   `safe-html` or similar; no other module touches `innerHTML`.
+3. The boundary module exports only `setSanitisedHTML(el, source)` —
+   no raw `innerHTML` setter is exposed.
+4. The boundary module's allow-list (tags, attributes, URL schemes) is
+   reviewed in the PR that introduces it and in any PR that widens it.
+
+Reject any PR that introduces a write to `innerHTML` *outside* the
+boundary module, or that widens the boundary module's allow-list
+without explicit reviewer sign-off.
 
 ## Agent behaviour
 
 When writing or reviewing browser JS:
 1. If the change introduces durable client state, multi-entity editing,
-   or workflow flow → escalate to Fulcro per `frameworks/web-architecture-mode.mdc`
+   or workflow state → escalate to Fulcro per `frameworks/web-architecture-mode.mdc`
    WEB-002.
 2. Grep for `window.<name> =` and `onclick=` / `on*=` in HTML and JS;
    each is a violation of JS-002 / JS-004.

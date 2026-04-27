@@ -7,7 +7,7 @@ globs:
 ---
 # HTML standards
 
-HTML in Fleet and miniforge web surfaces MUST favour semantic elements,
+HTML in any miniforge web surface MUST favour semantic elements,
 labelled controls, and meaningful structure. Generic `<div>` is the
 fallback, not the default.
 
@@ -67,7 +67,7 @@ mechanism is `placeholder=`.
 ## HTML-004 — Tables are valid for tabular operational data
 
 Tables SHOULD be used for naturally tabular data. Operator surfaces in
-Fleet have a lot of this:
+miniforge products have a lot of this:
 
 - workflow runs
 - policy checks

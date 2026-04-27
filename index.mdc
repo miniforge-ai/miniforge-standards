@@ -47,7 +47,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   ├── css.mdc                          # dewey: "260"
 │   └── html.mdc                         # dewey: "270"
 ├── frameworks/
-│   ├── polylith.mdc                     # dewey: "300"
+│   ├── polylith.mdc                     # dewey: "310"
 │   ├── polylith-composition.mdc         # dewey: "311"
 │   ├── polylith-tool.mdc                # dewey: "312"
 │   ├── kubernetes.mdc                   # dewey: "320"
@@ -102,7 +102,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 
 | Dewey | File | Always | Description |
 |-------|------|--------|-------------|
-| 300 | `polylith` |  | Polylith workspace conventions |
+| 310 | `polylith` |  | Polylith workspace conventions |
 | 311 | `polylith-composition` |  | Brick-oriented production code, interface contracts, validation gates, change-derived CI scope |
 | 312 | `polylith-tool` |  | Polylith as an architectural control tool — preflight reasoning, canonical workflow, agent-role operational requirements |
 | 320 | `kubernetes` |  | K8s/Kustomize/ArgoCD conventions |

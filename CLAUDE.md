@@ -74,7 +74,7 @@ languages/
   css.mdc                     dewey: "260"
   html.mdc                    dewey: "270"
 frameworks/
-  polylith.mdc                dewey: "300"
+  polylith.mdc                dewey: "310"
   polylith-composition.mdc    dewey: "311"
   polylith-tool.mdc           dewey: "312"
   kubernetes.mdc              dewey: "320"
@@ -120,7 +120,7 @@ meta/
   260      CSS (design tokens, semantic class names, shallow selectors, focus)
   270      HTML (semantic elements, buttons-vs-links, labelled forms)
 300-399  Frameworks      Polylith, K8s, web frameworks, databases
-  300      Polylith
+  310      Polylith
   311      Polylith Composition (bricks/bases/interfaces, validation gates, CI scope)
   312      Polylith Tool (preflight reasoning, canonical workflow, agent-role operational reqs)
   320      Kubernetes

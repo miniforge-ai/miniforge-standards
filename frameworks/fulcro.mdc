@@ -7,16 +7,12 @@ globs:
 ---
 # Fulcro standards
 
-Fulcro is the default for stateful product UI in Fleet (per
-`frameworks/web-architecture-mode.mdc` WEB-002). This rule extracts the
-load-bearing patterns from the *Fulcro Developer's Guide*
-(https://book.fulcrologic.com/) into enforceable repository rules.
-
-The trade we accept by choosing Fulcro: smaller ecosystem, niche
-training-data exposure for agents, deeper standards investment up front.
-The trade pays back via a single canonical reference text. Every rule
-here traces to the Book; cite the section in PR review when the rule is
-non-obvious.
+Fulcro is the default for stateful product UI in any miniforge web
+surface that opts into Fulcro per `frameworks/web-architecture-mode.mdc`
+WEB-002. This rule extracts the load-bearing patterns from the
+*Fulcro Developer's Guide* (https://book.fulcrologic.com/) into
+enforceable repository rules. Every rule here traces to the Book;
+cite the section in PR review when the rule is non-obvious.
 
 ## When Fulcro applies
 
@@ -26,9 +22,10 @@ relationships, workflow state, or policy / evidence interactions
 
 ### FUL-001 — Use Fulcro for entity/workflow product UI
 
-If a page renders durable entities (repos, runs, packs, bundles,
-agents, approvals) or transitions workflow state, it SHOULD be a Fulcro
-component tree. Static informational pages stay server-rendered.
+If a page renders durable entities (repositories, workflow runs, policy
+packs, evidence bundles, agents, approvals, etc.) or transitions
+workflow state, it SHOULD be a Fulcro component tree. Static
+informational pages stay server-rendered.
 
 ## Component basics — queries, idents, initial state
 
@@ -63,18 +60,15 @@ hand-writing a child query inline breaks it.
 Components representing persistent entities MUST define a stable
 `:ident`. Idents are the address into the normalised client DB.
 
-Persistent entity examples (Fleet domain):
+Typical persistent entity examples in a miniforge product UI:
 
-- repository
-- workflow run
-- workflow step
-- policy pack
-- policy rule
-- evidence bundle
-- evidence item
-- agent
-- approval
-- user
+- repository / project / workspace
+- workflow run / step
+- policy pack / rule
+- evidence bundle / item
+- agent / job / task
+- approval / review
+- user / principal
 
 UI-only "presence" components (modals, panels, banners) do not need
 idents.
@@ -128,10 +122,11 @@ storage implementation details. `:repo/integration-status` is good;
 Entity names, ids, resolver names, and mutation names SHOULD use a
 shared domain vocabulary across CLJS, CLJC, and CLJ.
 
-Canonical Fleet domain nouns: repository, workflow run, workflow step,
-policy pack, policy check, evidence bundle, approval, agent,
-integration. (Fleet-specific entity-key seeds live in the Fleet
-project's `domain.cljc`.)
+Each consuming repo SHOULD declare its canonical domain nouns once (in
+a shared `domain.cljc` or equivalent) and reference them across CLJS,
+CLJC, and CLJ namespaces. Common miniforge domain shapes include
+repository, workflow run / step, policy pack / check, evidence bundle,
+approval, agent, integration.
 
 ## Normalisation discipline
 
@@ -159,7 +154,7 @@ normalised entity — do not copy.
 When a graph edge can point to different entity types, use Fulcro
 union queries.
 
-Fleet candidates: evidence-item variants, policy-result variants,
+Common candidates: evidence-item variants, policy-result variants,
 workflow-step variants, activity-feed events.
 
 ## Mutations
@@ -221,9 +216,9 @@ Remote interactions MUST expose loading and error state in the UI
 (typically via load markers or per-entity status fields). Hidden
 spinners and silent failures are violations.
 
-For Fleet, error state SHOULD include enough diagnostic information to
-support evidence / debug workflows (request id, timestamp, error
-class, retryability hint).
+Error state SHOULD include enough diagnostic information to support
+evidence / debug workflows (request id, timestamp, error class,
+retryability hint).
 
 ### FUL-028 — Server API should match graph needs
 
@@ -288,7 +283,8 @@ manually extracting arbitrary nested data in root-level rendering.
 
 ### FUL-022 — Model workflow state explicitly
 
-Fleet workflow state MUST be explicit in the data model:
+Workflow state in the application MUST be explicit in the data model.
+Typical shape:
 
 - `:workflow.run/status`
 - `:workflow.run/current-step`
@@ -320,7 +316,7 @@ and events; the rest of the system MUST NOT see the foreign API.
 
 ### FUL-031 — Use Fulcro Inspect in development
 
-Fleet Fulcro applications SHOULD support Fulcro Inspect during
+Miniforge Fulcro applications SHOULD support Fulcro Inspect during
 development. The build should not strip the integration in dev mode.
 
 ### FUL-032 — Tests cover mutations and graph updates

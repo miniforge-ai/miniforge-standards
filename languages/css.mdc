@@ -7,7 +7,7 @@ globs:
 ---
 # CSS standards
 
-CSS in Fleet and miniforge web surfaces SHOULD lean on design tokens,
+CSS in any miniforge web surface SHOULD lean on design tokens,
 component-purpose class names, and shallow selectors. No hard-coded
 product colours; no anti-accessible focus suppression.
 
