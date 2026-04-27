@@ -42,12 +42,20 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   ├── clojure.mdc                      # dewey: "210"  alwaysApply: true
 │   ├── python.mdc                       # dewey: "220"
 │   ├── rust.mdc                         # dewey: "230"
-│   └── swift.mdc                        # dewey: "240"
+│   ├── swift.mdc                        # dewey: "240"
+│   ├── javascript.mdc                   # dewey: "250"
+│   ├── css.mdc                          # dewey: "260"
+│   └── html.mdc                         # dewey: "270"
 ├── frameworks/
 │   ├── polylith.mdc                     # dewey: "300"
 │   ├── polylith-composition.mdc         # dewey: "311"
 │   ├── polylith-tool.mdc                # dewey: "312"
-│   └── kubernetes.mdc                   # dewey: "320"
+│   ├── kubernetes.mdc                   # dewey: "320"
+│   ├── web-architecture-mode.mdc        # dewey: "330"
+│   ├── browser-security.mdc             # dewey: "331"
+│   ├── api-surface-classes.mdc          # dewey: "332"
+│   ├── fulcro.mdc                       # dewey: "340"
+│   └── fulcro-rad.mdc                   # dewey: "341"
 ├── testing/
 │   └── standards.mdc                    # dewey: "400"  alwaysApply: true
 ├── workflows/
@@ -86,6 +94,9 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 220 | `python` |  | Poetry, functional Python |
 | 230 | `rust` |  | Workspaces, typed boundary commands, pipeline selection, data-driven content |
 | 240 | `swift` |  | Swift conventions |
+| 250 | `javascript` |  | Browser JS — sparse use, no globals, ES modules, no inline handlers, safe DOM |
+| 260 | `css` |  | Design tokens, semantic class names, shallow selectors, accessible focus |
+| 270 | `html` |  | Semantic elements, buttons-vs-links, labelled forms |
 
 ### frameworks/
 
@@ -95,6 +106,11 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 311 | `polylith-composition` |  | Brick-oriented production code, interface contracts, validation gates, change-derived CI scope |
 | 312 | `polylith-tool` |  | Polylith as an architectural control tool — preflight reasoning, canonical workflow, agent-role operational requirements |
 | 320 | `kubernetes` |  | K8s/Kustomize/ArgoCD conventions |
+| 330 | `web-architecture-mode` |  | Fulcro for stateful UI, server HTML for simple pages, no new browser fw without ADR |
+| 331 | `browser-security` |  | Server-enforced authz, CSRF, no secrets in browser, blast-radius UI |
+| 332 | `api-surface-classes` |  | Internal (EDN/Transit) vs first-party cross-language (JSON/SSE) vs customer extension (REST/webhooks) |
+| 340 | `fulcro` |  | Queries, idents, normalisation, mutations, loads, domain naming |
+| 341 | `fulcro-rad` |  | RAD optional for CRUD/forms; never forced onto bespoke workflow UI |
 
 ### testing/
 

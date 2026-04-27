@@ -1,0 +1,363 @@
+---
+dewey: "340"
+description: Fulcro standards — queries, idents, normalisation, mutations, loads, domain naming
+globs:
+  - "**/*.cljs"
+  - "**/*.cljc"
+---
+# Fulcro standards
+
+Fulcro is the default for stateful product UI in Fleet (per
+`frameworks/web-architecture-mode.mdc` WEB-002). This rule extracts the
+load-bearing patterns from the *Fulcro Developer's Guide*
+(https://book.fulcrologic.com/) into enforceable repository rules.
+
+The trade we accept by choosing Fulcro: smaller ecosystem, niche
+training-data exposure for agents, deeper standards investment up front.
+The trade pays back via a single canonical reference text. Every rule
+here traces to the Book; cite the section in PR review when the rule is
+non-obvious.
+
+## When Fulcro applies
+
+Fulcro is for product UI involving durable entities, graph
+relationships, workflow state, or policy / evidence interactions
+(per WEB-002).
+
+### FUL-001 — Use Fulcro for entity/workflow product UI
+
+If a page renders durable entities (repos, runs, packs, bundles,
+agents, approvals) or transitions workflow state, it SHOULD be a Fulcro
+component tree. Static informational pages stay server-rendered.
+
+## Component basics — queries, idents, initial state
+
+The four-tuple `query` + `ident` + `initial-state` + `render` is the
+load-bearing contract. Get this right and the rest of the framework
+behaves; get it wrong and you fight normalisation forever.
+
+### FUL-002 — Components must declare queries
+
+Components that render application data MUST declare an explicit
+`:query`. Do not pass large opaque maps through component trees when
+the component can declare its own data requirements.
+
+### FUL-003 — Use `comp/get-query` for joins
+
+Parent component queries MUST use `comp/get-query` when joining to
+child components.
+
+```clojure
+(defsc WorkflowList [_ {:list/keys [runs]}]
+  {:query [{:list/runs (comp/get-query WorkflowRun)}]
+   :ident :list/id
+   :initial-state {:list/id :workflow-list :list/runs []}}
+  ...)
+```
+
+`get-query` carries the metadata Fulcro needs for normalisation;
+hand-writing a child query inline breaks it.
+
+### FUL-004 — Persistent entities must have idents
+
+Components representing persistent entities MUST define a stable
+`:ident`. Idents are the address into the normalised client DB.
+
+Persistent entity examples (Fleet domain):
+
+- repository
+- workflow run
+- workflow step
+- policy pack
+- policy rule
+- evidence bundle
+- evidence item
+- agent
+- approval
+- user
+
+UI-only "presence" components (modals, panels, banners) do not need
+idents.
+
+### FUL-005 — Initial state must match UI shape
+
+Initial state SHOULD match the component tree shape and normalise
+cleanly. Root initial state SHOULD compose child initial state via
+`comp/get-initial-state`, not duplicate it manually.
+
+## Naming and key conventions
+
+### FUL-014 — Prefer domain-namespaced keywords
+
+Application keys MUST be namespaced by domain.
+
+```clojure
+;; GOOD
+:repo/id :repo/name
+:workflow.run/id :workflow.run/status
+:policy.pack/id :evidence.bundle/id
+
+;; BAD — generic, ambiguous, collision-prone
+:id :name :status
+```
+
+### FUL-015 — UI-only state uses `:ui/*`
+
+UI-only state MUST use the `:ui/` namespace (or an equivalent explicit
+UI namespace).
+
+```clojure
+:ui/expanded?     :ui/selected-tab
+:ui/filter-text   :ui/modal-open?
+```
+
+### FUL-016 — Do not persist UI state accidentally
+
+Server writes MUST NOT persist `:ui/*` state unless explicitly
+intended. Strip `:ui/*` keys from mutation payloads before remote
+return.
+
+### FUL-029 — Do not leak database schema directly into UI
+
+Fulcro entity keys SHOULD represent product / domain concepts, not raw
+storage implementation details. `:repo/integration-status` is good;
+`:db/repos.integration_status_enum_value` is not.
+
+### FUL-035 — Keep naming consistent across client and server
+
+Entity names, ids, resolver names, and mutation names SHOULD use a
+shared domain vocabulary across CLJS, CLJC, and CLJ.
+
+Canonical Fleet domain nouns: repository, workflow run, workflow step,
+policy pack, policy check, evidence bundle, approval, agent,
+integration. (Fleet-specific entity-key seeds live in the Fleet
+project's `domain.cljc`.)
+
+## Normalisation discipline
+
+### FUL-006 — Normalize server data
+
+Server responses intended for Fulcro app state SHOULD be normalisable
+entity graphs (i.e. each entity carries its ident-key, references are
+ident-shaped). Avoid returning UI-specific denormalised blobs for
+durable product state.
+
+### FUL-019 — Treat the client DB as a normalised database
+
+After normalisation, do not reason about state as a nested
+component-owned object tree. Entity updates target normalised table
+entries by ident.
+
+### FUL-020 — Do not duplicate entity facts across tables
+
+A durable fact about an entity SHOULD have one canonical location. If a
+value appears in multiple UI contexts, render it from the same
+normalised entity — do not copy.
+
+### FUL-018 — Use unions for polymorphic graph edges
+
+When a graph edge can point to different entity types, use Fulcro
+union queries.
+
+Fleet candidates: evidence-item variants, policy-result variants,
+workflow-step variants, activity-feed events.
+
+## Mutations
+
+### FUL-007 — Mutations are the only state-transition boundary
+
+Application state changes MUST flow through Fulcro mutations (or
+approved Fulcro mechanisms — load merges, refresh, deferred routing).
+Do NOT mutate app state ad hoc from rendering code, callbacks, or
+foreign JS wrappers.
+
+### FUL-008 — Mutations must be intent-named
+
+Mutation names SHOULD describe domain intent, not implementation
+detail.
+
+| Good | Bad |
+|---|---|
+| `workflow/start!` | `set-flag!` |
+| `policy-pack/activate!` | `update-map!` |
+| `evidence/mark-reviewed!` | `do-click!` |
+| `repo.integration/remove!` | `handle-button!` |
+
+### FUL-009 — Separate local and remote mutation effects
+
+Mutations SHOULD clearly separate local optimistic effects from remote
+effects. A mutation with remote effects MUST define its expected
+failure behaviour (rollback, error message, retry policy).
+
+### FUL-010 — Use transactions for user-driven operations
+
+User-driven operations SHOULD be modelled as Fulcro transactions
+(`comp/transact!`). The UI submits intent; the mutation decides local
+and remote effects.
+
+### FUL-021 — Use targeted refresh
+
+Mutations SHOULD refresh only the affected UI / data where practical.
+Avoid full app refreshes for changes scoped to a small entity set.
+
+### FUL-023 — Destructive mutations require domain-level confirmation
+
+A Fulcro mutation that performs a destructive remote effect MUST
+require prior UI confirmation appropriate to blast radius (per
+`languages/javascript.mdc` JS-007 and `frameworks/browser-security.mdc`
+BSEC-004). The confirmation belongs in the UI flow that *triggers* the
+mutation, not inside the mutation body.
+
+## Loads and remote interaction
+
+### FUL-012 — Use loads for remote reads
+
+Remote data reads SHOULD use Fulcro load mechanisms (`df/load!` or
+equivalent) rather than arbitrary `fetch` calls embedded in components.
+
+### FUL-013 — Loading and error state must be modelled
+
+Remote interactions MUST expose loading and error state in the UI
+(typically via load markers or per-entity status fields). Hidden
+spinners and silent failures are violations.
+
+For Fleet, error state SHOULD include enough diagnostic information to
+support evidence / debug workflows (request id, timestamp, error
+class, retryability hint).
+
+### FUL-028 — Server API should match graph needs
+
+The server data API SHOULD support Fulcro graph reads and mutations
+cleanly. Pathom SHOULD be considered for graph-oriented server
+reads / resolvers. The internal Pathom / EQL surface is API class 1
+(per `frameworks/api-surface-classes.mdc`); the existing flat JSON
+endpoints stay alive as class-2 surfaces alongside it.
+
+## Render discipline
+
+### FUL-011 — No side effects in render
+
+Component render bodies MUST NOT perform side effects.
+
+Forbidden in render:
+- network calls
+- app state mutation
+- timers
+- subscriptions
+- DOM mutation outside React / Fulcro integration points
+
+Move side effects to mutation `:action`s, lifecycle hooks, or load
+calls triggered by route / mutation events.
+
+### FUL-017 — Component queries are minimal and local
+
+Each component's query SHOULD request only the data it renders or
+passes to declared children. Avoid broad root queries that bypass
+component composition.
+
+### FUL-024 — Components small but not anaemic
+
+A component SHOULD own:
+
+- its query
+- its ident if entity-backed
+- its initial state if applicable
+- its rendering
+- local UI event submission
+
+Splitting components so aggressively that query ownership becomes
+unclear is its own anti-pattern.
+
+### FUL-025 — Business rules out of CSS / DOM state
+
+Fulcro logic MUST NOT infer domain truth from CSS classes, DOM
+attributes, or visual state. The data model is the source of truth;
+the DOM reflects the data model.
+
+### FUL-033 — Avoid huge root components
+
+Root components SHOULD compose major screen areas and routing, not
+contain all product rendering logic.
+
+### FUL-034 — Prefer declarative screen composition
+
+Screens SHOULD be composed from queried components rather than
+manually extracting arbitrary nested data in root-level rendering.
+
+## Workflow / domain modelling
+
+### FUL-022 — Model workflow state explicitly
+
+Fleet workflow state MUST be explicit in the data model:
+
+- `:workflow.run/status`
+- `:workflow.run/current-step`
+- `:workflow.step/status`
+- `:workflow.step/error`
+- `:workflow.step/retryable?`
+
+Operational truth must NOT be derived only from incidental UI flags.
+
+### FUL-027 — Prefer CLJC for shared domain logic
+
+Validation, normalisation helpers, domain predicates, and
+policy-adjacent logic SHOULD live in CLJC when shared by client and
+server. Keeps the domain vocabulary single-sourced (FUL-035).
+
+### FUL-030 — Route state is product state when it controls workflow
+
+Route parameters that control workflow / evidence / policy context
+SHOULD be treated as part of application state, normalised, and
+tested.
+
+## Interop and tooling
+
+### FUL-026 — JS / React interop is isolated
+
+JavaScript / React interop MUST be wrapped in small boundary
+components. Interop components SHOULD expose Fulcro-friendly props
+and events; the rest of the system MUST NOT see the foreign API.
+
+### FUL-031 — Use Fulcro Inspect in development
+
+Fleet Fulcro applications SHOULD support Fulcro Inspect during
+development. The build should not strip the integration in dev mode.
+
+### FUL-032 — Tests cover mutations and graph updates
+
+Tests SHOULD verify:
+
+- mutation state transitions
+- normalised DB updates
+- remote mutation behaviour
+- load result normalisation
+- critical route transitions
+- failure states
+
+Component render tests are useful but secondary; the data-model layer
+is where regressions hurt most.
+
+## Severity guidance
+
+| Severity | Examples |
+|---|---|
+| **blocker** | side effects in render (FUL-011); state changes outside mutations (FUL-007); destructive mutation without confirmation (FUL-023); domain truth inferred from DOM (FUL-025) |
+| **major** | persistent entity without ident (FUL-004); duplicated entity facts across tables (FUL-020); generic-keyed durable state (FUL-014); inline `fetch` instead of load (FUL-012) |
+| **minor** | non-intent-named mutation (FUL-008); broad root query (FUL-017); huge root component (FUL-033) |
+| **advisory** | could use a union (FUL-018); could move helper to CLJC (FUL-027) |
+
+## Agent behaviour
+
+When writing or reviewing Fulcro code:
+1. Open the four-tuple check on every `defsc` rendering data — `:query`,
+   `:ident` (if entity), `:initial-state` (if joined from root),
+   render. Missing pieces are the most common agent failure mode.
+2. For every mutation, confirm: intent-named (FUL-008), local vs
+   remote effects separated (FUL-009), destructive ones gated
+   (FUL-023).
+3. Grep for `fetch(`, `.then(`, `XMLHttpRequest` — each is a likely
+   FUL-012 violation.
+4. Grep for `:id`, `:name`, `:status` as bare keys in app-state
+   contexts — likely FUL-014 violations.
+5. When in doubt about a Fulcro idiom, cite the *Fulcro Developer's
+   Guide* section by number in the PR comment, not framework folklore.

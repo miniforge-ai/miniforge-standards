@@ -1,0 +1,139 @@
+---
+dewey: "330"
+description: Web architecture mode — Fulcro for stateful product UI, server HTML for simple pages, no new browser frameworks without ADR
+globs:
+  - "**/*.html"
+  - "**/*.css"
+  - "**/*.js"
+  - "**/*.cljs"
+  - "**/*.cljc"
+---
+# Web architecture mode
+
+This rule decides which technology a web surface SHOULD be built in.
+Fleet (and any miniforge product with a browser surface) defaults to
+**Fulcro for stateful product UI**, **server-rendered HTML for simple
+pages**, and **no new browser frameworks without an ADR**.
+
+The Fulcro details live in `frameworks/fulcro.mdc`. The JavaScript /
+CSS / HTML / browser-security details live in their own files. This
+rule is the *router* that says which set of standards applies.
+
+## Surface taxonomy
+
+| Surface | Standard |
+|---|---|
+| Fleet control plane | Fulcro |
+| Workflow / evidence / policy screens | Fulcro |
+| Complex admin screens | Fulcro |
+| Simple docs / status / landing pages | Server-rendered HTML/CSS |
+| One-off dashboard utilities | Server-rendered or small JS |
+| Legacy pages | Leave until materially touched |
+
+## WEB-001 — Prefer simple server rendering for simple pages
+
+Simple informational pages MUST use server-rendered HTML unless they
+require durable client-side state. Examples: status pages, docs pages,
+simple reports, static configuration views.
+
+Adding Fulcro (or any other client framework) to a page that has no
+durable client state is over-architecture; reject in review.
+
+## WEB-002 — Prefer Fulcro for stateful product pages
+
+A page SHOULD be built in Fulcro when it contains *any* of:
+
+- multi-entity editing
+- workflow state
+- async job state
+- policy or rule editing
+- graph-like navigation
+- approval / rejection flows
+- inspectable evidence state
+
+If the page lacks all of the above today but is *expected* to gain them
+within the current product roadmap, start in Fulcro now to avoid a
+mid-feature rewrite.
+
+## WEB-003 — No new frontend framework without ADR
+
+Repositories MUST NOT introduce a new browser framework without an
+explicit architecture decision record under `docs/adr/` (or the project's
+ADR convention). The ADR MUST address: bus factor, agent legibility,
+hiring pipeline, server-contract impact, and migration cost.
+
+Currently allowed modes:
+
+- server-rendered HTML + CSS (with optional small vanilla JS per
+  `languages/javascript.mdc`)
+- Fulcro (per `frameworks/fulcro.mdc`)
+- Fulcro RAD (per `frameworks/fulcro-rad.mdc`)
+- explicitly grandfathered legacy code (named in the ADR)
+
+React, Vue, Svelte, Angular, Solid, htmx, Alpine, Stimulus, Lit, etc.
+are NOT pre-approved. Each requires its own ADR.
+
+## WEB-004 — Keep server transport separate from UI state
+
+http-kit handlers, Ring middleware, API routes, and any server-side
+HTTP plumbing MUST NOT contain browser workflow state-machine logic.
+
+Server transport MAY:
+- serve HTML and static assets
+- expose API endpoints
+- handle session / authentication
+- provide WebSocket / SSE transport
+
+Server transport MUST NOT:
+- encode client workflow state in handlers
+- generate large inline JavaScript blobs
+- duplicate frontend state transitions as hidden server control flow
+
+The boundary between transport and UI state is enforced by `frameworks/api-surface-classes.mdc`
+(internal vs first-party vs customer surfaces).
+
+## Migration rule
+
+Do NOT rewrite all existing web dashboards immediately. Convert
+feature-by-feature when *any* of these is true:
+
+- the page gains durable client-side state
+- the page edits multiple related entities
+- the page needs optimistic updates
+- the page needs retries / repair workflows
+- the page needs route-driven workflow state
+- the page has recurring bugs from ad-hoc JavaScript
+- the page participates in Fleet governance workflows
+
+When converting, retain the existing JSON / REST endpoints (per
+`frameworks/api-surface-classes.mdc`) — Fulcro consumes them via Pathom
+internally; cross-language clients keep their flat surface.
+
+## Frontend review checklist
+
+Every frontend PR SHOULD answer:
+
+1. Is this page simple, transitional, or product-stateful?
+2. Should this be Fulcro? (per WEB-001 / WEB-002)
+3. Are component queries explicit and local? (FUL-002, FUL-017)
+4. Are entity idents stable? (FUL-004)
+5. Are mutations domain-intent named? (FUL-008)
+6. Are async loading / error states visible? (JS-006, FUL-013)
+7. Are destructive operations guarded? (JS-007, FUL-023, BSEC-004)
+8. Are permissions enforced server-side? (BSEC-001)
+9. Are design tokens used? (CSS-001, CSS-002)
+10. Are focus states visible? (CSS-007, CSS-008)
+11. Is any JS interop isolated? (FUL-026)
+12. Are durable facts stored once in normalised state? (FUL-020)
+13. Are tests covering critical mutation / load behaviour? (FUL-032)
+
+## Agent behaviour
+
+When asked to add or modify a web surface:
+1. Classify the surface against WEB-001 / WEB-002 *before* writing code.
+   Output the classification in the PR description.
+2. If the surface qualifies for Fulcro, switch to `frameworks/fulcro.mdc`
+   for the implementation rules.
+3. If introducing anything that isn't on the WEB-003 allow-list, stop
+   and produce an ADR draft for review before writing code.
+4. Run the frontend review checklist before requesting review.

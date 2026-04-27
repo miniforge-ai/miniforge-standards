@@ -1,0 +1,85 @@
+---
+dewey: "341"
+description: Fulcro RAD — optional, for conventional CRUD/forms/reports; never forced onto bespoke workflow UI
+globs:
+  - "**/*.cljs"
+  - "**/*.cljc"
+---
+# Fulcro RAD standards
+
+Fulcro RAD (Rapid Application Development; see
+https://book.fulcrologic.com/RAD.html) is an *attribute-driven* layer
+on top of Fulcro for CRUD-shaped surfaces. RAD is **optional** in
+Fleet — useful for conventional admin forms and reports, harmful when
+forced onto bespoke workflow surfaces.
+
+This rule sits alongside `frameworks/fulcro.mdc` (which always
+applies to CLJS / CLJC). RAD adds rules; it does not replace any
+Fulcro rule.
+
+## RAD-001 — RAD is optional
+
+Fulcro RAD MAY be used where it reduces boilerplate without hiding
+important Fleet behaviour. RAD is never required; a hand-written
+Fulcro screen is always a valid choice.
+
+## RAD-002 — Use RAD for conventional forms and reports
+
+RAD SHOULD be considered for:
+
+- CRUD-like admin forms
+- tabular reports
+- attribute-driven forms
+- conventional entity management surfaces (list / detail / edit)
+
+These shapes have well-defined RAD generators that pay back the
+learning cost.
+
+## RAD-003 — Do not force RAD onto bespoke workflow UIs
+
+RAD SHOULD NOT be forced onto highly custom workflow-control surfaces
+where explicit Fulcro components are clearer.
+
+Examples that belong in bespoke Fulcro, not RAD:
+
+- live workflow execution graph (Fleet's Phase A SVG view)
+- PR train visualisation
+- evidence bundle diff / review
+- policy failure triage
+- agent orchestration console
+- recommendation + control panel (Fleet's Phase C dashboard)
+
+When the surface is more bespoke than CRUD, the RAD ergonomics fight
+the design rather than helping.
+
+## RAD-004 — Attribute definitions are domain contracts
+
+RAD attributes, when used, SHOULD be treated as domain model contracts
+and reviewed as carefully as a database schema migration. Renaming or
+re-typing an attribute is a breaking change.
+
+Attribute names follow the same domain-vocabulary rule as
+`frameworks/fulcro.mdc` FUL-035. RAD attribute namespaces match the
+Fulcro entity namespaces (`:repo/...`, `:workflow.run/...`, etc.).
+
+## RAD-005 — Escape hatch required
+
+Any RAD usage MUST preserve the ability to drop to custom Fulcro UI
+where product behaviour requires it. A surface that is "100% RAD with
+no escape" is a code smell — when the requirements move beyond RAD's
+generators, you cannot incrementally take over rendering or mutation.
+
+Concretely: each RAD-generated screen SHOULD be wrapped or composed
+such that a hand-written Fulcro replacement can be slotted in without
+rewriting the surrounding routing and state.
+
+## Agent behaviour
+
+When asked to add a CRUD-shaped surface:
+1. Classify the surface against RAD-002 / RAD-003. If bespoke, use
+   plain Fulcro per `frameworks/fulcro.mdc`.
+2. If RAD is the right fit, declare the attribute set in a
+   shared CLJC namespace (per FUL-027) so the contract is single-sourced.
+3. Confirm the escape hatch (RAD-005) before merging — name the
+   replacement strategy in the PR description if the surface looks
+   likely to outgrow RAD.

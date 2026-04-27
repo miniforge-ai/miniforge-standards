@@ -1,0 +1,126 @@
+---
+dewey: "260"
+description: CSS — design tokens, semantic class names, shallow selectors, accessible focus
+globs:
+  - "**/*.css"
+  - "**/*.scss"
+---
+# CSS standards
+
+CSS in Fleet and miniforge web surfaces SHOULD lean on design tokens,
+component-purpose class names, and shallow selectors. No hard-coded
+product colours; no anti-accessible focus suppression.
+
+## CSS-001 — Use design tokens
+
+CSS MUST use shared custom properties for product colours, spacing,
+typography, borders, shadows, and radii. Tokens live at `:root` (or a
+shared `tokens.css`) and are referenced via `var(--token-name)`.
+
+```css
+:root {
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-accent: #14b8a6;
+  --color-accent-soft: #a7f3d0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-4: 1rem;
+  --radius-md: 0.5rem;
+}
+```
+
+## CSS-002 — No hardcoded product colours outside tokens
+
+```css
+/* BAD */
+.button { background: #14b8a6; }
+
+/* GOOD */
+.button { background: var(--color-accent); }
+```
+
+The only acceptable hex/RGB literals in CSS are inside the token
+definitions themselves. Anywhere else is a violation.
+
+## CSS-003 — Name classes by component purpose
+
+| Acceptable | Not acceptable |
+|---|---|
+| `.policy-card` | `.big-blue-box` |
+| `.workflow-run-list` | `.left-thing` |
+| `.evidence-panel` | `.new-style` |
+| `.repo-status-badge` | `.thing-2` |
+
+Visual-only names (`.red`, `.large`, `.bold`) are forbidden. They tie
+markup to current visual style and break the moment the design changes.
+
+## CSS-004 — Avoid deep selector chains
+
+Selectors SHOULD NOT exceed three levels.
+
+```css
+/* BAD */
+.main .content .panel .body .row button span {}
+
+/* GOOD */
+.policy-card__action {}
+```
+
+Deep chains are a smell that the markup needs better named hooks (see
+CSS-003) or that the rule is over-coupled to DOM structure.
+
+## CSS-005 — Use reusable layout utilities
+
+Common layout patterns SHOULD be expressed as named utilities, not
+re-coded per component.
+
+Recommended utilities to factor out:
+
+- `.stack` — vertical rhythm with consistent gap
+- `.cluster` — horizontal flex with wrap and gap
+- `.grid` — CSS grid with sensible defaults
+- `.sidebar-layout` — main/aside split that collapses responsively
+- `.page-shell` — top-level page chrome
+
+## CSS-006 — Responsive layout required
+
+New pages MUST be usable at:
+
+- 390px width (mobile) unless explicitly desktop-only
+- 1280px (laptop)
+- large desktop monitor widths (1920px+)
+
+Document any "desktop-only" exception in the page's PR description.
+
+## CSS-007 — Visible focus states required
+
+Interactive elements MUST define a visible `:focus-visible` style.
+
+```css
+.button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+```
+
+## CSS-008 — Do not hide focus without replacement
+
+```css
+/* BAD — hides focus globally with no replacement */
+*:focus { outline: none; }
+```
+
+Focus suppression is allowed only when paired with an equivalent visible
+focus indicator on the same selector. Reject any rule that removes
+focus styling without compensation.
+
+## Agent behaviour
+
+When writing or reviewing CSS:
+1. Grep for hex/RGB/HSL literals outside the tokens file — each is a
+   CSS-002 violation.
+2. Count selector depth on any new rule; >3 levels gets refactored.
+3. Verify every interactive element class has a `:focus-visible` partner.
+4. Check for `outline: 0`, `outline: none`, `:focus { outline:` —
+   reject unless replaced.
