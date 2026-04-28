@@ -1,0 +1,162 @@
+---
+dewey: "250"
+description: Browser JavaScript — sparse use, no global state, ES modules, no inline handlers, safe DOM
+globs:
+  - "**/*.js"
+  - "**/*.mjs"
+---
+# JavaScript (browser) standards
+
+JavaScript in any miniforge web surface is a *progressive enhancement*
+tool, not an application-architecture substrate. Stateful product UI
+belongs in Fulcro (`frameworks/fulcro.mdc`), not in JS modules.
+
+## JS-001 — Use JavaScript sparingly
+
+Plain JavaScript is for progressive enhancement or isolated widgets only.
+
+| Acceptable | Not acceptable |
+|---|---|
+| menu toggles | application state machines |
+| copy-to-clipboard | multi-entity editing flows |
+| small form enhancement | client routing |
+| simple websocket event display | normalised data caches |
+| local filtering / sorting | optimistic UI for remote ops |
+
+Anything in the not-acceptable column belongs in Fulcro.
+
+## JS-002 — No global application state
+
+Application state MUST NOT live on `window` or unstructured globals.
+
+```js
+// BAD
+window.currentWorkflow = workflow;
+window.userState = state;
+
+// GOOD — module-local, scoped, explicit
+const moduleState = { selected: null };
+export function setSelected(x) { moduleState.selected = x; }
+```
+
+Acceptable:
+- module-local state inside an ES module
+- isolated per-widget state captured in a closure or class instance
+- explicit named state objects scoped to one module
+
+## JS-003 — Use ES modules
+
+New JavaScript MUST be authored as ES modules and loaded with
+`<script type="module">`.
+
+```html
+<script type="module" src="/assets/app.js"></script>
+```
+
+No `var`, no IIFE wrappers, no UMD bundles for new code.
+
+## JS-004 — No inline event handlers
+
+HTML MUST NOT use `onclick=`, `onchange=`, etc. Bind in JS using
+`addEventListener` against a `data-action` selector.
+
+```html
+<!-- BAD -->
+<button onclick="deleteRepo()">Delete</button>
+
+<!-- GOOD -->
+<button data-action="delete-repo">Delete</button>
+```
+
+```js
+document
+  .querySelector('[data-action="delete-repo"]')
+  .addEventListener('click', onDeleteRepo);
+```
+
+## JS-005 — Bind behaviour with `data-*`, not visual classes
+
+Behavioural selectors MUST use semantic `data-*` attributes. JS MUST NOT
+select on visual class names — those are CSS's contract, not JS's.
+
+```js
+// BAD
+document.querySelector('.blue-button');
+
+// GOOD
+document.querySelector('[data-action="copy-token"]');
+```
+
+## JS-006 — Async operations need visible states
+
+Any browser-triggered network operation MUST surface four states to the
+user: **idle, pending, success, failure**.
+
+Failures MUST be visible (not silently swallowed, not console-only). The
+visual treatment for each state SHOULD be consistent across the surface
+(e.g. a `data-state` attribute the CSS keys off of).
+
+## JS-007 — Guard destructive actions
+
+Destructive actions MUST require confirmation, undo, or typed
+confirmation, scaled to blast radius:
+
+| Blast radius | Guard |
+|---|---|
+| local UI dismiss | none |
+| revoke a session | confirm dialog |
+| cancel a workflow run | confirm dialog |
+| delete a policy pack | typed-name confirmation |
+| revoke a credential | typed-name confirmation + audit notice |
+| approve a destructive infra change | typed confirmation + blast-radius preview |
+
+See `frameworks/browser-security.mdc` BSEC-004 for the
+blast-radius-preview requirement.
+
+## JS-008 — Do not inject untrusted HTML
+
+JS MUST NOT assign server-sourced or user-sourced content to the
+`innerHTML`, `outerHTML`, or `insertAdjacentHTML` sinks. These are
+unconditional XSS surfaces.
+
+For text content, use the `textContent` property:
+
+```js
+// GOOD
+el.textContent = response.message;
+```
+
+For structured markup, build the tree explicitly with
+`document.createElement` + `appendChild`, or use a `<template>` element
+with text-only insertion points.
+
+### Sanitiser escape hatch
+
+If a sanitizer is genuinely required (e.g. rendering trusted Markdown
+to HTML), the use MUST satisfy ALL of:
+
+1. Sanitization goes through a single vetted library (DOMPurify or
+   equivalent) with a default-deny configuration.
+2. The sanitizer call lives in ONE boundary module per repo, named
+   `safe-html` or similar; no other module touches `innerHTML`.
+3. The boundary module exports only `setSanitisedHTML(el, source)` —
+   no raw `innerHTML` setter is exposed.
+4. The boundary module's allow-list (tags, attributes, URL schemes) is
+   reviewed in the PR that introduces it and in any PR that widens it.
+
+Reject any PR that introduces a write to `innerHTML` *outside* the
+boundary module, or that widens the boundary module's allow-list
+without explicit reviewer sign-off.
+
+## Agent behaviour
+
+When writing or reviewing browser JS:
+1. If the change introduces durable client state, multi-entity editing,
+   or workflow state → escalate to Fulcro per `frameworks/web-architecture-mode.mdc`
+   WEB-002.
+2. Grep for `window.<name> =` and `onclick=` / `on*=` in HTML and JS;
+   each is a violation of JS-002 / JS-004.
+3. Grep for the `innerHTML` sink — every hit needs justification or
+   rewrite to `textContent` per JS-008.
+4. Reject any new module that reaches into another module's state via
+   globals.

@@ -31,8 +31,16 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Write Python code | `languages/python` |
 | Write Rust code | `languages/rust` |
 | Write Swift code | `languages/swift` |
+| Write browser JavaScript | `languages/javascript` |
+| Write CSS | `languages/css` |
+| Write HTML | `languages/html` |
 | Work with Polylith | `frameworks/polylith` |
 | Work with Kubernetes | `frameworks/kubernetes` |
+| Pick a web architecture mode | `frameworks/web-architecture-mode` |
+| Decide an API's surface class | `frameworks/api-surface-classes` |
+| Browser security checklist | `frameworks/browser-security` |
+| Build a Fulcro UI | `frameworks/fulcro` |
+| Use Fulcro RAD | `frameworks/fulcro-rad` |
 | Create a branch | `workflows/git-branch-management` |
 | **Commit code** | **`workflows/pre-commit-discipline`** (CRITICAL) |
 | Use git worktrees | `workflows/git-worktrees` |
@@ -62,11 +70,19 @@ languages/
   python.mdc                  dewey: "220"
   rust.mdc                    dewey: "230"
   swift.mdc                   dewey: "240"
+  javascript.mdc              dewey: "250"
+  css.mdc                     dewey: "260"
+  html.mdc                    dewey: "270"
 frameworks/
-  polylith.mdc                dewey: "300"
+  polylith.mdc                dewey: "310"
   polylith-composition.mdc    dewey: "311"
   polylith-tool.mdc           dewey: "312"
   kubernetes.mdc              dewey: "320"
+  web-architecture-mode.mdc   dewey: "330"
+  browser-security.mdc        dewey: "331"
+  api-surface-classes.mdc     dewey: "332"
+  fulcro.mdc                  dewey: "340"
+  fulcro-rad.mdc              dewey: "341"
 testing/
   standards.mdc               dewey: "400"
 workflows/
@@ -100,11 +116,19 @@ meta/
   220      Python
   230      Rust (error handling, rule tables, context structs, linting)
   240      Swift (stratified views, access control, optionals, closures)
+  250      JavaScript (browser; sparse use, no globals, ES modules, safe DOM)
+  260      CSS (design tokens, semantic class names, shallow selectors, focus)
+  270      HTML (semantic elements, buttons-vs-links, labelled forms)
 300-399  Frameworks      Polylith, K8s, web frameworks, databases
-  300      Polylith
+  310      Polylith
   311      Polylith Composition (bricks/bases/interfaces, validation gates, CI scope)
   312      Polylith Tool (preflight reasoning, canonical workflow, agent-role operational reqs)
   320      Kubernetes
+  330      Web Architecture Mode (Fulcro for stateful UI, server HTML for simple pages)
+  331      Browser Security (server-enforced authz, CSRF, no secrets, blast-radius UI)
+  332      API Surface Classes (internal vs first-party cross-language vs customer extension)
+  340      Fulcro (queries, idents, normalisation, mutations, loads, domain naming)
+  341      Fulcro RAD (optional, for CRUD; never forced onto bespoke workflow UI)
 400-499  Testing         Unit, integration, E2E, code review
   400      Testing Standards (factory fns, same quality as prod)
 500-599  Operations      CI/CD, monitoring, security

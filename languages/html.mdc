@@ -1,0 +1,92 @@
+---
+dewey: "270"
+description: HTML — semantic elements, buttons-vs-links, labelled forms, tables for tabular data
+globs:
+  - "**/*.html"
+  - "**/*.htm"
+---
+# HTML standards
+
+HTML in any miniforge web surface MUST favour semantic elements,
+labelled controls, and meaningful structure. Generic `<div>` is the
+fallback, not the default.
+
+## HTML-001 — Semantic HTML first
+
+Use semantic elements before generic `<div>`.
+
+| Use | For |
+|---|---|
+| `<main>` | the primary page content |
+| `<section>` | thematically grouped content with a heading |
+| `<nav>` | navigation block |
+| `<article>` | self-contained item (audit entry, log line, etc.) |
+| `<button>` | actions |
+| `<form>` | form submission |
+| `<label>` | input labels |
+| `<table>` | tabular data (see HTML-004) |
+
+`<div>` is the fallback when none of the above expresses intent.
+
+## HTML-002 — Buttons are actions, links are navigation
+
+| Element | Purpose | Triggers |
+|---|---|---|
+| `<button>` | perform an action | mutations, dialogs, toggles |
+| `<a href="…">` | navigate | route changes, external URLs |
+
+```html
+<!-- BAD — anchor used for an action -->
+<a href="#" onclick="cancelRun()">Cancel</a>
+
+<!-- GOOD -->
+<button data-action="cancel-run">Cancel</button>
+```
+
+A "button styled as a link" or "link styled as a button" stays the
+correct element for its semantic purpose; styling does not change the
+choice.
+
+## HTML-003 — Forms must be labelled
+
+Every input MUST have either an explicit `<label for="…">` association
+or an `aria-label` / `aria-labelledby` accessible name.
+
+```html
+<!-- GOOD — explicit label -->
+<label for="repo-name">Repository name</label>
+<input id="repo-name" name="repo-name" />
+
+<!-- ALSO GOOD — accessible name on icon button -->
+<button aria-label="Close dialog" data-action="close-dialog">×</button>
+```
+
+Placeholder text is NOT a label. Reject any input where the only naming
+mechanism is `placeholder=`.
+
+## HTML-004 — Tables are valid for tabular operational data
+
+Tables SHOULD be used for naturally tabular data. Operator surfaces in
+miniforge products have a lot of this:
+
+- workflow runs
+- policy checks
+- audit events
+- evidence rows
+- repository lists
+
+Use `<table>` + `<thead>`/`<tbody>` + `<th scope="col">` for these.
+Resist the urge to render tabular data as nested flexboxes — it loses
+keyboard navigation, screen-reader semantics, and column alignment.
+
+## Agent behaviour
+
+When writing or reviewing HTML:
+1. Grep for `<div onclick=`, `<a href="#"`, `<a href="javascript:`,
+   anchor-as-button patterns — each is an HTML-002 violation (and
+   typically a JS-004 violation).
+2. Every `<input>` / `<select>` / `<textarea>` needs a labelled name.
+3. Tabular data rendered as nested flex containers gets refactored to
+   `<table>`.
+4. `<div>` count per page is a soft signal — high counts often hide
+   missing semantics.

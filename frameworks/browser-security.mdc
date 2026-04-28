@@ -1,0 +1,93 @@
+---
+dewey: "331"
+description: Browser security — server-enforced authz, CSRF, no secrets in browser, blast-radius UI for destructive ops
+globs:
+  - "**/*.html"
+  - "**/*.js"
+  - "**/*.cljs"
+  - "**/*.cljc"
+---
+# Browser security standards
+
+Four invariants for any browser-facing surface in a miniforge product.
+These are *blocker* severity — a violation MUST NOT merge.
+
+## BSEC-001 — Server enforces authorization
+
+Client-side visibility MUST NOT be treated as authorization. Hiding a
+button does NOT prevent the underlying action; the server MUST refuse
+unauthorized requests independent of any UI gating.
+
+```
+BAD:  "Only show the Delete Repo button to admins."
+GOOD: "Only show the Delete Repo button to admins, AND have the server
+       refuse DELETE /repos/<id> from non-admin sessions."
+```
+
+If the server-side check is missing, the UI gate is decorative and the
+endpoint is exploitable. Reject any PR adding privileged UI without the
+matching server check.
+
+## BSEC-002 — CSRF protection required
+
+State-changing browser requests MUST include CSRF protection unless the
+authentication mechanism makes CSRF structurally impossible (e.g.
+Authorization header with a token NOT auto-attached by the browser).
+
+Cookie-based sessions MUST use one of:
+- synchronizer token pattern (CSRF token in form / header, validated
+  server-side)
+- double-submit cookie pattern
+- `SameSite=Strict` or `SameSite=Lax` on the session cookie *plus* a
+  documented threat-model note
+
+GET requests MUST NOT change server state (this is also CSRF-relevant —
+forged GETs from `<img src>` don't carry CSRF tokens).
+
+## BSEC-003 — No secrets in browser code
+
+Browser-shipped code (JS bundles, HTML, inline scripts, source maps)
+MUST NOT contain:
+
+- API secrets or service tokens
+- private keys (signing, encryption, JWT, etc.)
+- internal credentials of any kind
+- internal hostnames / IPs that aren't intended to be public
+- vendor API keys that aren't designed for browser exposure
+
+Browser-safe identifiers (publishable Stripe keys, public OAuth client
+IDs, analytics property IDs) are fine but SHOULD be pulled from
+configuration, not hard-coded.
+
+If a secret leaks in browser code, treat as a security incident: rotate
+the secret first, then fix the code.
+
+## BSEC-004 — Destructive operations need blast-radius UI
+
+High-risk actions MUST show the affected resources before execution.
+The user must see *what* they are about to break, not just *that* they
+are about to break something.
+
+| Action | Blast-radius preview |
+|---|---|
+| delete a repository integration | repos affected, workflows that depend on it |
+| revoke a credential | services that use it, last-used timestamp |
+| cancel running workflows | which runs, which agents, current step |
+| deactivate a policy pack | rules disabled, repos newly out of compliance |
+| change an environment | apps deployed there, current versions |
+
+Pair this with JS-007 (typed confirmation for high blast radius) and
+FUL-023 (Fulcro mutations for destructive remote effects require prior
+UI confirmation).
+
+## Agent behaviour
+
+When writing or reviewing browser code:
+1. For every privileged UI gate, locate the matching server-side check.
+   No match → blocker.
+2. For every state-changing request, verify CSRF posture (header,
+   token, or SameSite documented).
+3. Grep the browser bundle for `key`, `secret`, `token`, `password`,
+   `credential` — investigate every hit.
+4. For every destructive action, confirm the UI shows blast-radius
+   *before* the confirmation prompt, not after.

@@ -1,0 +1,141 @@
+---
+dewey: "332"
+description: API surface classes — internal (EDN/Transit), first-party cross-language (JSON/SSE/GraphQL), customer extension (REST/webhooks)
+globs:
+  - "**/*.clj"
+  - "**/*.cljc"
+  - "**/*.cljs"
+  - "**/*.rs"
+  - "**/*.py"
+  - "**/*.ts"
+  - "**/*.js"
+---
+# API surface classes
+
+Every API in a miniforge product is one of three classes. The class
+determines the wire format, the contract stability expectations, and
+the authentication / versioning posture. Mixing classes — or evolving
+an internal contract as if it were a public one — creates lock-in
+and customer-visible churn.
+
+The architectural rule: **canonical domain model and external wire
+formats are not the same thing.** EDN is the semantic centre. Adapters
+project EDN out to JSON, GraphQL, webhooks, exports.
+
+## The three classes
+
+| Class | Audience | Wire | Stability | Authentication |
+|---|---|---|---|---|
+| **1. Internal domain boundary** | same product, same team, same language | EDN, Transit, EQL | refactor freely | trusted-process |
+| **2. First-party cross-language boundary** | own clients in other languages (native apps, Rust services, browser non-Fulcro consumers) | JSON-REST, SSE / WebSocket, possibly GraphQL | versioned, deprecation policy | session / OAuth / API key |
+| **3. Customer extension boundary** | third-party integrators, customer scripts, partner systems | REST/JSON, webhooks, signed callbacks, import / export formats, optional GraphQL | long-lived compatibility | API key / OAuth / signed requests |
+
+## API-001 — Choose the class explicitly
+
+Every new API surface MUST declare its class in the namespace docstring
+(Clojure) or module-level comment (Rust/Python/etc.) and in the PR
+description. Implicit class assignment hides design decisions.
+
+```clojure
+(ns example.fleet-server.recommendations
+  "API surface class 2 (first-party cross-language).
+   Wire: flat JSON over HTTP. Stable; versioned in the URL path.
+   Consumers: fleet-dashboard, native operator apps, customer SREs.")
+```
+
+## API-002 — EDN is the canonical internal shape
+
+Class-1 surfaces use EDN (or Transit for over-the-wire CLJ↔CLJ) as
+their data shape. Domain events, internal commands and results, rule
+sources, fixtures, tests, and resolver inputs / outputs SHOULD be EDN.
+
+This earns its keep when:
+
+- Clojure components compose without a JSON boundary in the middle
+- rules / policies compile to EDN data the runtime evaluates directly
+- fixtures and snapshots are diffable and human-readable
+- Fulcro / Pathom can consume the model without translation
+
+## API-003 — JSON for cross-language clients
+
+Class-2 surfaces MUST be JSON-flat, REST-shaped (or SSE / WebSocket for
+streams). They MUST NOT require knowledge of EDN, EQL, Transit, or
+Fulcro to consume.
+
+```
+GOOD:  GET /recommendations → {"recommendations": [{"kind":"pause", ...}]}
+BAD:   GET /recommendations → "[#:recommendation{:kind :pause ...}]"
+```
+
+The internal model may be richer (namespaced keys, EDN sets) but the
+projection at the class-2 boundary MUST translate to plain JSON
+(stringified keys, arrays for sets, ISO-8601 strings for instants).
+
+GraphQL is allowed at class 2 only when the client genuinely needs
+selective deep graph traversal that REST + a few endpoints can't
+express simply. Default to REST + SSE.
+
+## API-004 — Customer surfaces are intentionally narrow
+
+Class-3 surfaces MUST be:
+
+- documented separately from internal surfaces
+- versioned with a long-lived compatibility window (announced
+  deprecation periods, semver-style breaking-change policy)
+- minimal in surface area — every endpoint is a permanent commitment
+- delivered with reference SDKs or example code where possible
+
+Webhooks MUST be signed (HMAC or equivalent). Import / export formats
+MUST be text-based and stable (JSON, CSV, EDN) rather than internal
+binary formats.
+
+Class-3 endpoints MUST NOT leak class-1 shapes (no Transit-encoded
+EDN, no `:namespaced/keywords` over the wire as keys).
+
+## API-005 — Do not promote without intent
+
+Promoting an internal (class-1) surface to a customer (class-3)
+surface MUST be an explicit decision in an ADR. It is one-way: once a
+customer depends on a shape, you cannot quietly change it.
+
+A common failure mode: a private REST endpoint added "just for the
+internal dashboard" gets discovered by a customer's script, becomes
+load-bearing, and traps the team into supporting an unintended
+contract. Mitigate by:
+
+- documenting class-1 endpoints as internal in their docstring
+- requiring authenticated access for everything (no anonymous endpoints
+  except explicitly public ones like `/health`)
+- rate-limiting or path-prefixing internal endpoints (e.g. `/_internal/`)
+  so accidental adoption is visible and cheap to break
+
+## API-006 — Boundary patterns to recognise
+
+Patterns that recur across miniforge products. Use these to classify
+surfaces in your own repo:
+
+- **OSS event envelope on the wire** (`{"type":"event","event_type":...}`)
+  — class 2. Stable JSON-flat shape, intended for any consumer in any
+  language.
+- **Server REST** (`GET /<resource>`, `POST /<resource>/<id>/<action>`)
+  consumed by both first-party UIs and customer-side scripts — class 2.
+  Flat JSON, versioned, no namespaced keys on the wire.
+- **Fulcro internal Pathom / Transit surface** between a Fulcro UI and
+  its server — class 1. May use EQL, may use Transit, MUST NOT
+  replace the class-2 REST surface that other clients consume.
+- **In-process Clojure dependency** between two products in the same
+  workspace — class 1. Namespaces, protocols, EDN commands. No HTTP.
+- **Webhook / signed callback** delivered to customer-controlled
+  endpoints — class 3. Long-lived shape, signed payload, versioned.
+
+## Agent behaviour
+
+When designing or reviewing an API:
+1. State the class in the namespace docstring before writing handlers.
+2. If a class-2 endpoint emits a Transit-encoded blob, namespaced
+   keyword key, or EDN set, project it to JSON-flat shape.
+3. If a class-1 surface is being consumed by a class-2 client (e.g.
+   the native app reaches into a Pathom resolver directly), stop and
+   add a class-2 adapter.
+4. New customer-facing endpoints (class 3) require an ADR and a
+   versioning plan — no exceptions.
