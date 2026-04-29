@@ -31,7 +31,7 @@ Data-first errors fold into the same response-chain / evidence-bundle machinery 
 
 ## Anomaly shape
 
-The canonical anomaly map (defined in miniforge OSS — `ai.miniforge.anomaly`):
+The canonical anomaly map. The shared implementation is the `ai.miniforge.anomaly` component in miniforge OSS (Apache 2); when miniforge is unavailable, repos may use a local helper that produces the same shape.
 
 ```clojure
 {:anomaly/type    :keyword     ;; one of the standard types below
@@ -42,7 +42,7 @@ The canonical anomaly map (defined in miniforge OSS — `ai.miniforge.anomaly`):
 
 Standard type vocabulary (mirrors cognitect anomalies):
 
-```
+```clojure
 #{:not-found
   :invalid-input
   :unauthorized
@@ -159,7 +159,9 @@ When writing or reviewing component code:
 - "Throwing for control flow" — using `throw`/`try` to exit a deep loop or short-circuit a computation. Use proper return paths.
 - Catching `Throwable` deep inside business logic — only boundary helpers should catch, and they catch deliberately
 
-## Linter design (implementation lives in miniforge OSS `bb review`)
+## Linter design
+
+This rule prescribes the linter shape; the implementation will land in miniforge OSS `bb review` once the canonical anomaly component is in place. The design:
 
 Scan `components/*/src/**/*.clj` and `bases/*/src/**/*.clj`. For each `(throw ...)`, `(ex-info ...)`, `IllegalArgumentException.`, `RuntimeException.`, `(throw+ ...)` (slingshot):
 
@@ -168,9 +170,7 @@ Scan `components/*/src/**/*.clj` and `bases/*/src/**/*.clj`. For each `(throw ..
 3. If the form is inside a `case`/`condp` default branch and the message contains "unknown" or "unsupported" → flag as `:fatal-only` (warning-only, can be dismissed).
 4. Otherwise → emit a `:warning` with file:line:col, the offending form, and the suggested anomaly-return rewrite (link to the example in this rule).
 
-Output format follows the existing `bb review` convention. Severity defaults to `:warning` (not `:error`) — there are legitimate exceptions; we want to surface, not hard-block. Promote to `:error` per-repo only after the inventory cleanup completes.
-
-**Implementation status (2026-04-27):** Linter rule code lives in miniforge OSS, gated on the canonical `ai.miniforge.anomaly` component landing first. See `work/exception-cleanup-inventory.md` in miniforge for the cleanup backlog (158 cleanup-needed sites identified at audit time).
+Output format follows the existing `bb review` convention. Severity defaults to `:warning`, not `:error` — there are legitimate exceptions; we want to surface, not hard-block. Promotion to `:error` happens per-repo after that repo's cleanup completes.
 
 ## Related rules
 
@@ -180,4 +180,6 @@ Output format follows the existing `bb review` convention. Severity defaults to 
 
 ## Reference component
 
-`ai.miniforge.anomaly` (miniforge OSS, Apache 2). Public API: `anomaly`, `anomaly?`, `Anomaly` (malli schema), `anomaly-types` (set). Consumed by all miniforge-family Clojure repos via vendoring.
+The canonical implementation of the anomaly shape and constructor lives in miniforge OSS as the `ai.miniforge.anomaly` Polylith component (Apache 2). It exposes `anomaly`, `anomaly?`, the `Anomaly` malli schema, and the `anomaly-types` set. miniforge-family Clojure repos consume it via the existing vendoring relationship with miniforge.
+
+Repos that do not vendor miniforge may implement the same shape locally; the rule applies regardless of where the constructor lives, because the rule is about the discipline (return data, don't throw) rather than the specific namespace.
