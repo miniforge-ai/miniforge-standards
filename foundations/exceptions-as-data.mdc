@@ -1,0 +1,185 @@
+---
+dewey: "005"
+description: Exceptions are data — return anomalies in normal flows; throw only at absolute boundaries
+alwaysApply: true
+---
+
+# Exceptions Are Data, Not Control Flow (ALWAYS)
+
+Operations that can fail return an **anomaly** as data, not a thrown exception. Exceptions are caught only at absolute process boundaries (HTTP/CLI/MCP/message-consumer entry points) and *converted* into anomaly-shaped data that participates in the composable flow.
+
+Companion rule to result-handling (003) and validation-boundaries (004). Result-handling defines the result-map shape and predicates. Validation-boundaries defines *where* validation occurs. This rule defines *how errors propagate* — as data, not stack-unwinding.
+
+## The rule
+
+In a non-boundary namespace, `throw` is a code smell. Two narrow exemptions:
+
+1. **Absolute process boundaries** — see "Boundary namespace patterns" below.
+2. **Programmer-error guards** — `IllegalArgumentException` for an exhaustive case match, assertions on impossible-by-construction conditions inside pure helpers.
+
+Everywhere else: return an anomaly.
+
+## Why
+
+Composable AI/agent pipelines need to carry error context alongside successful output. Three problems with exceptions as the default failure path:
+
+- **They lose data.** The stack unwinds past the structured information you wanted to return. Whatever the failing function knew about the failure is gone unless it stuffs it into `ex-info` data, and even then it travels via a side channel rather than the normal return path.
+- **They break parallel composition.** A throw in one branch of a parallel fan-out poisons the whole computation. Anomalies returned as data let the orchestrator inspect each result.
+- **They don't carry provenance.** A response-chain accumulates per-operation anomalies in order, with each step's `:operation` keyword. A thrown exception gives you a stack trace and nothing about what came before it.
+
+Data-first errors fold into the same response-chain / evidence-bundle machinery that carries success. That is the difference between "a RAG toy" and "a consumer product that can answer 'why?'."
+
+## Anomaly shape
+
+The canonical anomaly map. The shared implementation is the `ai.miniforge.anomaly` component in miniforge OSS (Apache 2); when miniforge is unavailable, repos may use a local helper that produces the same shape.
+
+```clojure
+{:anomaly/type    :keyword     ;; one of the standard types below
+ :anomaly/message "string"     ;; human-readable
+ :anomaly/data    {...}        ;; structured context
+ :anomaly/at      #inst "..."} ;; instant of construction
+```
+
+Standard type vocabulary (mirrors cognitect anomalies):
+
+```clojure
+#{:not-found
+  :invalid-input
+  :unauthorized
+  :fault
+  :unavailable
+  :conflict
+  :timeout
+  :unsupported
+  :fatal}
+```
+
+Construct via `(anomaly/anomaly type message data)`. Test via `(anomaly/anomaly? x)`. Validate via the exported `Anomaly` malli schema.
+
+## Boundary namespace patterns
+
+`throw` and `ex-info` are appropriate in these namespace shapes:
+
+| Pattern | Examples | Why |
+|---------|----------|-----|
+| `*.cli.*` / `*-main` | `bases/cli/...`, `*-main` namespaces | Top-level CLI entry; throw produces a clean exit status |
+| `*.boundary.*` | `ai.miniforge.boundary.*` | Designated exception → anomaly converter component |
+| `*.http.*` / `*.web.*` | HTTP request handlers | The HTTP machinery expects exceptions to render error responses |
+| `*.mcp.*` | MCP tool entry | MCP protocol surfaces errors as throws |
+| `*.consumer.*` / `*.listener.*` | Message-consumer entry points | The consumer framework converts throws to retries / DLQ |
+| Fns named `execute-with-exception-handling` (or similar) | Anywhere | Designated catch-and-convert helpers |
+
+Anything *outside* those patterns should return anomalies.
+
+## Examples
+
+### Violation — throwing inside non-boundary code
+
+```clojure
+;; BAD — components/widget/src/ai/miniforge/widget/core.clj
+(defn fetch-widget
+  [store id]
+  (or (get-widget store id)
+      (throw (ex-info "Widget not found" {:id id}))))
+```
+
+Three problems: caller has to wrap every call in try/catch; the anomaly's `:type` and `:data` are buried in `ex-data`; parallel `(map fetch-widget …)` fan-outs break on the first miss.
+
+### Correction — return an anomaly
+
+```clojure
+;; GOOD — components/widget/src/ai/miniforge/widget/core.clj
+(ns ai.miniforge.widget.core
+  (:require [ai.miniforge.anomaly.interface :as anomaly]))
+
+(defn fetch-widget
+  [store id]
+  (if-let [w (get-widget store id)]
+    w
+    (anomaly/anomaly :not-found
+                     "Widget not found"
+                     {:id id})))
+```
+
+Caller inspects with `anomaly/anomaly?`; parallel calls collect both successes and failures cleanly.
+
+### Acceptable — boundary catches and converts
+
+```clojure
+;; GOOD — bases/cli/src/ai/miniforge/cli/main.clj
+(ns ai.miniforge.cli.main
+  (:require [ai.miniforge.boundary.interface :as boundary]
+            [ai.miniforge.widget.interface :as widget]))
+
+(defn -main
+  [& args]
+  (let [chain (boundary/execute-with-exception-handling
+                :widget-fetch
+                (response-chain/create-chain :widget-cli)
+                :widget/fetch
+                widget/fetch-widget store id)]
+    (if (response-chain/succeeded? chain)
+      (System/exit 0)
+      (do (print-anomaly (response-chain/last-anomaly chain))
+          (System/exit 1)))))
+```
+
+Boundary helper catches throws (from underlying libraries that *do* throw), converts to anomaly steps in the chain, returns the chain as data.
+
+### Acceptable — programmer-error guard
+
+```clojure
+;; GOOD — exhaustive case match on an enum-like value
+(case kind
+  :collection ...
+  :conversation ...
+  :event ...
+  ;; default: unknown kind is a programmer error, not a runtime error
+  (throw (IllegalArgumentException.
+          (str "Unknown kind: " kind))))
+```
+
+This isn't a runtime failure to be recovered from — it's "I added a new variant and forgot to handle it here." Throw is appropriate.
+
+## Agent behavior
+
+When writing or reviewing component code:
+
+1. **Default to anomaly returns.** If a function in a non-boundary namespace can fail, return an anomaly map.
+2. **Reach for `(anomaly/anomaly type message data)`**, not `(throw (ex-info ...))`.
+3. **At boundaries, use `boundary/execute-with-exception-handling`** (or the local equivalent) to wrap calls into libraries that throw. Convert their exceptions into anomaly steps.
+4. **When reviewing PRs**, flag any `throw` or `ex-info` in non-boundary code paths. Suggest the anomaly-return rewrite. Programmer-error guards (exhaustive case matches, impossible-by-construction assertions) get a pass.
+5. **Don't rewrite library code that throws.** That's outside our control. Catch at the boundary.
+
+## Anti-patterns to reject
+
+- `(throw (ex-info "..." {...}))` inside `core.clj` of a Polylith component
+- `try/catch` blocks inside non-boundary code paths used to convert thrown exceptions into return values — instead, fix the called function to return an anomaly directly
+- Mixed signaling: a function that *sometimes* returns `nil`, *sometimes* returns an anomaly, *sometimes* throws — pick one (anomaly)
+- "Throwing for control flow" — using `throw`/`try` to exit a deep loop or short-circuit a computation. Use proper return paths.
+- Catching `Throwable` deep inside business logic — only boundary helpers should catch, and they catch deliberately
+
+## Linter design
+
+This rule prescribes the linter shape; the implementation will land in miniforge OSS `bb review` once the canonical anomaly component is in place. The design:
+
+Scan `components/*/src/**/*.clj` and `bases/*/src/**/*.clj`. For each `(throw ...)`, `(ex-info ...)`, `IllegalArgumentException.`, `RuntimeException.`, `(throw+ ...)` (slingshot):
+
+1. Extract the namespace of the file containing the form.
+2. If the namespace matches one of the **boundary patterns** above → skip.
+3. If the form is inside a `case`/`condp` default branch and the message contains "unknown" or "unsupported" → flag as `:fatal-only` (warning-only, can be dismissed).
+4. Otherwise → emit a `:warning` with file:line:col, the offending form, and the suggested anomaly-return rewrite (link to the example in this rule).
+
+Output format follows the existing `bb review` convention. Severity defaults to `:warning`, not `:error` — there are legitimate exceptions; we want to surface, not hard-block. Promotion to `:error` happens per-repo after that repo's cleanup completes.
+
+## Related rules
+
+- `foundations/result-handling.mdc` (003) — the success/failure result-map shape and predicates
+- `foundations/validation-boundaries.mdc` (004) — *where* validation occurs (interface boundaries + external entry)
+- `foundations/stratified-design.mdc` (001) — layer discipline; this rule's "boundary" concept depends on layer hygiene
+
+## Reference component
+
+The canonical implementation of the anomaly shape and constructor lives in miniforge OSS as the `ai.miniforge.anomaly` Polylith component (Apache 2). It exposes `anomaly`, `anomaly?`, the `Anomaly` malli schema, and the `anomaly-types` set. miniforge-family Clojure repos consume it via the existing vendoring relationship with miniforge.
+
+Repos that do not vendor miniforge may implement the same shape locally; the rule applies regardless of where the constructor lives, because the rule is about the discipline (return data, don't throw) rather than the specific namespace.

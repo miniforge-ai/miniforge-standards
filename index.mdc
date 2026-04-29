@@ -34,6 +34,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   ├── code-quality.mdc                 # dewey: "002"  alwaysApply: true
 │   ├── result-handling.mdc              # dewey: "003"  alwaysApply: true
 │   ├── validation-boundaries.mdc        # dewey: "004"  alwaysApply: true
+│   ├── exceptions-as-data.mdc           # dewey: "005"  alwaysApply: true
 │   ├── simple-made-easy.mdc             # dewey: "010"  alwaysApply: true
 │   ├── specification-standards.mdc      # dewey: "020"
 │   ├── work-spec-authoring.mdc          # dewey: "021"
@@ -81,6 +82,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 002 | `code-quality` | ✓ | Composable pipelines, no nested conditionals, DRY |
 | 003 | `result-handling` | ✓ | success?/failed? predicates; schema constructors |
 | 004 | `validation-boundaries` | ✓ | Schemas at interface/external boundaries only |
+| 005 | `exceptions-as-data` | ✓ | Anomalies as data in flows; throw only at absolute boundaries |
 | 010 | `simple-made-easy` | ✓ | Simplicity over familiarity, uncomplected artifacts |
 | 020 | `specification-standards` |  | Normative specs (N1-N6), spec governance, conformance |
 | 021 | `work-spec-authoring` |  | `work/*.spec.edn` format: priority, theme, normative-refs, testable acceptance criteria |
