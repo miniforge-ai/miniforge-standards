@@ -26,6 +26,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Handle success/failure results | `foundations/result-handling` |
 | Know where to put validation | `foundations/validation-boundaries` |
 | Add user-facing strings | `foundations/localization` |
+| Run tasks in OCI containers | `foundations/runtime-*` (dewey 030–033) |
 | Write tests | `testing/standards` |
 | Write Clojure code | `languages/clojure` |
 | Write Python code | `languages/python` |
@@ -64,6 +65,10 @@ foundations/
   simple-made-easy.mdc        dewey: "010"
   specification-standards.mdc dewey: "020"
   work-spec-authoring.mdc     dewey: "021"
+  runtime-no-host-docker-socket.mdc      dewey: "030"
+  runtime-require-rootless.mdc           dewey: "031"
+  runtime-restrict-host-mounts.mdc       dewey: "032"
+  runtime-require-image-digest-pin.mdc   dewey: "033"
   localization.mdc            dewey: "050"
 languages/
   clojure.mdc                 dewey: "210"
@@ -109,6 +114,10 @@ meta/
   010      Simple Made Easy
   020      Specification Standards
   021      Work-Spec Authoring (priority, theme, testable criteria)
+  030      Runtime: No Host Docker Socket (capsule isolation)
+  031      Runtime: Require Rootless
+  032      Runtime: Restrict Host Mounts
+  033      Runtime: Require Image Digest Pin
   050      Localization (i18n, en-US.edn)
 100-199  Tools           Linters, formatters, build tools
 200-299  Languages       Clojure, Python, JS/TS, Go, Rust, Swift
