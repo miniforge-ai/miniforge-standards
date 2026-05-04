@@ -29,6 +29,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Run tasks in OCI containers | `foundations/runtime-*` (dewey 030–033) |
 | Write tests | `testing/standards` |
 | Write Clojure code | `languages/clojure` |
+| Catch exceptions in Clojure (`try` vs `try+`) | `languages/clojure-exception-handling` |
 | Write Python code | `languages/python` |
 | Write Rust code | `languages/rust` |
 | Write Swift code | `languages/swift` |
@@ -72,6 +73,7 @@ foundations/
   localization.mdc            dewey: "050"
 languages/
   clojure.mdc                 dewey: "210"
+  clojure-exception-handling.mdc  dewey: "211"
   python.mdc                  dewey: "220"
   rust.mdc                    dewey: "230"
   swift.mdc                   dewey: "240"
@@ -122,6 +124,7 @@ meta/
 100-199  Tools           Linters, formatters, build tools
 200-299  Languages       Clojure, Python, JS/TS, Go, Rust, Swift
   210      Clojure (Polylith, stratified files, map access patterns)
+  211      Clojure exception handling (prefer `try+` / `throw+`; `try+` is a strict superset of `try`)
   220      Python
   230      Rust (error handling, rule tables, context structs, linting)
   240      Swift (stratified views, access control, optionals, closures)
