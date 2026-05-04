@@ -1,6 +1,6 @@
 ---
 dewey: "211"
-description: Clojure exception handling — prefer slingshot `try+` / `throw+`; `try` only when slingshot is not on the classpath
+description: Clojure exception handling — prefer slingshot `try+` / `throw+`; plain `try` only in narrow exemptions (no-slingshot-dep leaf catch, leaf inside `try+`, REPL/`(comment …)`)
 alwaysApply: true
 globs:
   - "components/**/src/**/*.clj"
@@ -165,18 +165,11 @@ When picking up legacy code:
 
 ## Agent behavior
 
-When writing or reviewing exception-handling code:
-
-1. Default new catch sites to `try+`. Add the slingshot require if absent.
-2. Reject plain-`try` callsites that pattern-match on `ex-data` to read
-   anomaly categories — that's `try+` cosplaying as `try`.
-3. Reject `try+` callsites whose every catch is class-only AND the component
-   has no other slingshot use — either commit to `try+` consistently, or
-   drop the `+` and the import.
-4. When the throw site uses `throw+` / `throw-anomaly!`, the catch site
-   MUST use `try+`. No exceptions.
-5. Don't mass-migrate. Convergence is opportunistic during normal work and
-   audited after dogfood readiness.
+- Default new catch sites to `try+`; add the slingshot require if absent.
+- If the throw site is `throw+` / `throw-anomaly!`, the catch site MUST be `try+` — never plain `try` digging into `ex-data` for `:anomaly/category`.
+- Reject `try+` whose every catch is class-only AND the component has no other slingshot use — either commit to `try+` across the component or drop the `+`.
+- Plain `try` is allowed only in three narrow cases: (a) component has no slingshot dep and adding one would be solely for this catch; (b) leaf `try` nested inside a `try+` body for try-finally clarity; (c) REPL / `(comment …)` blocks.
+- Don't mass-migrate. Convergence is opportunistic during normal work; full audit deferred to post-dogfood readiness.
 
 ## Examples
 
