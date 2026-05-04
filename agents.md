@@ -25,6 +25,7 @@ as a git submodule at `.standards/` in each repo.
 | Add user-facing strings | `foundations/localization` |
 | Write tests | `testing/standards` |
 | Write Clojure code | `languages/clojure` |
+| Catch exceptions in Clojure (`try` vs `try+`) | `languages/clojure-exception-handling` |
 | Write Python code | `languages/python` |
 | Work with Polylith | `frameworks/polylith` |
 | Work with Kubernetes | `frameworks/kubernetes` |
