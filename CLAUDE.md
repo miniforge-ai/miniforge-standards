@@ -124,7 +124,7 @@ meta/
 100-199  Tools           Linters, formatters, build tools
 200-299  Languages       Clojure, Python, JS/TS, Go, Rust, Swift
   210      Clojure (Polylith, stratified files, map access patterns)
-  211      Clojure exception handling (prefer `try+` / `throw+`; `try+` is a strict superset of `try`)
+  211      Clojure exception handling (prefer `try+` / `throw+`; plain `try` allowed in three narrow cases — no-dep leaf catch, leaf inside try+, REPL)
   220      Python
   230      Rust (error handling, rule tables, context structs, linting)
   240      Swift (stratified views, access control, optionals, closures)
