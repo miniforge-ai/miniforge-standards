@@ -22,7 +22,7 @@ who will see the string:
 | **System locale** | `messages/system.edn` | A user will never see — logs, metric / span descriptions, internal error tags, debug prose, telemetry attributes, exception data shipped to observability pipelines |
 
 Both catalogs live under `resources/config/<component>/messages/`.
-Both are looked up via `(t :key)`. The split is about **destination**,
+Both are looked up via `(msg/t :key)`. The split is about **destination**,
 not about whether to localize.
 
 ## Why two locales (and not one + a "no" exemption)
