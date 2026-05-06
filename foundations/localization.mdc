@@ -67,7 +67,7 @@ for observability pipelines:
 
 ;; GOOD — system-locale lookup
 (otel/counter "fleet.events.share"
-              (msg/t :metric/fleet-events-share-description)
+              (msg/t :metric-desc/fleet-events-share-description)
               "1")
 ```
 
