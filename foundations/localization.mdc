@@ -1,79 +1,199 @@
 ---
 dewey: "050"
-description: Localization — all user-facing strings via i18n resource files, no raw string literals
+description: Localization — every emitted string flows through a catalog; user-facing strings into a user locale (en-US, etc.), developer-facing strings into the system locale
 alwaysApply: true
 ---
 
 # Localization (ALWAYS)
 
-**No raw string literals in views, templates, or user-facing output.** All user-visible text comes from a localization resource file.
+**No raw string literals in emitted output.** Every string a process
+emits — to a UI, an HTTP response, a log line, a metric description,
+an exception payload — flows through a localization catalog.
 
 ## The rule
 
-Every string a user sees — labels, headings, error messages, button text, empty-state copy, units — must be looked up via the i18n system, not written inline.
+Every emitted string lives in a catalog and is looked up by key. Code
+never carries the literal text. There are **two locales**, picked by
+who will see the string:
+
+| Locale | Catalog file | For strings that |
+|---|---|---|
+| **User locale** | `messages/en-US.edn` (plus future `fr-FR.edn`, `ja-JP.edn`, …) | A user will see in a UI, dashboard, formatted error response, or any other product surface |
+| **System locale** | `messages/system.edn` | A user will never see — logs, metric / span descriptions, internal error tags, debug prose, telemetry attributes, exception data shipped to observability pipelines |
+
+Both catalogs live under `resources/config/<component>/messages/`.
+Both are looked up via `(t :key)`. The split is about **destination**,
+not about whether to localize.
+
+## Why two locales (and not one + a "no" exemption)
+
+The previous version of this rule exempted developer-facing strings
+from any catalog. That was wrong for three reasons:
+
+1. **Centralization.** Even developer-facing prose benefits from one
+   place to audit, grep, and edit. A dev tightening a log message
+   shouldn't have to hunt every emit site.
+2. **Sanitization gate.** The catalog is the chokepoint. When a future
+   scanner asks "does any emitted string contain PII / secrets /
+   internal identifiers," the catalog is the surface to check —
+   raw-string-literals scattered through code defeat that.
+3. **Reclassification without code change.** If a string we labeled
+   "developer-facing" turns out to land on a customer console (a
+   support-mode metric panel, a debug dialog), we move the key from
+   `system.edn` to `en-US.edn` without chasing emit sites.
+
+## Examples
+
+User-facing — UI labels, displayed errors, body copy:
 
 ```clojure
-;; BAD — raw string literals in view code
+;; BAD — raw string in view
 [:h3 "No Workflows Yet"]
-[:p "Workflows will appear here when you run a workflow"]
 [:button "Pause"]
-(str "Duration: " duration "ms")
 
-;; GOOD — keys resolved via i18n
+;; GOOD — user-locale lookup
 [:h3 (msg/t :workflow/none-heading)]
-[:p  (msg/t :workflow/none-body)]
 [:button (msg/t :cp/btn-pause)]
-(str (msg/t :metric/duration-prefix) duration (msg/t :duration/ms-suffix))
 ```
 
-## en-US.edn is the canonical source
+Developer-facing — log lines, metric descriptions, anomaly text bound
+for observability pipelines:
 
-The primary resource file is `resources/config/web-dashboard/messages/en-US.edn` (or the equivalent `messages/en-US.edn` for the component). This is the canonical record of every user-visible string. New strings go here first.
+```clojure
+;; BAD — raw string in metric definition
+(otel/counter "fleet.events.share"
+              "Events appended to the durable event log."
+              "1")
+
+;; GOOD — system-locale lookup
+(otel/counter "fleet.events.share"
+              (msg/t :metric/fleet-events-share-description)
+              "1")
+```
+
+```clojure
+;; BAD — raw string in log call
+(log/info "share-event! conflict on" event-id)
+
+;; GOOD — system-locale lookup
+(log/info (msg/t :log/share-event-conflict) {:event/id event-id})
+```
+
+```clojure
+;; BAD — raw string in anomaly message
+(anomaly/anomaly :conflict
+                 "share-event!: event-id reuse with conflicting payload-digest"
+                 {:event/id id})
+
+;; GOOD — system-locale lookup (anomaly text is observability-bound,
+;; not displayed to a user)
+(anomaly/anomaly :conflict
+                 (msg/t :anomaly/event-conflicting-digest)
+                 {:event/id id})
+```
+
+If the same anomaly is also rendered into a user-facing error toast,
+the UI layer looks up the user-locale equivalent (`(t :error/...)`)
+keyed off the anomaly's `:anomaly/type` — never reuses the system
+string.
+
+## Catalog files are the canonical source
 
 ```edn
-;; en-US.edn — add new keys here
-{:web-dashboard/messages
+;; resources/config/<component>/messages/en-US.edn
+{:knowledge-shared/messages
  {:workflow/none-heading "No Workflows Yet"
   :workflow/none-body    "Workflows will appear here when you run a workflow"
-  :workflow/none-hint    "Try running a workflow to see real-time progress tracking."
-  :duration/ms-suffix    "ms"
-  :duration/s-suffix     "s"
-  :duration/min-suffix   "m"}}
+  :duration/ms-suffix    "ms"}}
 ```
+
+```edn
+;; resources/config/<component>/messages/system.edn
+{:knowledge-shared/system
+ {:log/share-event-conflict             "share-event! conflict on event-id"
+  :anomaly/event-conflicting-digest     "share-event!: event-id reuse with conflicting payload-digest"
+  :metric/fleet-events-share-description "Events appended to the durable event log."}}
+```
+
+New strings go into the appropriate catalog FIRST, then are
+referenced by key.
 
 ## Key naming conventions
 
-- Namespace by component/feature: `:workflow/`, `:cp/`, `:metric/`
-- Use domain semantics, not UI position: `:workflow/none-heading` not `:sidebar/empty-title`
-- Suffixes: `-heading`, `-body`, `-hint`, `-label`, `-prefix`, `-suffix`, `-placeholder`
-- Error messages: `:error/<component>-<condition>` (e.g., `:error/agent-not-found`)
+- Namespace by audience + feature:
+  - User locale: `:workflow/`, `:cp/`, `:metric/`, `:error/` (errors
+    rendered to the user)
+  - System locale: `:log/`, `:anomaly/`, `:metric-desc/`, `:debug/`,
+    `:internal-error/`
+- Use domain semantics, not UI position: `:workflow/none-heading` not
+  `:sidebar/empty-title`
+- Suffixes: `-heading`, `-body`, `-hint`, `-label`, `-prefix`,
+  `-suffix`, `-placeholder`
+- The user-locale `:error/<feature>-<condition>` and system-locale
+  `:anomaly/<feature>-<condition>` SHOULD share the trailing pair so
+  callers can map between them: `:error/agent-not-found` ↔
+  `:anomaly/agent-not-found`.
 
-## What requires localization
+## What goes where
 
-| Category | Example | Requires l10n |
-|----------|---------|---------------|
-| UI labels | "Pause", "Submit", "Cancel" | Yes |
-| Headings and body copy | "No agents registered" | Yes |
-| Error messages shown to user | "Agent not found" | Yes |
-| Units and suffixes shown in UI | "ms", "s", " tokens" | Yes |
-| Placeholder / hint text | "Type your response..." | Yes |
-| Log messages (developer-facing) | "Error reading file" | No |
-| Code comments | | No |
-| Test assertions | | No |
-| EDN/config keys | | No |
+| Category | Example | Catalog |
+|----------|---------|---------|
+| UI labels | "Pause", "Submit", "Cancel" | User locale |
+| Headings and body copy | "No agents registered" | User locale |
+| Error messages displayed to user | "Agent not found" | User locale |
+| Units and suffixes shown in UI | "ms", "s", " tokens" | User locale |
+| Placeholder / hint text | "Type your response..." | User locale |
+| Log messages (developer-facing) | "Error reading file" | System locale |
+| Metric / span descriptions (OpenTelemetry, Prometheus, etc.) | "Events appended to the log." | System locale |
+| Anomaly `:anomaly/message` text | "share-event!: id reuse with conflicting digest" | System locale |
+| Internal error tags shipped in `ex-data` / log fields | "eql-processing-failed" | System locale |
+| Code comments | | Not emitted — raw |
+| Test assertions | | Not emitted — raw |
+| EDN / config keys | `:auto-apply/tick-ms` | Not emitted — raw |
+| Source-code identifiers | function / variable names | Not emitted — raw |
+
+The dividing line is **emission**: if the string ends up in a UI, an
+HTTP body, a log file, a metric backend, or any other surface a human
+or downstream system reads — it goes through a catalog. If it's a
+source artifact (comment, identifier, config key, test assertion), it
+stays raw.
 
 ## Agent behavior
 
-When writing or reviewing view/template code:
-1. Every string literal in a view namespace is a violation — replace with `(msg/t :key)`.
-2. When adding a new user-visible string, add the key to `en-US.edn` first, then reference it.
-3. When reviewing a PR, grep for string literals in `views/` or `templates/` namespaces — each is a missing l10n key.
-4. Format strings that combine a label + value use separate keys: `(str (msg/t :label) value)` not `(str "Label: " value)`.
+When writing or reviewing code:
+1. Every string literal in code that gets emitted is a violation —
+   replace with `(msg/t :key)`.
+2. When adding a new emitted string, decide audience first:
+   - Will any user (operator dashboard counts) see it? → user locale
+   - Logs / metric descriptions / observability-bound anomaly text /
+     internal tags? → system locale
+3. Add the key to the matching catalog file FIRST, then reference it.
+4. When reviewing a PR, grep emit sites (`log/`, `t/`, `otel/counter`,
+   `(throw `, `anomaly/anomaly`, view namespaces) for raw strings.
+   Each one is a missing catalog key.
+5. Format strings that combine a label + value use separate keys:
+   `(str (msg/t :label) value)` not `(str "Label: " value)`.
+6. When in doubt about audience, default to **system locale** —
+   relocating to user locale later is a one-line catalog move; the
+   reverse direction usually means a string a user already saw is
+   getting rephrased in a way that reads as a regression.
 
 ## Anti-patterns to reject
 
-- Inline strings in Hiccup: `[:p "Loading..."]` — use `(msg/t :some/loading)`
-- String interpolation with hardcoded copy: `(str "Error: " msg)` — localize the prefix
-- `"—"` as a nil placeholder inline — use `(msg/t :time/none)` or equivalent
-- Format strings with embedded units: `(format "%.1fs" n)` — extract the `s` suffix
-- Duplicate strings across files — one key, referenced in multiple places
+- Inline strings in Hiccup / view code: `[:p "Loading..."]` →
+  user-locale lookup
+- Inline strings in `log/` calls: `(log/info "Error reading file")` →
+  system-locale lookup
+- Inline strings in metric descriptions: `(otel/counter "x" "Counts
+  things." "1")` → system-locale lookup
+- Inline strings in anomaly messages: `(anomaly/anomaly :type "..." {})`
+  → system-locale lookup
+- "Developer-facing strings don't need l10n" — that exemption is
+  removed. Developer-facing strings go to the system locale.
+- Format strings with embedded units: `(format "%.1fs" n)` — extract
+  the `s` suffix to a key
+- Duplicate strings across files — one key, referenced in multiple
+  places
+- The same string text appearing in BOTH catalogs — pick one audience;
+  the other catalog references the canonical key via the system →
+  user mapping the rendering layer owns
