@@ -95,7 +95,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 031 | `runtime-require-rootless` | ✓ | Warn / hard-stop based on the runtime's `:rootless` capability |
 | 032 | `runtime-restrict-host-mounts` | ✓ | Review host bind mounts outside an allowlist |
 | 033 | `runtime-require-image-digest-pin` | ✓ | Reject execution plans whose `:image-digest` is not `sha256:<64-hex>` |
-| 050 | `localization` | ✓ | No raw strings in views; msg/t + en-US.edn always |
+| 050 | `localization` | ✓ | No raw strings in any emitted output; user-facing → en-US.edn, system-facing → system.edn; msg/t lookup always |
 
 ### languages/
 
