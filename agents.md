@@ -115,7 +115,12 @@ The following are the highest-priority, always-on principles:
 - See: `foundations/validation-boundaries`
 
 ### Localization
-- **No raw strings** in views/templates — use `(msg/t :key)` and `en-US.edn`
+- **No raw strings** in any emitted output — views, log calls,
+  metric descriptions, anomaly messages all flow through a catalog
+- User-facing strings → `messages/en-US.edn` (per-component)
+- Developer-facing strings (logs, telemetry, anomaly text bound for
+  observability) → `messages/system.edn` (per-component)
+- Use `(msg/t :key)` regardless of catalog
 - See: `foundations/localization`
 
 ### Testing

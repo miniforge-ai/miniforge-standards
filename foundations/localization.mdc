@@ -67,7 +67,7 @@ for observability pipelines:
 
 ;; GOOD — system-locale lookup
 (otel/counter "fleet.events.share"
-              (msg/t :metric-desc/fleet-events-share-description)
+              (msg/t :metric-desc/fleet-events-share)
               "1")
 ```
 
@@ -94,8 +94,53 @@ for observability pipelines:
 
 If the same anomaly is also rendered into a user-facing error toast,
 the UI layer looks up the user-locale equivalent (`(t :error/...)`)
-keyed off the anomaly's `:anomaly/type` — never reuses the system
-string.
+via the explicit error-key the producer attached — never reuses the
+system string. See "Anomaly → user-locale mapping" below for the
+mechanism.
+
+## Anomaly → user-locale mapping
+
+`:anomaly/type` is a coarse category vocabulary (`:not-found`,
+`:conflict`, `:invalid-input`, etc. — see
+`foundations/exceptions-as-data`). It can't uniquely identify a
+specific user-facing message: the same `:conflict` type covers
+"event-id reuse with conflicting digest", "approval already
+finalised", "schedule overlap", etc. Mapping must use a finer key.
+
+**Producer responsibility.** When an anomaly might surface in a UI,
+the producer attaches an explicit `:user/error-key` keyword to
+`:anomaly/data`:
+
+```clojure
+(anomaly/anomaly :conflict
+                 (msg/t :anomaly/event-conflicting-digest)   ;; system text
+                 {:user/error-key :error/event-conflicting-digest
+                  :event/id id})
+```
+
+**Renderer responsibility.** The UI layer reads
+`:user/error-key` and looks it up:
+
+```clojure
+(if-let [k (get-in anomaly [:anomaly/data :user/error-key])]
+  (msg/t k)
+  ;; No producer-attached key → either this anomaly was never meant
+  ;; for a user surface, or the producer has a gap. Render a
+  ;; generic fallback by :anomaly/type, never the raw system text.
+  (msg/t (default-error-key (:anomaly/type anomaly))))
+```
+
+The shared `<feature>-<condition>` naming convention from "Key
+naming conventions" makes the pairing mechanical: the producer pairs
+`:anomaly/event-conflicting-digest` (system) with
+`:error/event-conflicting-digest` (user) automatically by reading
+its own emit site.
+
+When an anomaly is purely operational (will never reach a UI —
+internal sync failures, telemetry-only conditions), the producer
+omits `:user/error-key`. Callers that DO render to a UI hit the
+fallback path, which surfaces the type-level message rather than
+internal text.
 
 ## Catalog files are the canonical source
 
@@ -110,9 +155,9 @@ string.
 ```edn
 ;; resources/config/<component>/messages/system.edn
 {:knowledge-shared/system
- {:log/share-event-conflict             "share-event! conflict on event-id"
-  :anomaly/event-conflicting-digest     "share-event!: event-id reuse with conflicting payload-digest"
-  :metric/fleet-events-share-description "Events appended to the durable event log."}}
+ {:log/share-event-conflict                  "share-event! conflict on event-id"
+  :anomaly/event-conflicting-digest          "share-event!: event-id reuse with conflicting payload-digest"
+  :metric-desc/fleet-events-share            "Events appended to the durable event log."}}
 ```
 
 New strings go into the appropriate catalog FIRST, then are
@@ -168,9 +213,15 @@ When writing or reviewing code:
    - Logs / metric descriptions / observability-bound anomaly text /
      internal tags? → system locale
 3. Add the key to the matching catalog file FIRST, then reference it.
-4. When reviewing a PR, grep emit sites (`log/`, `t/`, `otel/counter`,
-   `(throw `, `anomaly/anomaly`, view namespaces) for raw strings.
-   Each one is a missing catalog key.
+4. When reviewing a PR, grep emit sites for raw string literals.
+   Each one is a missing catalog key. Patterns to scan:
+   - `(log/(info|warn|error|debug|trace) "` — log calls
+   - `(otel/counter "` / `(otel/histogram "` / `(otel/gauge "` —
+     metric-instrument descriptions (third arg)
+   - `(anomaly/anomaly :[^ ]+ "` — anomaly messages
+   - `(throw (ex-info "` — surviving ex-info text in boundary
+     namespaces (per `foundations/exceptions-as-data`)
+   - `[:p "` / `[:h1 "` / `[:button "` — view namespaces
 5. Format strings that combine a label + value use separate keys:
    `(str (msg/t :label) value)` not `(str "Label: " value)`.
 6. When in doubt about audience, default to **system locale** —
@@ -184,16 +235,28 @@ When writing or reviewing code:
   user-locale lookup
 - Inline strings in `log/` calls: `(log/info "Error reading file")` →
   system-locale lookup
-- Inline strings in metric descriptions: `(otel/counter "x" "Counts
-  things." "1")` → system-locale lookup
-- Inline strings in anomaly messages: `(anomaly/anomaly :type "..." {})`
-  → system-locale lookup
+- Inline strings in metric descriptions:
+
+  ```clojure
+  ;; BAD
+  (otel/counter "x" "Counts things." "1")
+  ;; GOOD
+  (otel/counter "x" (msg/t :metric-desc/x) "1")
+  ```
+
+- Inline strings in anomaly messages:
+  `(anomaly/anomaly :type "..." {})` → system-locale lookup
 - "Developer-facing strings don't need l10n" — that exemption is
   removed. Developer-facing strings go to the system locale.
 - Format strings with embedded units: `(format "%.1fs" n)` — extract
   the `s` suffix to a key
 - Duplicate strings across files — one key, referenced in multiple
   places
-- The same string text appearing in BOTH catalogs — pick one audience;
-  the other catalog references the canonical key via the system →
-  user mapping the rendering layer owns
+- Catalogs referencing each other (EDN aliasing, runtime key chain).
+  Catalogs are flat; each is the canonical source for its locale.
+  When the same condition needs both a system-locale log line AND a
+  user-locale toast, define a key in EACH catalog and let the
+  rendering layer map between them at render time. The shared
+  `<feature>-<condition>` naming convention (see "Anomaly →
+  user-locale mapping") makes the pairing mechanical without making
+  one catalog depend on the other.
