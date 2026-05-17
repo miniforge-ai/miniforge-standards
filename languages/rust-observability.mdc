@@ -135,9 +135,10 @@ subscriber records the duration.
 ## Log-message strings are localized
 
 Per `foundations/localization` (050): every emitted string is localized through the project's
-localization framework, including log messages. Log messages target the **system locale** (en-US,
-no operator override) so engineering tooling — Grafana queries, Loki filters, alert templates —
-keeps working regardless of which operator-facing locale is active.
+localization framework, including log messages. Log messages come from the **system catalog**
+(for example `messages/system.edn`, with no operator override) so engineering tooling — Grafana
+queries, Loki filters, alert templates — keeps working regardless of which operator-facing locale
+is active.
 
 Concretely: a project's `mfc-strings` (or equivalent) crate declares log-message constants under a
 `logs` module; tracing call sites reference the const via the `"{}"` placeholder (`tracing` macros
