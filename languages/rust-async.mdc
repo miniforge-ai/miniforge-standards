@@ -1,0 +1,204 @@
+---
+dewey: "231"
+description: Rust async and concurrency — blocking discipline, locks across .await, cancellation, bounded channels, task lifecycle ownership
+globs:
+  - "**/*.rs"
+  - "**/Cargo.toml"
+---
+
+# Rust async and concurrency
+
+See also: `languages/rust` (230) — base style + idioms. This file covers the specific failure modes
+that arise when a Rust crate spawns tasks, awaits I/O, or shares state across threads.
+
+Apply to: every async function, every `tokio::spawn` / `tokio::select!` call site, every channel,
+every lock, every `Arc<T>` / `Arc<Mutex<T>>`. Service code that handles control-plane semantics
+(agent supervision, phase transitions, PR monitoring, workflow cancellation) is where these rules
+matter most — the bugs are silent, only manifest under load, and tend to cost a debugging weekend.
+
+## Do not block the async runtime
+
+No synchronous file, network, or process I/O inside async code unless wrapped in `spawn_blocking`
+or isolated behind a documented blocking boundary. `std::thread::sleep`, blocking file reads,
+synchronous database drivers, and CPU-bound loops longer than a few hundred microseconds all
+starve the runtime.
+
+```rust
+// Good — file read happens on the blocking pool
+let contents = tokio::task::spawn_blocking(move || std::fs::read_to_string(&path)).await??;
+
+// Good — async-native I/O
+let contents = tokio::fs::read_to_string(&path).await?;
+
+// Bad — blocks the executor thread; under load, parks N tasks behind this one
+let contents = std::fs::read_to_string(&path)?;
+```
+
+CPU-bound work that can't be made async (parsing, compression, cryptography) belongs on
+`spawn_blocking` or `rayon`. Async is for I/O wait, not for compute.
+
+## Do not hold locks across `.await`
+
+A `std::sync::Mutex` guard held across an `.await` deadlocks the moment a second task tries to
+acquire the same lock. `tokio::sync::Mutex` is await-safe but pays an allocation per acquire —
+use it only when the lock guard genuinely needs to survive an await.
+
+```rust
+// Good — snapshot under the lock, release before awaiting
+let snapshot = {
+    let guard = state.lock().expect("poisoned");
+    guard.clone()
+};
+some_async_io(&snapshot).await;
+
+// Bad — std lock held across .await; deadlock-prone, runtime-stalling
+let guard = state.lock().expect("poisoned");
+some_async_io(&*guard).await;
+```
+
+Workspace lints should enable `clippy::await_holding_lock = "deny"` to catch this mechanically.
+
+## Cancellation awareness
+
+`tokio::select!`, dropped futures, and `CancellationToken` can interrupt at any await point. Code
+that uses these MUST be cancellation-aware: it must not lose data, leak state, or deadlock when
+cancellation happens.
+
+A future that's dropped mid-execution may never be polled again. Synchronous `Drop` glue on owned
+locals **does** run (Rust drops the future, which drops owned values in scope); what's skipped is
+any cleanup that needs to be driven by the task itself — `async fn finalize()`, awaits that come
+after the cancellation point, side effects guarded by `defer`-style patterns. Partial side effects
+already committed before the cancellation point don't roll back.
+
+```rust
+// Good — cooperative shutdown via a oneshot signal; async finalize runs on the cooperative path
+let join = tokio::spawn(async move {
+    loop {
+        tokio::select! {
+            _ = &mut shutdown_rx => {
+                finalize().await;       // requires the task to keep being polled
+                break;
+            }
+            tick = next_event() => { handle(tick).await; }
+        }
+    }
+});
+
+// Bad — abort() skips the task's own async cleanup path (e.g. `finalize().await`).
+// Sync `Drop` on owned locals still runs; what's lost is anything that required
+// the task itself to make progress past the cancellation point.
+join.abort();
+```
+
+When you must use `abort()` as a fallback (e.g. cooperative-shutdown timeout), document **what
+async cleanup is skipped** and what's lost as a result. Don't claim "all cleanup runs" — that's
+wrong — or "no cleanup runs" — also wrong. The precise statement is: sync `Drop` runs; async
+finalize doesn't.
+
+## Bounded channels and backpressure
+
+Use bounded channels by default for agent/workflow orchestration. An unbounded queue with no
+backpressure becomes the canonical "we ran out of memory under sustained load" failure mode.
+
+```rust
+// Good — explicit bound; producer experiences backpressure
+let (tx, rx) = tokio::sync::mpsc::channel::<Event>(1024);
+
+// Bad — unbounded; one slow consumer + a fast producer = OOM
+let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<Event>();
+```
+
+Unbounded queues are acceptable only when a documented upper bound exists elsewhere — a per-workflow
+budget, a per-request input size limit, or a process-lifetime bound. State that bound in a comment
+next to the channel construction.
+
+## Spawned task lifecycle ownership
+
+Every `tokio::spawn` produces a `JoinHandle`. That handle has an owner who decides when the task
+ends. The owner is one of:
+
+- **awaited** — the spawning function `.await`s the handle (or stores it in a supervisor that does).
+- **joined by a supervisor** — a long-lived owner holds the handle and joins on graceful shutdown.
+- **cancelled by token or drop** — the handle is held until a `CancellationToken` fires or the
+  owner is dropped.
+- **intentionally detached** — `drop(handle)` with a comment explaining why fire-and-forget is OK
+  (rare; typically reserved for fault-tolerant best-effort I/O like metrics emission).
+
+A spawned task with no documented owner is a bug. It WILL outlive its useful scope, log misleading
+errors after the system has moved on, or hold open a database connection past shutdown.
+
+```rust
+// Good — task has a handle, a timeout, and a documented abort fallback
+let mut handle = tokio::spawn(run_tailer(args));
+match tokio::time::timeout(SHUTDOWN_TIMEOUT, &mut handle).await {
+    Ok(_) => {}
+    Err(_) => handle.abort(),  // documented fallback: cooperative finalize did not complete
+}
+
+// Bad — fire-and-forget, no handle, no termination path
+tokio::spawn(run_tailer(args));
+```
+
+## Shared state ownership
+
+`Arc<T>` means "this value has shared ownership across multiple owners," not "I couldn't satisfy
+the borrow checker." Appropriate uses:
+
+- Shared immutable config or runtime handles.
+- Shared caches with internal interior mutability (`Arc<DashMap<K, V>>`).
+- Task graphs where multiple workers hold the same plan.
+
+`Arc<Mutex<T>>` is the canonical "I've got a concurrency problem I haven't designed for" red flag.
+Before reaching for it, consider:
+
+1. **Message passing** — does the data flow one direction? Use channels.
+2. **Task ownership** — does one task own the state? Pass it in, return updates.
+3. **Immutable snapshots** — does the consumer just need a read view? `Arc<T>` (no Mutex).
+4. **Narrow locks** — if a lock is genuinely needed, scope it to the smallest critical section.
+
+When `Arc<Mutex<T>>` is the right answer, document why in a comment next to the type alias and
+keep the held region tiny.
+
+```rust
+// Good — narrow critical section, clear ownership story
+type SessionRegistry = Arc<Mutex<HashMap<Uuid, SessionState>>>;
+//                          ^-- shared because the supervisor + many task handlers need it
+//                              Mutex because mutation happens from multiple tasks.
+//                              Held only during insert/remove, never across .await.
+
+// Bad — Arc<Mutex<T>> as the default architecture for ordinary data flow
+struct App {
+    config: Arc<Mutex<Config>>,           // config is immutable — drop the Mutex
+    users: Arc<Mutex<Vec<User>>>,         // append-mostly — channel + log structure
+    cache: Arc<Mutex<HashMap<K, V>>>,     // use DashMap if concurrency is real
+}
+```
+
+## Async errors
+
+Errors crossing `.await` boundaries must implement `Send + Sync + 'static` — usually a `Box<dyn
+std::error::Error + Send + Sync>` is the easiest baseline; named error enums via `thiserror` are
+preferred when you control the type.
+
+Do not stringify errors at the await boundary. Preserve the typed error all the way to the
+reporting layer; see `languages/rust-observability` (233) for the source-chain preservation rule.
+
+## What NOT to do
+
+- Do not call blocking I/O from async functions without `spawn_blocking`.
+- Do not hold `std::sync::Mutex`/`std::sync::RwLock` guards across `.await`.
+- Do not spawn tasks without a documented lifecycle owner.
+- Do not use unbounded channels for cross-task or cross-component messaging unless the bound is
+  documented elsewhere.
+- Do not reach for `Arc<Mutex<T>>` as a default architecture; message passing and task ownership
+  cover most cases.
+- Do not assume an aborted task completed its own cleanup — `abort()` drops the future, so owned
+  locals' destructors do run, but cooperative shutdown paths and async cleanup after the
+  cancellation point do not; document what's lost.
+
+## References
+
+- [Tokio `sync::Mutex` docs](https://docs.rs/tokio/latest/tokio/sync/struct.Mutex.html) — when to
+  prefer it over `std::sync::Mutex` (specifically: when a guard must survive `.await`).
+- [Comprehensive Rust — Async cancellation](https://google.github.io/comprehensive-rust/concurrency/async-pitfalls/cancellation.html) —
+  the failure modes that motivate cancellation-awareness.

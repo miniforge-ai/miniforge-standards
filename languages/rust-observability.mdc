@@ -1,0 +1,204 @@
+---
+dewey: "233"
+description: Rust observability — tracing over println, correlation IDs on workflow/agent paths, error source-chain preservation
+globs:
+  - "**/*.rs"
+  - "**/Cargo.toml"
+---
+
+# Rust observability
+
+See also: `languages/rust` (230) — base style + idioms. `foundations/localization` (050) — every
+emitted string is localized; log messages target the system locale.
+
+Applies to every library, adapter, and service crate that emits diagnostic output. CLIs and tests
+have narrow exemptions noted below.
+
+## `tracing`, not `println!`
+
+Libraries MUST use the `tracing` crate. `println!` and `eprintln!` are acceptable only in:
+
+- Small CLI binaries that emit deliberate operator-facing output.
+- Examples and test fixtures.
+- `Display` / `Debug` impls themselves (where `tracing` would be circular).
+
+```rust
+// Good — structured event, queryable in any tracing subscriber
+tracing::info!(workflow_id = %plan.id(), phase = ?plan.phase, "workflow phase entered");
+
+// Bad — unstructured stdout; invisible to Grafana, Loki, journald, or test capture
+println!("workflow {} entered phase {:?}", plan.id(), plan.phase);
+```
+
+`println!` from inside a library is a workspace-level lint:
+
+```toml
+[workspace.lints.clippy]
+print_stdout = "warn"
+print_stderr = "warn"
+dbg_macro = "deny"
+```
+
+`dbg!` is always denied — it's a development aid, not production telemetry.
+
+## Correlation IDs on workflow/agent paths
+
+Functions on workflow/agent/PR execution paths SHOULD carry correlation IDs via
+`#[tracing::instrument]` so every emitted event can be filtered to a single run end-to-end. This
+is non-negotiable for any code path the operator might need to debug from logs.
+
+```rust
+#[tracing::instrument(
+    skip(executor, plan),
+    fields(
+        workflow_id = %plan.workflow_id(),
+        run_id      = %plan.run_id(),
+        phase_id    = tracing::field::Empty,  // populated when entering a phase
+    ),
+)]
+async fn execute_plan(executor: &Executor, plan: WorkflowPlan) -> Result<ExecutionReport> {
+    /* ... */
+}
+```
+
+Notes:
+
+- `skip(...)` keeps large arguments (executor handle, full plan) out of every event payload.
+- `fields(...)` declares the correlation surface up front. Fields populated later use
+  `tracing::field::Empty` as a placeholder, then
+  `tracing::Span::current().record("phase_id", tracing::field::display(&id))` inside the body.
+- Use `%foo` for `Display` formatting, `?foo` for `Debug`. Pick the one the operator will read.
+
+Cross-task spans: `tracing::Span::current()` captures the active span; `instrument` on the spawned
+future propagates it. Tasks created without `instrument` lose the parent context — every spawn that
+matters for diagnostics MUST be instrumented.
+
+## Error source-chain preservation
+
+Do not stringify errors at intermediate layers. Preserve the typed `source()` chain all the way to
+the reporting boundary; consumers downstream (log scrapers, alerting, support runbooks) extract the
+chain.
+
+```rust
+// Good — typed error, source chain preserved
+#[derive(Debug, thiserror::Error)]
+pub enum WorkflowError {
+    #[error("policy evaluation failed for {workflow_id}")]
+    PolicyEval {
+        workflow_id: WorkflowId,
+        #[source]
+        cause: PolicyEvalError,
+    },
+}
+
+// At the reporting boundary (CLI / FFI / log line):
+tracing::error!(error = ?err, "workflow failed");
+// `error = ?err` records the error's `Debug` representation as a field.
+// If you need each `source()` level rendered, use a formatter/layer or helper that
+// explicitly formats or records the source chain.
+
+// Bad — early stringification erases the cause
+return Err(WorkflowError::Generic(format!("policy eval failed: {e}")));
+```
+
+The `thiserror` `#[source]` attribute marks the wrapped error so `Error::source()` returns it.
+`anyhow::Error` preserves source chains automatically — its `Debug` impl walks them.
+
+At the actual log emission point, the structured field carries the error; never serialize the
+error chain into the message text:
+
+```rust
+// Good
+tracing::error!(error = ?err, workflow_id = %id, "workflow failed");
+
+// Bad — error becomes a string in the message; cause chain is lost
+tracing::error!("workflow {} failed: {:?}", id, err);
+```
+
+## Spans for long-running operations
+
+Use `tracing::span!` (or `#[instrument]`) for any operation that lasts long enough to be visible
+in latency graphs — handle of a request, evaluation of a policy pack, drainage of an event stream.
+Spans give the operator a duration measurement and a parent/child tree without per-event timestamp
+math.
+
+**Async functions: use `#[instrument]` or `Instrument::instrument`. Do not hold an `Entered`
+guard across `.await` points.** `tracing` explicitly warns against this — when a task yields at
+an `.await`, the executor may schedule a different task on the same thread while the `Entered`
+guard remains live, polluting that other task's span context.
+
+```rust
+// Good — #[instrument] correctly enters/exits the span around every poll
+#[tracing::instrument(skip(pack, target), fields(pack = %pack.id(), target = %target.id()))]
+async fn evaluate_policy_pack(pack: &PolicyPack, target: &Artifact) -> PolicyOutcome {
+    /* ... evaluation ... */
+}
+
+// Also good — explicit Instrument::instrument on a future
+use tracing::Instrument;
+let span = tracing::info_span!("policy.evaluate", pack = %pack.id());
+let outcome = evaluate(pack, target).instrument(span).await;
+
+// Bad — Entered guard held across .await; pollutes other tasks' span contexts
+async fn evaluate_policy_pack(pack: &PolicyPack, target: &Artifact) -> PolicyOutcome {
+    let _span = tracing::info_span!("policy.evaluate", pack = %pack.id()).entered();
+    something_else().await;  // ← span remains "entered" while another task may run on this thread
+}
+```
+
+For synchronous blocks, `.entered()` is fine — the RAII guard drops at end of scope and there's
+no executor yielding to worry about:
+
+```rust
+fn evaluate_sync(pack: &PolicyPack, target: &Artifact) -> PolicyOutcome {
+    let _span = tracing::info_span!("policy.evaluate", pack = %pack.id()).entered();
+    /* ... sync work ... */
+}
+```
+
+## Log-message strings are localized
+
+Per `foundations/localization` (050): every emitted string is localized through the project's
+localization framework, including log messages. Log messages come from the **system catalog**
+(for example `messages/system.edn`, with no operator override) so engineering tooling — Grafana
+queries, Loki filters, alert templates — keeps working regardless of which operator-facing locale
+is active.
+
+Concretely: a project's `mfc-strings` (or equivalent) crate declares log-message constants under a
+`logs` module; tracing call sites reference the const via the `"{}"` placeholder (`tracing` macros
+require the message be a format-string literal at the macro site):
+
+```rust
+use mfc_strings as s;
+
+tracing::warn!(
+    error = %e,
+    path = %p.display(),
+    "{}", s::LOG_TAILER_EXIT_ON_ERROR,
+);
+```
+
+The constant lives in one place; future locale additions or string audits find it via `grep -r
+mfc_strings::LOG_`.
+
+## What NOT to do
+
+- Do not use `println!` / `eprintln!` / `dbg!` in library or service code.
+- Do not stringify errors at intermediate layers — preserve `source()` chains.
+- Do not skip `#[instrument]` on workflow/agent execution paths.
+- Do not embed structured data inside the message string — use named fields.
+- Do not emit hardcoded English log strings without going through the localization layer (see
+  `foundations/localization`).
+- Do not log at the wrong level — `info` is for routine events the operator wants to see, `debug`
+  is for engineers, `warn` is for unexpected-but-recoverable, `error` is for things that need
+  attention.
+
+## References
+
+- [`tracing` crate documentation](https://docs.rs/tracing/) — structured spans/events.
+- [`tracing::instrument` macro](https://docs.rs/tracing/latest/tracing/attr.instrument.html) — the
+  canonical way to attach correlation IDs to async functions.
+- [`thiserror` `#[source]` attribute](https://docs.rs/thiserror/) — preserving error source chains
+  in typed error enums.
+- `foundations/localization` (050) — the all-strings-are-localized policy that log messages must
+  also satisfy.

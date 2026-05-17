@@ -1,0 +1,217 @@
+---
+dewey: "234"
+description: Rust wire protocols — separate wire structs from domain structs, version envelopes explicitly, validate invariants on deserialize
+globs:
+  - "**/*.rs"
+  - "**/Cargo.toml"
+---
+
+# Rust wire protocols
+
+See also: `languages/rust` (230) — base style + the "domain newtypes at boundaries" type idiom this
+rule extends. `frameworks/api-surface-classes` (332) — the broader wire-format taxonomy this rule
+applies to in Rust.
+
+Applies to every (de)serialization boundary: FFI payloads, event-stream JSON, gRPC / Cap'n Proto /
+MessagePack, HTTP request bodies, persisted artifacts. The rules are the same for all wire formats;
+serde derives are the canonical example.
+
+## Wire structs are not domain structs
+
+A wire struct's job is bytes-on-the-wire stability. A domain struct's job is in-memory invariant
+enforcement. Conflating them locks the wire format to whatever the domain happens to look like
+today — every refactor becomes a breaking protocol change.
+
+```rust
+// Good — separate types, explicit conversion
+mod domain {
+    pub struct WorkflowPlan {
+        pub id: WorkflowId,                      // newtype, validated
+        pub phases: Vec<Phase>,                  // domain Phase enum
+        pub budget: RetryBudget,                 // newtype with invariants
+    }
+}
+
+mod protocol {
+    #[derive(Serialize, Deserialize)]
+    pub struct WorkflowPlanV1 {
+        pub id: Uuid,                            // raw uuid on the wire
+        pub phases: Vec<PhaseV1>,                // wire-format Phase
+        pub budget: u32,                         // raw u32 on the wire
+    }
+}
+
+impl TryFrom<protocol::WorkflowPlanV1> for domain::WorkflowPlan {
+    type Error = WorkflowPlanError;
+    fn try_from(wire: protocol::WorkflowPlanV1) -> Result<Self, Self::Error> { /* validate */ }
+}
+
+// Bad — one type serves both surfaces; the wire is locked to the domain shape
+#[derive(Serialize, Deserialize)]
+pub struct WorkflowPlan {
+    pub id: Uuid,
+    pub phases: Vec<Phase>,
+    pub budget: u32,
+}
+```
+
+The exception: when stability semantics are genuinely identical — e.g. a primitive config struct
+that's just a serde-derived bag of fields and is also the in-memory shape. In that case one type
+is fine, but the moment you want to add a domain invariant (`budget > 0`, `phases` non-empty), the
+types split.
+
+Naming convention: domain types live in `domain/` or directly in their owning module. Wire types
+live in `protocol/` (or `wire/`) and carry an explicit version suffix (`PlanV1`, `EnvelopeV2`).
+
+## Version wire formats explicitly
+
+Every wire format has an explicit version field. New consumers detect old payloads and old
+consumers fail predictably on new ones.
+
+```rust
+#[derive(Serialize, Deserialize)]
+pub struct EnvelopeV1<T> {
+    pub version: ProtocolVersion,
+    pub payload: T,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProtocolVersion {
+    V1,
+    V2,
+}
+```
+
+Migration shape:
+
+- Adding optional fields to an existing version is additive; mark them `#[serde(default,
+  skip_serializing_if = "...")]`.
+- Removing fields, reinterpreting fields, or changing field types is a new version. Bump the
+  version enum, keep the old variant decodable, add a converter.
+- Never silently drop unknown fields from versions newer than the consumer expects — log + reject,
+  or pass-through if the consumer can tolerate it.
+
+`#[serde(deny_unknown_fields)]` is the right default for strictly-validated payloads (control-plane
+commands). Open-set payloads (telemetry events, debug snapshots) can tolerate unknown fields with
+explicit logging.
+
+## Deserialization validates domain invariants
+
+A wire struct deserializes into the wire type, not directly into the domain type. The conversion
+from wire to domain is where invariants get checked. This is where `TryFrom` earns its keep.
+
+```rust
+// Good — wire round-trips serde; domain enforces invariants
+mod protocol {
+    #[derive(Serialize, Deserialize)]
+    pub struct WorkflowIdWire(pub String);
+}
+
+mod domain {
+    pub struct WorkflowId(String);
+
+    impl TryFrom<protocol::WorkflowIdWire> for WorkflowId {
+        type Error = WorkflowIdError;
+        fn try_from(wire: protocol::WorkflowIdWire) -> Result<Self, Self::Error> {
+            validate_workflow_id(&wire.0)?;
+            Ok(Self(wire.0))
+        }
+    }
+}
+
+// Bad — wire and domain are the same type; serde accepts anything that parses
+#[derive(Serialize, Deserialize)]
+pub struct WorkflowId(pub String);
+```
+
+For inline validation during deserialization (one-shot enums or value objects), implement a custom
+`Deserialize` via the visitor pattern or use a typed-wrapper crate (`serde_with`, `garde`,
+`validator`). The principle is the same: invariants are enforced before the domain type exists.
+
+## Optional field discipline
+
+Optional wire fields are tolerated; defensive matching at every read site is not. Push the optional
+into the conversion layer:
+
+```rust
+// Good — conversion layer resolves the optional once
+mod protocol {
+    #[derive(Deserialize)]
+    pub struct AgentReportV1 {
+        pub agent_id: Uuid,
+        pub status: String,
+        pub metrics: Option<MetricsV1>,        // optional on the wire
+    }
+}
+
+mod domain {
+    pub struct AgentReport {
+        pub agent_id: AgentId,
+        pub status: AgentStatus,
+        pub metrics: Metrics,                  // domain has a default
+    }
+
+    impl From<protocol::AgentReportV1> for AgentReport {
+        fn from(wire: protocol::AgentReportV1) -> Self {
+            AgentReport {
+                agent_id: AgentId(wire.agent_id),
+                status: wire.status.parse().unwrap_or(AgentStatus::Unknown),
+                metrics: wire.metrics.map(Into::into).unwrap_or_default(),
+            }
+        }
+    }
+}
+```
+
+`Option<T>` in the domain type is reserved for cases where absence is genuinely meaningful (the
+report covers a partial window; the field is N/A for this agent kind). Don't propagate every
+"the wire might omit this" optional all the way through.
+
+## Roundtrip + compatibility tests
+
+Every wire format ships with roundtrip and compatibility tests. See `languages/rust` (230)
+Testing section for the general principle; the protocol-specific cases:
+
+- `encode(decode(x)) == x` — wire is fixed-point under round-trip.
+- `decode(old_fixture) == expected_current_model` — old payloads continue to decode under the
+  current consumer.
+- Unknown fields are handled per the format's stated policy (rejected, ignored, or pass-through).
+- Malformed bytes fail with a typed error, not a panic.
+
+Fixtures live in `tests/fixtures/<protocol>/v<N>/` and are committed. A protocol change that
+breaks a committed fixture is a deliberate version bump, not a silent regression.
+
+## Backward-compatibility ratchet
+
+Once a wire version is observed in production, that version's encoding is permanent. Adding
+optional fields is allowed; changing the meaning of existing fields is not.
+
+The audit trail (`foundations/result-handling`, event streams, evidence bundles) is especially
+sensitive: a v1 evidence bundle written to durable storage must decode forever under any later
+consumer, or the operator loses the ability to prove what the system did. Reinterpreting fields in
+existing versions corrupts the audit trail silently.
+
+When a version becomes obsolete, mark it deprecated in the code but keep the decoder; remove only
+after a documented retention window plus a migration that re-encodes any stored payloads.
+
+## What NOT to do
+
+- Do not use one struct for both the wire format and the domain type unless stability semantics
+  are demonstrably identical and you accept that domain refactors are wire-breaking changes.
+- Do not omit the `version` field from wire envelopes — even the first version.
+- Do not deserialize directly into the domain type without a validation hop.
+- Do not propagate every wire-side `Option` all the way through the domain. Resolve optionals at
+  the conversion layer.
+- Do not change the encoding of an existing version after it has shipped. Bump.
+- Do not assume `#[serde(default)]` is free — confirm the default value is semantically correct in
+  every existing call path, not just convenient at the deserialization site.
+
+## References
+
+- [Serde derive docs](https://serde.rs/derive.html) — `#[serde(default)]`, `#[serde(rename_all)]`,
+  `#[serde(deny_unknown_fields)]`, version-tolerant patterns.
+- [Rust API Guidelines — Dependability](https://rust-lang.github.io/api-guidelines/dependability.html) —
+  static-validation-where-possible, dynamic-at-boundaries.
+- `frameworks/api-surface-classes` (332) — the three API-surface tiers (internal EDN/Transit,
+  cross-language JSON/SSE, customer-facing REST/webhooks) that govern which protocol shape applies.

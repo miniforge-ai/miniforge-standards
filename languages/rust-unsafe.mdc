@@ -1,0 +1,136 @@
+---
+dewey: "232"
+description: Rust unsafe discipline — forbidden by default, isolated behind safe APIs, SAFETY comments required, never "it's faster"
+globs:
+  - "**/*.rs"
+  - "**/Cargo.toml"
+---
+
+# Rust unsafe discipline
+
+See also: `languages/rust` (230) — base style + idioms. This file is the narrow but load-bearing
+policy on every `unsafe` block, `unsafe fn`, or `unsafe trait impl`.
+
+## Forbidden by default
+
+`unsafe` is denied at the workspace level. Set this in the root `Cargo.toml`:
+
+```toml
+[workspace.lints.rust]
+unsafe_code = "deny"
+```
+
+Per-crate exceptions are allowed only when the crate's purpose requires unsafe. The whitelist is
+small in practice: FFI bindings, memory-layout primitives, OS-platform glue, performance-critical
+low-level abstractions where safe alternatives are demonstrably insufficient.
+
+A crate that needs unsafe declares the exception explicitly:
+
+```toml
+[lints.rust]
+unsafe_code = "warn"  # or "allow" with a justification comment
+```
+
+Service code, business logic, adapters, and protocol crates do not need unsafe. The default is
+the policy.
+
+## Isolated behind a safe API
+
+Required unsafe MUST be isolated behind a safe API. The unsafe block is small; the safe wrapper
+documents the invariants that justify it. Callers of the wrapper get a normal Rust API.
+
+```rust
+// Good — unsafe is a narrow implementation detail; the public API is safe
+pub fn split_at_mut(s: &mut [u8], mid: usize) -> (&mut [u8], &mut [u8]) {
+    assert!(mid <= s.len(), "split index out of bounds");
+    let ptr = s.as_mut_ptr();
+    let len = s.len();
+    // SAFETY: mid is bounds-checked above; the two slices are non-overlapping by construction
+    // (one starts at ptr, length `mid`; the other starts at ptr+mid, length `len-mid`).
+    unsafe { (std::slice::from_raw_parts_mut(ptr, mid),
+              std::slice::from_raw_parts_mut(ptr.add(mid), len - mid)) }
+}
+
+// Bad — unsafe leaks into the public surface; callers inherit the obligation
+pub unsafe fn split_at_mut(s: &mut [u8], mid: usize) -> (&mut [u8], &mut [u8]) { /* same */ }
+```
+
+The Rust Book's guidance: unsafe blocks are small; safe abstractions wrap them; the public API
+does not require the caller to know the safety story.
+
+## SAFETY comment on every unsafe site
+
+Every `unsafe` block and every `unsafe fn` MUST carry a `// SAFETY:` comment explaining the
+invariant being upheld. The comment names what is true at this site that makes the unsafe call
+legal — not what the unsafe call does mechanically.
+
+```rust
+// Good — SAFETY comment explains the invariant
+let value = unsafe {
+    // SAFETY: ptr is non-null and properly aligned; we just checked `!ptr.is_null()` above
+    // and the allocator returns aligned blocks. The lifetime ends inside this block.
+    *ptr
+};
+
+// Bad — comment restates the syntax
+let value = unsafe {
+    // Dereference the pointer
+    *ptr
+};
+```
+
+For `unsafe fn`, the `// SAFETY:` documentation lives in the rustdoc `# Safety` section and
+states the preconditions the caller must establish before calling. Every call site of an
+`unsafe fn` then carries its own `// SAFETY:` comment proving those preconditions hold at the
+call site.
+
+## "It is faster" is not enough
+
+`unsafe` for performance requires:
+
+1. **Profiling evidence** showing the safe version is materially insufficient at production load —
+   not in a microbenchmark of a tight loop with no contention.
+2. **A benchmark in the repo** that exercises the safe vs unsafe versions and demonstrates the gap.
+3. **An invariant analysis** documenting why the unsafe version is correct, written as if it were
+   a code review.
+
+Microbenchmark deltas that don't translate to operator-observable latency do not justify unsafe.
+The cost is real — every unsafe site is one more thing on the human reviewer's audit list, and
+the benefit needs to clear that bar.
+
+## Common unsafe pitfalls
+
+Even with the discipline above, certain patterns are recurring sources of UB:
+
+- **Aliasing mutable references through raw pointers.** Constructing two `&mut T` (directly or via
+  `&mut *ptr`) that overlap is undefined behavior — even if you never write through both. Use
+  `std::ptr` operations or restructure the code.
+- **Sending `!Send` types across threads via transmute or hand-rolled raw-pointer tricks.** If a
+  type is `!Send`, the compiler is telling you something. Wrapping it in `Arc` and a transmute
+  does not change the underlying memory-model story.
+- **Dropping or freeing memory you don't own.** `Box::from_raw` only consumes a pointer that came
+  from `Box::into_raw`. Mixing allocator boundaries (Rust `Box`, malloc, custom allocators) is a
+  silent data corruption channel.
+- **Trusting alignment or layout assumptions.** `#[repr(Rust)]` (the default) makes no layout
+  guarantees. Use `#[repr(C)]` for FFI; use `mem::align_of` / `mem::size_of` at runtime; don't
+  hand-roll struct offsets.
+
+When in doubt, write the safe version, profile it, then revisit.
+
+## What NOT to do
+
+- Do not add `unsafe` because the borrow checker rejected your design — that's a signal to redesign,
+  not to escape into raw pointers.
+- Do not use `unsafe` to avoid a `Result` — that's `unwrap_unchecked`, which removes a runtime
+  check the optimizer probably already eliminated.
+- Do not put `unsafe` in a public function signature without a `# Safety` rustdoc section.
+- Do not leave a `// SAFETY:` comment off any unsafe site — even a one-line block.
+- Do not silence `unsafe_code = "deny"` per-file with `#[allow(unsafe_code)]` without an
+  invariant comment that justifies why this specific exception is correct.
+
+## References
+
+- [Rust Book — Unsafe Rust](https://doc.rust-lang.org/book/ch20-01-unsafe-rust.html) — when and
+  how unsafe is meant to be used; small blocks behind safe APIs.
+- [Canonical — Unsafe discipline](https://canonical.github.io/rust-best-practices/unsafe-discipline.html) —
+  the "isolate, document, justify" frame this rule adopts.
