@@ -48,6 +48,10 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   ├── clojure-exception-handling.mdc   # dewey: "211"  alwaysApply: true
 │   ├── python.mdc                       # dewey: "220"
 │   ├── rust.mdc                         # dewey: "230"
+│   ├── rust-async.mdc                   # dewey: "231"
+│   ├── rust-unsafe.mdc                  # dewey: "232"
+│   ├── rust-observability.mdc           # dewey: "233"
+│   ├── rust-wire-protocols.mdc          # dewey: "234"
 │   ├── swift.mdc                        # dewey: "240"
 │   ├── javascript.mdc                   # dewey: "250"
 │   ├── css.mdc                          # dewey: "260"
@@ -72,7 +76,8 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   ├── git-worktrees.mdc                # dewey: "725"
 │   └── datever.mdc                      # dewey: "730"
 ├── project/
-│   └── header-copyright.mdc             # dewey: "810"  alwaysApply: true
+│   ├── header-copyright.mdc             # dewey: "810"  alwaysApply: true
+│   └── rust-miniforge-shape.mdc         # dewey: "835"
 └── meta/
     └── rule-format.mdc                  # dewey: "900"
 ```
@@ -104,7 +109,11 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 210 | `clojure` | ✓ | Polylith + per-file stratified design, map access patterns |
 | 211 | `clojure-exception-handling` | ✓ | Prefer slingshot `try+` / `throw+` (strict superset of `try`); plain `try` allowed in three narrow cases (no-slingshot-dep leaf catch, leaf inside `try+`, REPL/`(comment …)`) |
 | 220 | `python` |  | Poetry, functional Python |
-| 230 | `rust` |  | Workspaces, typed boundary commands, pipeline selection, data-driven content |
+| 230 | `rust` |  | Workspaces, typed boundary commands, pipeline selection, data-driven content, toolchain (Rust 2024 + workspace lints), domain newtypes, dependency policy |
+| 231 | `rust-async` |  | Don't block the runtime, no locks across `.await`, cancellation-aware `select!`, bounded channels, task lifecycle ownership, `Arc<Mutex<T>>` not as default architecture |
+| 232 | `rust-unsafe` |  | `unsafe_code = "deny"` workspace-wide; isolated behind safe APIs; `// SAFETY:` comment on every site; performance alone insufficient |
+| 233 | `rust-observability` |  | `tracing` not `println!`, correlation IDs via `#[instrument]`, error source-chain preservation, log strings localized to system locale |
+| 234 | `rust-wire-protocols` |  | Wire structs separate from domain, versioned envelopes, validate-on-deserialize, append-only ratchet for audit-trail payloads |
 | 240 | `swift` |  | Swift conventions |
 | 250 | `javascript` |  | Browser JS — sparse use, no globals, ES modules, no inline handlers, safe DOM |
 | 260 | `css` |  | Design tokens, semantic class names, shallow selectors, accessible focus |
@@ -146,6 +155,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | Dewey | File | Always | Description |
 |-------|------|--------|-------------|
 | 810 | `header-copyright` | ✓ | Miniforge.ai header + copyright ownership |
+| 835 | `rust-miniforge-shape` |  | Miniforge architectural Rust constraints: typed workflow state, `PolicyDecision` as value, structured `Finding`, adapter traits vs concrete domain, append-only evidence, UI never imported by core |
 
 ### meta/
 

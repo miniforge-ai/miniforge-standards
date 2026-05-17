@@ -1,0 +1,233 @@
+---
+dewey: "835"
+description: Miniforge-specific Rust shape — typed workflow state, PolicyDecision as value, structured findings, adapter traits but domain concrete, append-only evidence, core never imports UI
+globs:
+  - "**/*.rs"
+  - "**/Cargo.toml"
+---
+
+# Miniforge Rust shape
+
+Project-specific architectural constraints for Rust code in Miniforge product-family repos
+(miniforge, miniforge-control, thesium-* products, fleet, etc.).
+
+Sits on top of the language rules:
+
+- `languages/rust` (230) — base style + idioms.
+- `languages/rust-async` (231), `rust-unsafe` (232), `rust-observability` (233), `rust-wire-protocols` (234).
+
+The frame: Clippy catches idiom violations; these rules catch **semantic Rust design drift** that's
+specific to a governed workflow-orchestration runtime. They're the layer between linting and
+architecture review.
+
+## Workflow execution state is typed, never stringly
+
+No `"running"` / `"failed"` / `"done"` state transitions in core logic. Workflow phases, agent
+sessions, policy evaluations, PR train slots — every closed state machine is an enum with data on
+the variants. See `languages/rust` (230) "Domain newtypes at boundaries" for the general rule;
+this is the Miniforge-specific application.
+
+```rust
+// Good
+enum PhaseState {
+    Pending,
+    Running { started_at: OffsetDateTime },
+    Succeeded { evidence: EvidenceBundleId },
+    Failed { error: PhaseError },
+    Cancelled { reason: CancellationReason },
+}
+
+// Bad — stringly state with implicit cross-field invariants
+struct Phase {
+    state: String,                 // "pending" | "running" | "done" | "failed" | ...
+    error: Option<String>,         // populated only if state == "failed"
+    evidence_id: Option<String>,   // populated only if state == "done"
+}
+```
+
+The stringly form encodes invariants ("error present iff failed", "evidence present iff done") as
+runtime contracts you have to remember in every code path. New states get added by typoing a new
+string. Exhaustive matching on the enum form gives you compiler pressure at every existing call
+site.
+
+## Policy decisions are values
+
+A policy decision is a structured value carrying its own justification or rejection reason. Not
+`bool`. Not `(bool, String)`. Not `Option<String>`. Not `Result<Allow, Deny>` (because review
+isn't an error).
+
+```rust
+pub enum PolicyDecision {
+    Allow {
+        evidence: Vec<EvidenceRef>,
+    },
+    Deny {
+        violations: Vec<PolicyViolation>,
+    },
+    RequiresReview {
+        questions: Vec<ReviewQuestion>,
+    },
+}
+```
+
+Three first-class outcomes — `Allow`, `Deny`, `RequiresReview` — with the data each needs.
+Downstream consumers match exhaustively; adding a fourth outcome (e.g. `Defer`) lights up every
+call site at compile time.
+
+Operator visibility: every decision serializes losslessly to evidence; the audit trail can replay
+exactly which decision was made and why.
+
+## Mechanical detection returns structured findings
+
+Linters, policy checks, drift detectors, attention derivers — anything that produces a "finding"
+about an artifact — emits a structured `Finding`, not a string.
+
+```rust
+pub struct Finding {
+    pub rule_id: RuleId,
+    pub severity: Severity,
+    pub span: Option<SourceSpan>,
+    pub message: DiagnosticMessage,
+    pub evidence: Vec<EvidenceRef>,
+}
+```
+
+Renderers downstream (TUI, web dashboard, FFI to native app, exported reports) format the finding
+per the consumer's needs. The producer's contract is the struct shape, not the rendered text.
+
+`DiagnosticMessage` is itself localized via the project's `mfc-strings` framework — never a raw
+English literal. See `foundations/localization` (050).
+
+## Adapters behind traits; domain policy concrete
+
+Use traits for I/O boundaries:
+
+```rust
+pub trait GitProvider: Send + Sync {
+    async fn fetch_pr(&self, repo: RepoId, pr: PrNumber) -> Result<Pr>;
+    async fn open_pr(&self, draft: PrDraft) -> Result<Pr>;
+}
+
+pub trait LlmClient: Send + Sync { /* ... */ }
+pub trait ArtifactStore: Send + Sync { /* ... */ }
+pub trait AgentAdapter: Send + Sync { /* ... */ }   // Miniforge agent supervision adapters
+```
+
+These have multiple real implementations (GitHub vs GitLab vs fake-for-tests; Claude vs Codex vs
+OpenCode; S3 vs local fs; claude-code-session vs codex-session vs bash-shell). The trait is the
+seam where alternative implementations actually exist.
+
+**Domain policy is concrete.** Avoid abstracting core domain logic behind traits unless multiple
+real implementations exist. A `PolicyClassifier` trait with one production impl and a test mock is
+a smell — it adds dispatch overhead, indirection in every call site, and a fake in every test, for
+zero benefit. Production has one classifier. The "what if we want to swap" is hypothetical and
+would be cheap to add later if it ever became real.
+
+```rust
+// Good — pure function, no trait
+pub fn classify_fix(violation: &PolicyViolation) -> FixClassification { /* ... */ }
+
+// Bad — speculative trait surface with one implementation
+pub trait PolicyClassifier: Send + Sync {
+    fn classify_fix(&self, violation: &PolicyViolation) -> FixClassification;
+}
+pub struct DefaultPolicyClassifier;  // the only real impl
+```
+
+## Evidence and audit structs are append-only compatible
+
+The Miniforge audit trail is the operator's proof of what the system did. Reinterpreting fields in
+an existing version of an evidence/audit struct corrupts that proof silently — a v1 bundle written
+six months ago must decode cleanly under today's code.
+
+```rust
+// Good — additive evolution
+#[derive(Serialize, Deserialize)]
+pub struct EvidenceBundleV1 {
+    pub bundle_id: BundleId,
+    pub created_at: OffsetDateTime,
+    pub findings: Vec<Finding>,
+    // Added in v1.1 — optional, default keeps v1.0 decodable:
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub remediation_attempts: Vec<RemediationAttempt>,
+}
+
+// Bad — same name, different shape
+pub struct EvidenceBundle {              // v1
+    pub bundle_id: BundleId,
+    pub findings: Vec<Finding>,
+}
+
+pub struct EvidenceBundle {              // v2 — same name, repurposed shape
+    pub bundle_id: BundleId,
+    pub findings: Vec<EnrichedFinding>,  // different element type
+}
+```
+
+When the audit shape genuinely needs to break, bump to a new versioned wire type (`EvidenceBundleV2`)
+and keep the v1 decoder. See `languages/rust-wire-protocols` (234) for the general rule.
+
+This applies to every persisted artifact: evidence bundles, policy evaluation records, agent
+session transcripts, workflow snapshots, decision cards.
+
+## Rust core does not leak UI / client assumptions
+
+The dependency arrow points UI → core, never the reverse. CLI / web / native protocol structs can
+adapt to core models; core models do not import CLI / web / TUI / SwiftUI concepts.
+
+```rust
+// Good — core model is UI-agnostic
+mod domain {
+    pub struct AttentionItem {
+        pub id: AttentionId,
+        pub severity: AttentionSeverity,
+        pub summary: DiagnosticMessage,
+        pub source: AttentionSource,
+    }
+}
+
+// UI layers adapt at the boundary
+mod tui {
+    use crate::domain::AttentionItem;
+    fn render_row(item: &AttentionItem, theme: &Theme) -> Line { /* ... */ }
+}
+
+// Bad — core model knows about TUI rendering
+mod domain {
+    pub struct AttentionItem {
+        pub id: AttentionId,
+        pub severity: AttentionSeverity,
+        pub summary: String,
+        pub tui_glyph: char,          // ← TUI concern leaked into domain
+        pub tui_color: Color,         // ← so has color
+    }
+}
+```
+
+The same applies to web and native app surfaces: SwiftUI types, web-component descriptors, HTML
+attributes, CSS classes — none of those belong in core. They get derived at the boundary by the
+renderer that knows about them.
+
+This rule is what makes the FFI / web / TUI / native shells interchangeable: they all consume the
+same core model and produce their own representation. A core that imports `tui` (or `web`, or
+`swiftui`) ceases to be reusable across the fleet of surface shells.
+
+## What NOT to do
+
+- Do not use string-typed phase / state / status fields in core logic.
+- Do not collapse a policy decision into `bool` or `Result<(), String>`.
+- Do not return string messages from a detector — emit a structured `Finding`.
+- Do not trait-abstract a domain function that has one real implementation.
+- Do not change the on-wire shape of an existing evidence/audit struct version; bump the version.
+- Do not import UI / TUI / native-shell types from a core domain crate.
+
+## References
+
+- `languages/rust` (230) — base style; in particular "Domain newtypes at boundaries" (the
+  language-level frame these Miniforge-specific rules extend).
+- `languages/rust-wire-protocols` (234) — wire/domain separation + versioned envelopes apply to
+  every audit-trail evolution here.
+- `foundations/localization` (050) — `DiagnosticMessage`, finding text, and every other
+  operator-facing string flows through the localization framework.
+- `frameworks/api-surface-classes` (332) — the three API-surface tiers (internal EDN/Transit,
+  cross-language JSON/SSE, customer extension REST/webhooks) the UI-vs-core boundary must respect.

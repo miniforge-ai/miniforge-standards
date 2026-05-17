@@ -11,6 +11,69 @@ globs:
 See also: `foundations/stratified-design` and `foundations/simple-made-easy` — those rules apply in Rust
 without exception. This file covers Rust-specific idioms that sit on top of those foundations.
 
+Sister rules in this set:
+
+- `languages/rust-async` (231) — async/concurrency: blocking discipline, locks across `.await`, cancellation, bounded channels, task lifecycle ownership.
+- `languages/rust-unsafe` (232) — unsafe is denied by default; SAFETY comments; isolation behind safe APIs.
+- `languages/rust-observability` (233) — `tracing` over `println!`, correlation IDs, error source-chain preservation.
+- `languages/rust-wire-protocols` (234) — wire/domain separation, versioned envelopes, validate-on-deserialize.
+- `project/rust-miniforge-shape` (835) — Miniforge architectural Rust constraints.
+
+## Toolchain and edition
+
+- **New crates MUST use Rust 2024** unless constrained by dependency or MSRV. Rust 2024 stabilized
+  with Rust 1.85.0; Cargo defaults new manifests to edition 2024.
+- **Every repo MUST define `rust-toolchain.toml`** so contributors and CI agree on the channel and
+  components without out-of-band coordination:
+
+  ```toml
+  [toolchain]
+  channel = "stable"
+  components = ["rustfmt", "clippy"]
+  ```
+
+  For reproducible infra/core repos, pin a concrete stable version instead of `"stable"` when
+  release determinism matters.
+
+- **CI MUST run the following, with `-D warnings`:**
+
+  ```bash
+  cargo fmt --all --check
+  cargo clippy --workspace --all-targets --all-features -- -D warnings
+  cargo test --workspace --all-targets --all-features
+  cargo doc --workspace --all-features --no-deps
+  ```
+
+  Feature-gated code is only seen by Clippy when invoked with `--all-features` (or the matching
+  feature combination). Drift between gated and ungated code is a recurring source of breakage —
+  enforce the gate in CI.
+
+- **Workspace lints** are centralized in the root `Cargo.toml`'s `[workspace.lints]` table; every
+  crate's `Cargo.toml` says `[lints] workspace = true`. A new clippy lint (or a tightened severity)
+  is a single edit, not a sweep across every crate. Recommended baseline:
+
+  ```toml
+  [workspace.lints.rust]
+  unsafe_code = "deny"
+  missing_docs = "warn"
+
+  [workspace.lints.clippy]
+  all = "deny"
+  cargo = "warn"
+  pedantic = { level = "warn", priority = -1 }
+  unwrap_used = "warn"
+  expect_used = "warn"
+  panic = "warn"
+  todo = "warn"
+  unimplemented = "warn"
+  dbg_macro = "deny"
+  print_stdout = "warn"
+  print_stderr = "warn"
+  wildcard_imports = "warn"
+  enum_glob_use = "deny"
+  await_holding_lock = "deny"
+  ```
+
 ## Crate and module structure
 
 - Use Cargo workspaces with small crates and explicit boundaries.
@@ -85,7 +148,29 @@ variable names to use consistently:
 
 Avoid ad-hoc abbreviations. Use the established set (`db`, `ctx`, `acc`) or spell it out.
 
-Names that clash with keywords: mangle rather than use raw identifiers (`r#`):
+### Conversion-method semantics
+
+Conversion methods follow the Rust API Guidelines naming pattern:
+
+| Prefix | Meaning |
+|--------|---------|
+| `as_` | cheap borrowed view — no allocation, no compute |
+| `to_` | conversion that may allocate or compute |
+| `into_` | consumes `self` (or moves into a lower-level representation) |
+
+```rust
+impl WorkflowSpec {
+    pub fn as_str(&self) -> &str { &self.id }            // borrowed view
+    pub fn to_json(&self) -> String { serde_json::to_string(self).unwrap() }  // allocates
+    pub fn into_compiled(self) -> CompiledSpec { /* consumes self */ }
+}
+```
+
+Mixing the prefixes confuses callers about cost and ownership at the call site.
+
+### Names that clash with keywords
+
+Mangle rather than use raw identifiers (`r#`):
 
 ```
 crate  → krate
@@ -207,6 +292,51 @@ Use `anyhow::format_err!` rather than `anyhow::anyhow` (less stuttering).
 - Test error paths: check `err.to_string()` when `PartialEq` is not available.
 
 ## Type idioms
+
+### Domain newtypes at boundaries
+
+Prefer domain newtypes over raw primitives at every public boundary:
+
+```rust
+pub struct WorkflowId(Uuid);
+pub struct PhaseId(String);
+pub struct RetryBudget(u32);
+pub struct RepoRoot(Utf8PathBuf);
+
+pub fn assign(workflow: WorkflowId, agent: AgentId) { /* ... */ }
+```
+
+The compiler now refuses `assign(some_agent_id, some_workflow_id)` (arguments swapped). With raw
+`Uuid` parameters both directions compile — the type system was off duty when it mattered most.
+
+The same principle applies to function arguments that would otherwise be bare `bool` or ambiguous
+`Option`:
+
+```rust
+// Good
+enum ExecutionMode { DryRun, Apply }
+enum ConflictPolicy { Fail, Force }
+fn run_workflow(id: WorkflowId, mode: ExecutionMode, conflicts: ConflictPolicy)
+
+// Bad — caller writes run_workflow(id, true, false) and has to remember what's what
+fn run_workflow(id: WorkflowId, dry_run: bool, force: bool)
+```
+
+Closed state machines are enums with data on the variants — not strings, not bitfields:
+
+```rust
+enum PhaseState {
+    Pending,
+    Running { started_at: OffsetDateTime },
+    Succeeded { evidence: EvidenceBundleId },
+    Failed { error: PhaseError },
+    Cancelled { reason: CancellationReason },
+}
+```
+
+Internal matches MUST be exhaustive — no `_ =>` catch-all unless the enum is `#[non_exhaustive]`
+from an external crate. A new variant should produce compiler pressure at every existing call
+site; that's the type system doing its job.
 
 ### Prefer general borrowed types on function boundaries
 
@@ -600,6 +730,33 @@ variables are cognitively cheap and aid debugging.
   and merging fresh collections on each recursion.
 - Avoid monomorphizing large functions across crate boundaries — use a thin generic wrapper that
   delegates to a `&dyn Fn` implementation.
+
+## Dependency policy
+
+Dependencies require a reason. Adding one without justification gets pushed back at review.
+
+Acceptable reasons, in order of preference:
+
+1. **Ecosystem standard** — `serde`, `tokio`, `tracing`, `thiserror`, `clap`. Removing them is
+   harder than adding them; the cost-benefit is clearly in favor.
+2. **Security-reviewed and actively maintained** — has releases, has commits, has a maintainer
+   responding to security advisories.
+3. **Large complexity reduction** — replaces hundreds of lines of fiddly logic. Document the
+   complexity-reduction claim in the dep's section of `Cargo.toml`.
+4. **Protocol or ecosystem necessity** — needed to speak HTTP/2, gRPC, Cap'n Proto, etc.
+5. **Internal-only dev/test utility** — `proptest`, `insta`, `tempfile`, `serial_test`. Put under
+   `[dev-dependencies]`, not the main set.
+
+Prefer mature crates for infra/core paths. Clever micro-crates with a half-dozen GitHub stars are
+not the right risk profile for the workflow engine. New-crate decisions should consider:
+maintenance signal, license, transitive-dep surface, MSRV, and feature flags.
+
+**Public dependencies are API commitments.** If a public type exposes a dependency's type
+(`pub fn parse() -> Result<Foo, third_party::Error>`), that dependency becomes part of your
+semver surface. Either re-export it through your own type, or wrap the error in your own enum.
+
+`cargo update` cadence: lockfile updates ship via PR like any other change. Don't pin transitive
+deps unless there's a known incompatibility; let `^` ranges do their work.
 
 ## Import style
 
