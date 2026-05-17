@@ -40,8 +40,8 @@ Sister rules in this set:
   ```bash
   cargo fmt --all --check
   cargo clippy --workspace --all-targets --all-features -- -D warnings
-  cargo test --workspace --all-targets --all-features
-  cargo doc --workspace --all-features --no-deps
+  RUSTFLAGS="-D warnings" cargo test --workspace --all-targets --all-features
+  RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --no-deps
   ```
 
   Feature-gated code is only seen by Clippy when invoked with `--all-features` (or the matching
