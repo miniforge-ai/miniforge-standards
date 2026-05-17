@@ -93,7 +93,9 @@ pub enum WorkflowError {
 
 // At the reporting boundary (CLI / FFI / log line):
 tracing::error!(error = ?err, "workflow failed");
-// `error = ?err` walks the chain; subscribers can render each level.
+// `error = ?err` records the error's `Debug` representation as a field.
+// If you need each `source()` level rendered, use a formatter/layer or helper that
+// explicitly formats or records the source chain.
 
 // Bad — early stringification erases the cause
 return Err(WorkflowError::Generic(format!("policy eval failed: {e}")));
