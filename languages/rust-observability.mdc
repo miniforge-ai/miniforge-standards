@@ -65,8 +65,8 @@ Notes:
 
 - `skip(...)` keeps large arguments (executor handle, full plan) out of every event payload.
 - `fields(...)` declares the correlation surface up front. Fields populated later use
-  `tracing::field::Empty` as a placeholder, then `tracing::Span::current().record("phase_id", &%id)`
-  inside the body.
+  `tracing::field::Empty` as a placeholder, then
+  `tracing::Span::current().record("phase_id", tracing::field::display(&id))` inside the body.
 - Use `%foo` for `Display` formatting, `?foo` for `Debug`. Pick the one the operator will read.
 
 Cross-task spans: `tracing::Span::current()` captures the active span; `instrument` on the spawned
