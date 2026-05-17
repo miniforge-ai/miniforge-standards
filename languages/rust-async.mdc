@@ -185,8 +185,9 @@ reporting layer; see `languages/rust-observability` (233) for the source-chain p
   documented elsewhere.
 - Do not reach for `Arc<Mutex<T>>` as a default architecture; message passing and task ownership
   cover most cases.
-- Do not assume an aborted task's drop glue ran — `abort()` jumps over cleanup; document what's
-  lost.
+- Do not assume an aborted task completed its own cleanup — `abort()` drops the future, so owned
+  locals' destructors do run, but cooperative shutdown paths and async cleanup after the
+  cancellation point do not; document what's lost.
 
 ## References
 
