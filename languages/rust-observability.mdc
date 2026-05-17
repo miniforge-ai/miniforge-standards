@@ -122,15 +122,39 @@ in latency graphs — handle of a request, evaluation of a policy pack, drainage
 Spans give the operator a duration measurement and a parent/child tree without per-event timestamp
 math.
 
+**Async functions: use `#[instrument]` or `Instrument::instrument`. Do not hold an `Entered`
+guard across `.await` points.** `tracing` explicitly warns against this — when a task yields at
+an `.await`, the executor may schedule a different task on the same thread while the `Entered`
+guard remains live, polluting that other task's span context.
+
 ```rust
+// Good — #[instrument] correctly enters/exits the span around every poll
+#[tracing::instrument(skip(pack, target), fields(pack = %pack.id(), target = %target.id()))]
 async fn evaluate_policy_pack(pack: &PolicyPack, target: &Artifact) -> PolicyOutcome {
-    let _span = tracing::info_span!("policy.evaluate", pack = %pack.id(), target = %target.id()).entered();
     /* ... evaluation ... */
+}
+
+// Also good — explicit Instrument::instrument on a future
+use tracing::Instrument;
+let span = tracing::info_span!("policy.evaluate", pack = %pack.id());
+let outcome = evaluate(pack, target).instrument(span).await;
+
+// Bad — Entered guard held across .await; pollutes other tasks' span contexts
+async fn evaluate_policy_pack(pack: &PolicyPack, target: &Artifact) -> PolicyOutcome {
+    let _span = tracing::info_span!("policy.evaluate", pack = %pack.id()).entered();
+    something_else().await;  // ← span remains "entered" while another task may run on this thread
 }
 ```
 
-The `_span` binding stays in scope for the function body. RAII drops it at function exit; the
-subscriber records the duration.
+For synchronous blocks, `.entered()` is fine — the RAII guard drops at end of scope and there's
+no executor yielding to worry about:
+
+```rust
+fn evaluate_sync(pack: &PolicyPack, target: &Artifact) -> PolicyOutcome {
+    let _span = tracing::info_span!("policy.evaluate", pack = %pack.id()).entered();
+    /* ... sync work ... */
+}
+```
 
 ## Log-message strings are localized
 

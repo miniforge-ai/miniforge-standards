@@ -64,16 +64,19 @@ Workspace lints should enable `clippy::await_holding_lock = "deny"` to catch thi
 that uses these MUST be cancellation-aware: it must not lose data, leak state, or deadlock when
 cancellation happens.
 
-A future that's dropped mid-execution may never be polled again. Local state on the stack
-disappears; partial side effects don't roll back automatically.
+A future that's dropped mid-execution may never be polled again. Synchronous `Drop` glue on owned
+locals **does** run (Rust drops the future, which drops owned values in scope); what's skipped is
+any cleanup that needs to be driven by the task itself — `async fn finalize()`, awaits that come
+after the cancellation point, side effects guarded by `defer`-style patterns. Partial side effects
+already committed before the cancellation point don't roll back.
 
 ```rust
-// Good — cooperative shutdown via a oneshot signal; finalize runs on the cooperative path
+// Good — cooperative shutdown via a oneshot signal; async finalize runs on the cooperative path
 let join = tokio::spawn(async move {
     loop {
         tokio::select! {
             _ = &mut shutdown_rx => {
-                finalize().await;
+                finalize().await;       // requires the task to keep being polled
                 break;
             }
             tick = next_event() => { handle(tick).await; }
@@ -81,12 +84,16 @@ let join = tokio::spawn(async move {
     }
 });
 
-// Bad — abort() jumps over any cleanup; partial writes/events leak
+// Bad — abort() skips the task's own async cleanup path (e.g. `finalize().await`).
+// Sync `Drop` on owned locals still runs; what's lost is anything that required
+// the task itself to make progress past the cancellation point.
 join.abort();
 ```
 
-When you must use `abort()` as a fallback (e.g. cooperative-shutdown timeout), document that
-finalize will not run and what's lost as a result.
+When you must use `abort()` as a fallback (e.g. cooperative-shutdown timeout), document **what
+async cleanup is skipped** and what's lost as a result. Don't claim "all cleanup runs" — that's
+wrong — or "no cleanup runs" — also wrong. The precise statement is: sync `Drop` runs; async
+finalize doesn't.
 
 ## Bounded channels and backpressure
 

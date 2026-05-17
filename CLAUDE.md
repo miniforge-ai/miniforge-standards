@@ -32,6 +32,11 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Catch exceptions in Clojure (`try` vs `try+`) | `languages/clojure-exception-handling` |
 | Write Python code | `languages/python` |
 | Write Rust code | `languages/rust` |
+| Write async/concurrent Rust | `languages/rust-async` |
+| Touch `unsafe` in Rust | `languages/rust-unsafe` |
+| Add Rust logging/tracing | `languages/rust-observability` |
+| Design Rust wire formats / serialization | `languages/rust-wire-protocols` |
+| Write Rust in a Miniforge product | `project/rust-miniforge-shape` |
 | Write Swift code | `languages/swift` |
 | Write browser JavaScript | `languages/javascript` |
 | Write CSS | `languages/css` |
@@ -76,6 +81,10 @@ languages/
   clojure-exception-handling.mdc  dewey: "211"
   python.mdc                  dewey: "220"
   rust.mdc                    dewey: "230"
+  rust-async.mdc              dewey: "231"
+  rust-unsafe.mdc             dewey: "232"
+  rust-observability.mdc      dewey: "233"
+  rust-wire-protocols.mdc     dewey: "234"
   swift.mdc                   dewey: "240"
   javascript.mdc              dewey: "250"
   css.mdc                     dewey: "260"
@@ -101,6 +110,7 @@ workflows/
   datever.mdc                 dewey: "730"
 project/
   header-copyright.mdc        dewey: "810"
+  rust-miniforge-shape.mdc    dewey: "835"
 meta/
   rule-format.mdc             dewey: "900"
 ```
@@ -126,7 +136,11 @@ meta/
   210      Clojure (Polylith, stratified files, map access patterns)
   211      Clojure exception handling (prefer `try+` / `throw+`; plain `try` allowed in three narrow cases — no-dep leaf catch, leaf inside try+, REPL)
   220      Python
-  230      Rust (error handling, rule tables, context structs, linting)
+  230      Rust (error handling, rule tables, context structs, linting, toolchain, deps)
+  231      Rust async/concurrency (no blocking, no locks across .await, cancellation, bounded channels, task lifecycle)
+  232      Rust unsafe discipline (deny by default, isolated behind safe APIs, SAFETY comments, profile-evidence required)
+  233      Rust observability (tracing not println, correlation IDs via #[instrument], error source-chain preservation, system-catalog log strings)
+  234      Rust wire protocols (wire/domain separation, versioned envelopes, validate-on-deserialize, append-only audit ratchet)
   240      Swift (stratified views, access control, optionals, closures)
   250      JavaScript (browser; sparse use, no globals, ES modules, safe DOM)
   260      CSS (design tokens, semantic class names, shallow selectors, focus)
@@ -154,6 +168,7 @@ meta/
   730      Datever
 800-899  Project         Reserved for project-specific overrides
   810      Copyright Header
+  835      Rust Miniforge Shape (typed workflow state, PolicyDecision as value, structured findings, adapters-behind-traits, append-only evidence)
 900-999  Meta            Templates, indexes
   900      Rule Format
 ```
