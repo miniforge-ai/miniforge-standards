@@ -83,14 +83,15 @@ in another, and grep can't find them.
 
 ;; GOOD — factory function owns the envelope shape
 (defn- agent-event
-  "Build an :agent/* event envelope. All :agent/* events share these
-   keys; only the body keys vary by type."
-  [event-type workflow-id body-keys]
+  "Build an :agent/* event envelope. All :agent/* events share the
+   envelope keys; `body-map` carries the per-type payload and is
+   merged in last."
+  [event-type workflow-id body-map]
   (merge {:event/type      event-type
           :event/id        (random-uuid)
           :event/timestamp (now)
           :workflow/id     workflow-id}
-         body-keys))
+         body-map))
 
 (agent-event :agent/chunk     workflow-id {:chunk/delta delta})
 (agent-event :agent/tool-call workflow-id {:tool/name tool-name})

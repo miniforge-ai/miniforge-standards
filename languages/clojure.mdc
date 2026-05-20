@@ -240,12 +240,12 @@ shape of the `let` and entangles binding with computation.
 
 ### `cond` / `case` / `condp` arms
 
-`cond` arm bodies must fit on one expression. A multi-form body in a
-`cond` arm hides branching logic inside what reads like a dispatch
-table.
+Arm bodies in **all three** dispatch forms must fit on one expression.
+A multi-form body hides branching logic inside what reads like a
+dispatch table — the visual shape of the form lies about what it does.
 
 ```clojure
-;; BAD — each arm has multi-form work; the dispatch table is gone
+;; BAD (cond) — each arm has multi-form work; the dispatch table is gone
 (cond
   (= phase :verify)
   (let [budget (get-budget ctx)
@@ -263,6 +263,33 @@ table.
 (cond
   (= phase :verify) (run-and-record-verify ctx)
   (= phase :review) (run-and-record-review ctx))
+
+;; BAD (case) — multi-form body buried under the dispatch keyword
+(case status
+  :completed (do (mark-done! ctx)
+                 (emit-completion! ctx)
+                 (build-success-result ctx))
+  :failed    (do (record-failure! ctx)
+                 (build-failure-result ctx)))
+
+;; GOOD
+(case status
+  :completed (finalize-success ctx)
+  :failed    (finalize-failure ctx))
+
+;; BAD (condp) — predicate-shaped dispatch with let-laden arms
+(condp re-matches input
+  #"v1/.*" (let [parsed (parse-v1 input)]
+             (validate-v1! parsed)
+             (handle-v1 parsed))
+  #"v2/.*" (let [parsed (parse-v2 input)]
+             (validate-v2! parsed)
+             (handle-v2 parsed)))
+
+;; GOOD
+(condp re-matches input
+  #"v1/.*" (process-v1 input)
+  #"v2/.*" (process-v2 input))
 ```
 
 ### Map literal construction (ALWAYS)

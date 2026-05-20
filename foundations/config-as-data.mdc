@@ -19,12 +19,15 @@ Three signals that a value is configuration:
 If a value matches any of (1), (2), or (3) — it is configuration. It lives in an `.edn` resource (or a layered profile of them), not in a `def` and not in a hand-built map in `(defn create-foo ...)`.
 
 ```clojure
-;; BAD — operational policy embedded in code
+;; BAD — operational policy embedded in code; the per-backend table
+;; is the policy the operator wants to tune, not the function the
+;; agent calls.
 (defn watchdog [backend]
-  (create-watchdog {:threshold-ms 90000
-                    :check-interval-ms 5000
-                    :allowed-backends [:claude :codex]
-                    :per-backend-overrides {:claude 120000}}))
+  (let [overrides {:claude 120000}
+        threshold (get overrides backend 90000)]
+    (create-watchdog {:threshold-ms       threshold
+                      :check-interval-ms  5000
+                      :allowed-backends   [:claude :codex]})))
 
 ;; GOOD — configuration is data, code is parametric
 ;; resources/config/agent-stream-watchdog.edn
@@ -34,8 +37,14 @@ If a value matches any of (1), (2), or (3) — it is configuration. It lives in 
  :agent/per-backend-gap-thresholds    {:claude 120000}}
 
 ;; src/agent/stream_watchdog.clj
+(defn- resolve-threshold [config backend]
+  (or (get-in config [:agent/per-backend-gap-thresholds backend])
+      (:agent/stream-gap-threshold-ms config)))
+
 (defn watchdog [config backend]
-  (create-watchdog config))
+  (create-watchdog (assoc config
+                          :resolved-threshold-ms
+                          (resolve-threshold config backend))))
 ```
 
 ## EDN structure conventions
