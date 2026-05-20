@@ -1,0 +1,80 @@
+---
+dewey: "008"
+description: No dead code, no legacy shims, no commented-out blocks — deleting unused code is part of the change, not a follow-up
+alwaysApply: true
+---
+
+# No Dead Code (ALWAYS)
+
+**Code that is no longer reachable, used, or correct must be deleted in the change that obsoletes it — not left as a "for now" comment, a `_unused` rename, or a "legacy" shim.** Git history is the archive; commented-out code is not.
+
+## The rule
+
+If a refactor or feature change makes a function, namespace, helper, or branch unused:
+
+- **Delete it in the same PR.** Not in a follow-up. Not "after we're sure." Now.
+- The change is incomplete until the unused code is removed.
+- Rely on git history — `git log -S <symbol>` recovers anything that was once there.
+
+```clojure
+;; BAD — keeping the old impl "just in case"
+(defn calc-budget-v2 [ctx] ...)   ; the new way
+;; (defn calc-budget-v1 [ctx] ...) ; commented out — REMOVE this entirely
+
+;; BAD — renamed instead of deleted
+(defn ^:deprecated calc-budget-legacy [ctx] (calc-budget-v2 ctx))
+;; A deprecation marker WITHOUT a removal plan is just dead code with paperwork.
+
+;; GOOD — delete it, commit the deletion, trust git
+(defn calc-budget [ctx] ...)   ; one impl, current, used
+```
+
+## What counts as dead code
+
+Reject in review:
+
+- **Commented-out function bodies, defns, or imports.** "Might need this later" is what `git log` is for.
+- **Unused helper fns** — no callers anywhere in the workspace. Use `(clj-kondo --lint)` or grep before assuming a fn is referenced.
+- **Imports / requires that aren't used.** Lint should already catch these; agents must respect lint warnings.
+- **Branches in `cond` / `case` that are never reachable.** If a branch was "for backwards compat" and the compat target is gone, the branch is gone.
+- **`if` arms that are always-true or always-false** after a feature flag flips permanently.
+- **Tests that were `^:disabled` or `(comment ...)`-wrapped "for now"** — fix or delete. Never leave them disabled across PRs.
+- **`TODO:` / `FIXME:` / `XXX:` comments older than the current PR** that the author isn't going to address — open an issue or delete the comment.
+- **`_unused_` or `_old_` prefix renames** — these are dead code wearing a hat.
+- **Shims that wrap a "v1" API to look like "v2"** when no caller depends on v1 anymore. The shim's existence is the smell.
+
+## Legacy / migration windows
+
+If a deprecation truly needs a migration window (external consumers, persisted data shape):
+
+1. The deprecation is the change, not a "for now."
+2. The PR includes the migration plan in the commit message: who removes it, when, what blocks the removal.
+3. There is a tracked work item (issue, spec, ticket) referenced from the comment that wraps the legacy code.
+4. The block carries the deprecation reason inline: `;; DEPRECATED 2026-06-01: removed when X completes — tracked in #1234`. A bare `;; legacy` is rejected.
+5. **Default to deletion.** A migration window is the exception, not the default; the burden is on the author to justify keeping the old path.
+
+## The user invariant
+
+Some users add a directive to their agent profile: **"Never introduce legacy code without explicit direction."** Treat that as a hard rule in repos that include this standard.
+
+When in doubt: ask for explicit permission to leave a deprecation in place, with a removal date. Default to delete.
+
+## Agent behavior
+
+When writing or reviewing code:
+1. Every PR that adds new functionality — check for the old functionality the new replaces. Did you delete it?
+2. Every PR that adds a function — grep for callers. If there are none, why is it being added?
+3. Every PR that renames a function — make sure no `def old-name new-name` shim is left behind unless the migration plan is documented.
+4. Lint warnings about unused symbols are not noise — they are dead code reports. Fix or delete.
+5. When the user says "we don't need backwards compat" — that is the explicit direction to delete the shim.
+
+## Anti-patterns to reject
+
+- Commented-out code blocks of any size, in any file
+- `;; TODO: remove after X` comments where X has already happened
+- Disabled tests left in the suite (`^:disabled`, `(comment ...)`-wrapped, `(when false ...)`)
+- Helper fns that have zero call sites in the workspace
+- Renames-to-park (`old-x → x-legacy`) without a documented removal plan
+- "Just in case" branches in `cond` / `case` for inputs that no caller produces
+- Multiple parallel implementations of the same logic (`*-v1`, `*-v2`, `*-new`) — pick one and delete the others
+- "For now" / "temporary" comments older than 30 days

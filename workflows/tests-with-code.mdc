@@ -1,0 +1,78 @@
+---
+dewey: "716"
+description: Code changes ship with test changes — a PR that touches production code without touching tests is a smell worth re-examining
+alwaysApply: true
+---
+
+# Tests Ship With Code (ALWAYS)
+
+**A PR that modifies production code without modifying tests is the exception, not the rule.** When reviewing or authoring a change, treat the absence of test changes as a question that must be answered, not as a default.
+
+## The rule
+
+Every code change falls into one of three categories. Each has a different test expectation; pick deliberately, document the choice.
+
+| Category | Expected test change |
+|---|---|
+| **New behavior** — a new function, branch, decision path, side effect | New tests pinning the new behavior. No exception. |
+| **Changed behavior** — a fix, optimization, refactor that changes observable output | Tests updated to pin the new behavior; the old assertion must change or be replaced. |
+| **Pure restructuring** — rename, extract-fn, move-ns, reformat, comment | Tests likely unchanged. State this in the PR body. |
+
+The third category is the only one where "no test changes" is a valid PR. If the PR description doesn't explicitly claim it's pure restructuring, the absence of test changes is a defect.
+
+## Why this rule exists
+
+When agents (or humans) write code without writing tests:
+
+- The change is **unverified** — the agent claims it works, but no executable proof exists.
+- The next change risks **silently breaking the behavior** — there's no test to fail.
+- The reviewer has no **independent specification** of what the code is supposed to do.
+- The bug-fix PR has no **regression pin** — the same bug can return tomorrow.
+
+A test is a second statement of intent. Two statements that have to agree catches a class of misunderstanding that one statement cannot.
+
+## Diagnostic questions
+
+When you author or review a PR with `+N -M` in source and `+0 -0` in tests:
+
+1. **Did you add a new function or branch?** Then a new test must pin it. No exception.
+2. **Did you fix a bug?** A regression test must reproduce the bug on `main` and pass on this branch. The bug report is incomplete without it.
+3. **Did you change observable behavior?** The existing test for that behavior must change. If no test exists, the absence of one is itself a finding — open a follow-up to add coverage *now*, not later.
+4. **Is this truly pure restructuring?** State it in the PR body: "No test changes — rename only / formatting only / comment only." If the PR author can't make that claim with conviction, the change isn't pure restructuring.
+
+If none of the answers explain the missing test change, the PR is incomplete.
+
+## What "test change" means
+
+Not just new `deftest` forms. Counts as a test change:
+
+- New assertions in an existing test
+- Test fixtures updated to cover the new shape
+- Property-based test generators extended for the new domain
+- Snapshot / golden-file regeneration
+- Removed obsolete tests when the behavior they pinned is genuinely gone
+- Test scaffolding (mocks, stubs, helpers) extended for new code paths
+
+Does NOT count:
+
+- Whitespace / formatting in test files
+- Renames following a production-code rename (mechanical, not specification)
+- Disabling a test (`^:disabled`, `(comment ...)`) — see [no-dead-code](../foundations/no-dead-code.mdc); this is dead-code production, not test work
+
+## Agent behavior
+
+When writing or reviewing code:
+1. After every implement step, before declaring done — re-read the diff. Did production code change? Did test code change to match? If not, return to the implement step.
+2. When a CI / lint / format step changes code automatically and a test wasn't touched — verify the formatter didn't change behavior. If it did, add tests.
+3. Reviewer agents must surface "no test changes" as a blocking issue unless the PR description claims pure restructuring.
+4. When the bug-fix prompt arrives ("fix X"), the deliverable is two artifacts: the fix AND the regression test. One without the other is not done.
+
+## Anti-patterns to reject
+
+- PR that adds a feature with "tests in a follow-up" as the justification — there is no follow-up
+- PR that fixes a bug without a regression test reproducing the bug on `main`
+- PR that touches business logic and only updates whitespace in test files
+- "I tested it locally" as a substitute for executable test coverage
+- A growing list of `(comment ...)` blocks "for now" in test files
+- New `defmethod` / `defmulti` cases without a test exercising the new dispatch
+- Schema changes without a test exercising the new shape (and rejection of the old one)

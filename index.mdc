@@ -35,6 +35,9 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   ├── result-handling.mdc                   # dewey: "003"  alwaysApply: true
 │   ├── validation-boundaries.mdc             # dewey: "004"  alwaysApply: true
 │   ├── exceptions-as-data.mdc                # dewey: "005"  alwaysApply: true
+│   ├── named-constants.mdc                   # dewey: "006"  alwaysApply: true
+│   ├── config-as-data.mdc                    # dewey: "007"  alwaysApply: true
+│   ├── no-dead-code.mdc                      # dewey: "008"  alwaysApply: true
 │   ├── simple-made-easy.mdc                  # dewey: "010"  alwaysApply: true
 │   ├── specification-standards.mdc           # dewey: "020"
 │   ├── work-spec-authoring.mdc               # dewey: "021"
@@ -71,6 +74,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 ├── workflows/
 │   ├── git-branch-management.mdc        # dewey: "710"
 │   ├── pre-commit-discipline.mdc        # dewey: "715"  alwaysApply: true
+│   ├── tests-with-code.mdc              # dewey: "716"  alwaysApply: true
 │   ├── pr-documentation.mdc             # dewey: "721"
 │   ├── pr-layering.mdc                  # dewey: "722"  alwaysApply: true
 │   ├── git-worktrees.mdc                # dewey: "725"
@@ -93,6 +97,9 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 003 | `result-handling` | ✓ | success?/failed? predicates; schema constructors |
 | 004 | `validation-boundaries` | ✓ | Schemas at interface/external boundaries only |
 | 005 | `exceptions-as-data` | ✓ | Anomalies as data in flows; throw only at absolute boundaries |
+| 006 | `named-constants` | ✓ | No magic numbers / magic strings; every meaningful literal extracted to a `def` with an intent-bearing docstring |
+| 007 | `config-as-data` | ✓ | Operational config lives in `.edn` files with a Malli schema; code holds only fallback defaults |
+| 008 | `no-dead-code` | ✓ | Delete unused code in the change that obsoletes it; no commented-out blocks, no `_legacy` shims without an explicit removal plan |
 | 010 | `simple-made-easy` | ✓ | Simplicity over familiarity, uncomplected artifacts |
 | 020 | `specification-standards` |  | Normative specs (N1-N6), spec governance, conformance |
 | 021 | `work-spec-authoring` |  | `work/*.spec.edn` format: priority, theme, normative-refs, testable acceptance criteria |
@@ -145,6 +152,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 |-------|------|--------|-------------|
 | 710 | `git-branch-management` |  | Branch from main, single-purpose PRs |
 | 715 | `pre-commit-discipline` | ✓ | Never bypass hooks without investigation; fix root causes |
+| 716 | `tests-with-code` | ✓ | Code changes ship with test changes; "no test diff" requires an explicit pure-restructuring claim |
 | 721 | `pr-documentation` |  | Living PR docs in `docs/pull-requests/` |
 | 722 | `pr-layering` | ✓ | Stratified PR DAG; <400 lines; independently mergeable |
 | 725 | `git-worktrees` |  | Parallel workflows with worktrees, operator multi-loop |

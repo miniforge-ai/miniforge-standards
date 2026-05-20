@@ -1,0 +1,104 @@
+---
+dewey: "007"
+description: Configuration is data — operational values live in .edn files, not as embedded literals in code, and never as runtime constructions of the configuration shape
+alwaysApply: true
+---
+
+# Configuration is Data (ALWAYS)
+
+**Operational configuration lives in `.edn` files, not in code.** If a value can be reasonably overridden at install time, run time, or per-environment — by an operator who is not editing source — it is configuration, and it goes in EDN.
+
+## The rule
+
+Three signals that a value is configuration:
+
+1. **Different deployments want different values.** Local dev wants short timeouts; production wants long ones. A test fixture wants a stub URL; production wants a real one.
+2. **An operator should be able to change it without a code release.** Adjusting a retry policy, swapping a backend image digest, toggling a feature flag.
+3. **The value composes naturally with other related values.** A `:self-healing` block holds threshold + cooldown + backend allow-list, all tunable together.
+
+If a value matches any of (1), (2), or (3) — it is configuration. It lives in an `.edn` resource (or a layered profile of them), not in a `def` and not in a hand-built map in `(defn create-foo ...)`.
+
+```clojure
+;; BAD — operational policy embedded in code
+(defn watchdog [backend]
+  (create-watchdog {:threshold-ms 90000
+                    :check-interval-ms 5000
+                    :allowed-backends [:claude :codex]
+                    :per-backend-overrides {:claude 120000}}))
+
+;; GOOD — configuration is data, code is parametric
+;; resources/config/agent-stream-watchdog.edn
+{:agent/stream-gap-threshold-ms       90000
+ :agent/check-interval-ms             5000
+ :agent/allowed-failover-backends     [:claude :codex]
+ :agent/per-backend-gap-thresholds    {:claude 120000}}
+
+;; src/agent/stream_watchdog.clj
+(defn watchdog [config backend]
+  (create-watchdog config))
+```
+
+## EDN structure conventions
+
+- **Namespaced keys** (`:agent/stream-gap-threshold-ms`, not `:threshold-ms`) so configs can be merged across components without collision.
+- **Units in the key name** (`-ms`, `-bytes`, `-percent`) — values shouldn't have to be guessed.
+- **One file per component or per domain** under `resources/config/`. A `default-user-config.edn` ships embedded defaults; per-deployment overrides layer on top via Aero or equivalent.
+- **No code execution at load time** — EDN reader literals only where the schema explicitly allows them. Reading config must not be Turing-complete.
+
+## Where named constants live (code) vs config values (EDN)
+
+| Belongs in code (`def`) | Belongs in EDN config |
+|---|---|
+| Algorithmic constants (golden ratio, max-redirects guard) | Anything an operator might tune |
+| Protocol-level values (event-type keywords, schema field names) | Per-environment thresholds, timeouts, retries |
+| Test-only values used in fixtures | Production defaults the team agrees on |
+| The **fallback default** when config is absent | The **active value** the system uses |
+
+Pattern: code has a `default-X` named constant for "what to do when config is silent"; the EDN config carries the actual operational value:
+
+```clojure
+(def default-gap-threshold-ms
+  "Hard-coded fallback when config is absent. The active value comes
+   from :agent/stream-gap-threshold-ms in resources/config/agent.edn."
+  90000)
+
+(defn resolve-threshold [config]
+  (get config :agent/stream-gap-threshold-ms default-gap-threshold-ms))
+```
+
+## Schema and validation
+
+Every EDN config file has a Malli (or equivalent) schema. Validation runs at config load, NOT at every read. A bad config fails fast at startup with a clear error pointing at the offending key — not as a `NullPointerException` three layers deep at runtime.
+
+```clojure
+(def ConfigSchema
+  [:map
+   [:agent/stream-gap-threshold-ms      {:default 90000} pos-int?]
+   [:agent/check-interval-ms            {:default 5000}  pos-int?]
+   [:agent/per-backend-gap-thresholds   {:default {}}    [:map-of keyword? pos-int?]]
+   [:agent/allowed-failover-backends    {:default []}    [:vector keyword?]]])
+
+(defn load-config [path]
+  (-> (slurp path) edn/read-string (validate ConfigSchema)))
+```
+
+See [validation-boundaries](./validation-boundaries.mdc) for the broader principle: validate at the boundary, trust inside.
+
+## Agent behavior
+
+When writing or reviewing code:
+1. Every operational literal in code (timeouts, retry counts, thresholds, URLs, paths) — ask: would an operator want to change this without a code release? If yes → move to EDN.
+2. Reject PRs that add a feature flag, threshold, or backend list as a hard-coded `def`.
+3. When extracting to EDN, also add (or extend) the config's Malli schema.
+4. The code's `default-X` constant stays — it is the fallback if config is absent — but the operational value lives in EDN.
+5. Never use `eval`, `read-string` without binding `*read-eval* false`, or any other Turing-complete config-reading path.
+
+## Anti-patterns to reject
+
+- Hard-coded URLs / paths / backend image digests in `defn` bodies
+- Per-deployment values gated by `if` on environment name (`(if (= env :prod) 90000 5000)`) — that's config disguised as code
+- Hand-built option maps inside `(defn create-X ...)` for what should be a passed-in config
+- EDN files that contain Clojure forms (`#=(...)`) instead of pure data
+- Config files with no schema — every config file MUST have one
+- "Magic numbers extracted to a `def`" when the value should have been EDN
+- Configuration spread across multiple `def`s instead of a single namespaced EDN map
