@@ -141,10 +141,17 @@ When a file exceeds 3 layers:
   (or (:tokens result) total-tokens)           ; → (get result :tokens total-tokens)
   ```
 
-## Anonymous functions (ALWAYS)
+## Inline expressions: extract anything that grows (ALWAYS)
 
-Anonymous functions (`fn` / `#(...)`) should be used **only when they enhance
-the clarity of the surrounding code** — not as a default for every callback.
+The rule that follows applies uniformly to **anonymous functions** (`fn` /
+`#(...)`), **`let` bindings**, and **`cond` / `case` / `condp` arms**. If the
+body grows beyond a single, intent-bearing line, extract it to a `defn-`
+with a name that says *what it does* — not how.
+
+### Anonymous functions (`fn` / `#(...)`)
+
+Anonymous functions should be used **only when they enhance the clarity of
+the surrounding code** — not as a default for every callback.
 
 **Prefer named functions when:**
 
@@ -197,6 +204,137 @@ data and the behavior is separately testable:
 
 {:file-pred clojure-file?}
 ```
+
+### `let` bindings
+
+The same one-line rule applies to `let` binding right-hand sides. A
+binding whose value is computed by a multi-form expression obscures the
+shape of the `let` and entangles binding with computation.
+
+```clojure
+;; BAD — non-trivial computation inline; the let reads as code, not data flow
+(let [config       (get-in ctx [:execution/config])
+      threshold    (or (get-in config [:per-backend backend])
+                       (get config :default)
+                       (* 30 60 1000))
+      enabled?     (and (true? (:agent/watchdog-enabled? config))
+                        (some? threshold)
+                        (not (:agent/dry-run? ctx)))]
+  ...)
+
+;; GOOD — each value is a named helper; the let reads as a pipeline of names
+(defn- resolve-threshold [config backend]
+  (or (get-in config [:per-backend backend])
+      (get config :default)
+      default-gap-threshold-ms))
+
+(defn- watchdog-enabled? [config ctx]
+  (and (true? (:agent/watchdog-enabled? config))
+       (not (:agent/dry-run? ctx))))
+
+(let [config    (get-in ctx [:execution/config])
+      threshold (resolve-threshold config backend)
+      enabled?  (watchdog-enabled? config ctx)]
+  ...)
+```
+
+### `cond` / `case` / `condp` arms
+
+Arm bodies in **all three** dispatch forms must fit on one expression.
+A multi-form body hides branching logic inside what reads like a
+dispatch table — the visual shape of the form lies about what it does.
+
+```clojure
+;; BAD (cond) — each arm has multi-form work; the dispatch table is gone
+(cond
+  (= phase :verify)
+  (let [budget (get-budget ctx)
+        result (run-tests! ctx :timeout-ms budget)]
+    (record-metrics! ctx result)
+    (build-verify-result result))
+
+  (= phase :review)
+  (let [issues (analyze ctx)
+        decision (decide ctx issues)]
+    (record-fingerprint! ctx issues)
+    (build-review-result decision issues)))
+
+;; GOOD — one named helper per arm; cond is a dispatch table again
+(cond
+  (= phase :verify) (run-and-record-verify ctx)
+  (= phase :review) (run-and-record-review ctx))
+
+;; BAD (case) — multi-form body buried under the dispatch keyword
+(case status
+  :completed (do (mark-done! ctx)
+                 (emit-completion! ctx)
+                 (build-success-result ctx))
+  :failed    (do (record-failure! ctx)
+                 (build-failure-result ctx)))
+
+;; GOOD
+(case status
+  :completed (finalize-success ctx)
+  :failed    (finalize-failure ctx))
+
+;; BAD (condp) — predicate-shaped dispatch with let-laden arms
+(condp re-matches input
+  #"v1/.*" (let [parsed (parse-v1 input)]
+             (validate-v1! parsed)
+             (handle-v1 parsed))
+  #"v2/.*" (let [parsed (parse-v2 input)]
+             (validate-v2! parsed)
+             (handle-v2 parsed)))
+
+;; GOOD
+(condp re-matches input
+  #"v1/.*" (process-v1 input)
+  #"v2/.*" (process-v2 input))
+```
+
+### Map literal construction (ALWAYS)
+
+Map literals must read as **key → value, one line per pair**. If a
+value requires computation, compute it in a `let` above the map and
+reference the binding by name.
+
+```clojure
+;; BAD — computation embedded in map values; intent is buried
+{:execution/id        (random-uuid)
+ :execution/started?  true
+ :execution/budget-ms (* (get config :budget-mins 30) 60 1000)
+ :execution/threshold (or (get-in config [:per-backend backend])
+                          (get config :default)
+                          90000)
+ :execution/backends  (->> (get config :allowed-backends)
+                           (remove #{:claude-legacy})
+                           sort
+                           vec)
+ :execution/mode      (if (:governed? ctx) :governed :local)}
+
+;; GOOD — values pre-computed in let; map construction is pure data
+(let [budget-ms (* (get config :budget-mins 30) 60 1000)
+      threshold (resolve-threshold config backend)
+      backends  (allowed-backends config)
+      mode      (execution-mode ctx)]
+  {:execution/id        (random-uuid)
+   :execution/started?  true
+   :execution/budget-ms budget-ms
+   :execution/threshold threshold
+   :execution/backends  backends
+   :execution/mode      mode})
+```
+
+Acceptable inline values: literals, constant lookups (`:foo`,
+`some-const`), one-arg function calls whose name carries the intent
+(`(random-uuid)`, `(now)`, `(read-config)`). Anything with arithmetic,
+threading, or branching belongs in the `let` above.
+
+### Test code is not exempt
+
+All rules in this section apply to `test/` namespaces. Tests are also
+documentation — a multi-form `cond` arm or a 4-line `let` binding in
+a test obscures the contract the test is meant to pin.
 
 ## Agent behavior
 

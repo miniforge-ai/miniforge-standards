@@ -51,6 +51,59 @@ The internal shape of a result map is an **implementation detail**. Code that de
 
 Constructors enforce the canonical shape. They are also self-documenting: `(schema/failure-with-errors :pack errors)` communicates intent; `{:success? false :pack nil :errors errors}` does not.
 
+### Factory functions for any repeated map shape
+
+This rule generalizes beyond result/anomaly. **Any map shape constructed
+in more than one place must have a factory function.** Hand-built map
+literals across files drift — keys get added in one site and forgotten
+in another, and grep can't find them.
+
+```clojure
+;; BAD — same event envelope built by hand in three sites
+;; src/agent/streaming.clj
+{:event/type :agent/chunk
+ :event/id (random-uuid)
+ :event/timestamp (now)
+ :workflow/id workflow-id
+ :chunk/delta delta}
+
+;; src/agent/tool_call.clj
+{:event/type :agent/tool-call
+ :event/id (random-uuid)
+ :event/timestamp (now)
+ :workflow/id workflow-id
+ :tool/name tool-name}
+
+;; src/agent/error.clj
+{:event/type :agent/error
+ :event/id (random-uuid)
+ ;; ↑ someone forgot :event/timestamp here. Compiler doesn't catch it.
+ :workflow/id workflow-id
+ :error/message msg}
+
+;; GOOD — factory function owns the envelope shape
+(defn- agent-event
+  "Build an :agent/* event envelope. All :agent/* events share the
+   envelope keys; `body-map` carries the per-type payload and is
+   merged in last."
+  [event-type workflow-id body-map]
+  (merge {:event/type      event-type
+          :event/id        (random-uuid)
+          :event/timestamp (now)
+          :workflow/id     workflow-id}
+         body-map))
+
+(agent-event :agent/chunk     workflow-id {:chunk/delta delta})
+(agent-event :agent/tool-call workflow-id {:tool/name tool-name})
+(agent-event :agent/error     workflow-id {:error/message msg})
+```
+
+The factory is the single place to add a new envelope key or change
+the timestamp source. Drift across call sites is impossible. The
+factory's signature also documents which keys are envelope and which
+are body-specific — information that's invisible in the duplicate
+literals.
+
 ## Propagation — thread results through, don't unwrap
 
 When passing a result to a caller, propagate the result map — don't unwrap it and re-wrap it.

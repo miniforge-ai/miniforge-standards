@@ -1,0 +1,113 @@
+---
+dewey: "006"
+description: Named constants — no magic numbers or magic strings in code, always extract to a well-named def with a docstring that explains intent
+alwaysApply: true
+---
+
+# Named Constants (ALWAYS)
+
+**No magic numbers, no magic strings in code.** Every numeric or string literal whose value carries meaning beyond "this is the only valid value for this position" must be a named `def` with a docstring that explains *what the value means* and *why this value*.
+
+## The rule
+
+If a reader has to ask **"why this number?"** or **"what does this string mean?"**, the literal is magic and must be extracted.
+
+```clojure
+;; BAD — magic 90000 and magic 0.90 buried in code
+(defn watchdog [config backend]
+  (let [threshold (get config :gap-threshold-ms 90000)]
+    ...))
+
+(select-best-backend current-backend 0.90 1800000 nil)
+
+;; GOOD — named constants with intent in the docstring
+(def default-gap-threshold-ms
+  "Default wall-clock gap between agent emissions before the watchdog
+   fires (90s). Tuned against Claude Code + Codex streaming cadence —
+   normal turns emit at least one event per minute; 90s allows two
+   missed beats before declaring the stream stalled."
+  90000)
+
+(def default-backend-health-threshold
+  "Backend success-rate floor for selection. Below this, the backend
+   is considered degraded and skipped in favor of a healthier one."
+  0.90)
+
+(def default-backend-switch-cooldown-ms
+  "Minimum interval between automatic backend switches (30 min). Stops
+   thrashing when two backends are oscillating between healthy and
+   degraded."
+  (* 30 60 1000))
+```
+
+Composed math (`(* 30 60 1000)`) is preferred over a single opaque integer when the unit composition is part of the intent.
+
+## What counts as a "magic" literal
+
+Magic:
+- Threshold / timeout / budget values (any time-or-money number)
+- Retry counts, batch sizes, page sizes
+- Confidence cutoffs, success-rate floors, similarity ratios
+- File paths embedded in code (use config or resource lookup)
+- Status codes other than 0 / 1 (exit 124 = `unix-timeout-exit-code`, exit 130 = `unix-sigint-exit-code`)
+- Domain enumerations spelled inline (`:blocking`, `:warning` repeated across files → `actionable-severities`)
+
+Not magic — fine to inline:
+- `0`, `1`, `-1` as loop / index sentinels (their meaning is structural)
+- `true` / `false`
+- Empty literals: `[]`, `{}`, `#{}`, `""`
+- Math identities: `(inc n)`, `(dec n)`, `(* x 2)` where the `2` is "doubled" by intent
+
+## Test code is not exempt
+
+Tests using bare `750`, `5000`, `7200` for "short enough to be fast" / "long enough to time out" should still name the intent:
+
+```clojure
+;; BAD
+(verify/run-tests! "/tmp" :test-cmd "sleep 7200" :timeout-ms 750)
+
+;; GOOD
+(def ^:private absurdly-long-cmd
+  "Sleep command guaranteed to outlive the test deadline — used to
+   force the timeout path. If the test runs without killing it, CI
+   would see a 2-hour orphan, so the assertion below also checks the
+   process tree is reaped."
+  "sleep 7200")
+
+(def ^:private aggressive-timeout-ms
+  "Short timeout to make the test fast — the production default is 30min,
+   but the contract under test is `aborts within deadline`, not `tolerates
+   30min wait`."
+  750)
+```
+
+The named-constant rule is stricter than other style rules in tests because test code is also documentation: a reader auditing the test for correctness has to recover the intent from the names.
+
+## Configuration values
+
+Values that the user can override at runtime live in `.edn` config files (see [config-as-data](./config-as-data.mdc)), *not* as `def`s in code. The `def` in code is the **default** if config is silent. Pattern:
+
+```clojure
+(def default-stream-gap-threshold-ms 90000)
+
+(defn resolve-gap-threshold [config backend]
+  (or (get-in config [:per-backend backend])
+      (get config :default)
+      default-stream-gap-threshold-ms))
+```
+
+## Agent behavior
+
+When writing or reviewing code:
+1. Every numeric literal larger than 2 or smaller than -1 → check if it deserves a name.
+2. Every string literal with structure (path fragment, format placeholder, enum value) → check if it deserves a name *or* belongs in i18n.
+3. If a magic literal appears in more than one place, it MUST be extracted to a shared constant.
+4. The `def`'s docstring must explain the *intent* (what does this value mean?) and the *rationale* (why this value?). "Default timeout" is not a docstring; "Default timeout — 90s allows two missed Claude-Code event heartbeats before declaring the stream stalled" is.
+
+## Anti-patterns to reject
+
+- Inline numeric literals passed to multi-arg functions where the position carries meaning (`(select-best-backend backend 0.90 1800000 nil)` — every positional arg should be a named constant or a runtime value)
+- `(get config :key 90000)` patterns where the default is magic — extract the default
+- Same numeric literal repeated in multiple files
+- `def` named `default-value` / `magic-x` / `the-number` (the name must explain the intent, not flag the pattern)
+- Pure numeric `def`s without docstrings — the name is half the story, the docstring is the other half

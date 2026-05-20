@@ -26,6 +26,10 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Handle success/failure results | `foundations/result-handling` |
 | Know where to put validation | `foundations/validation-boundaries` |
 | Add user-facing strings | `foundations/localization` |
+| Replace a magic number or string | `foundations/named-constants` |
+| Decide between code default and EDN config | `foundations/config-as-data` |
+| Remove or refactor old code | `foundations/no-dead-code` |
+| Add code without tests | `workflows/tests-with-code` |
 | Run tasks in OCI containers | `foundations/runtime-*` (dewey 030–033) |
 | Write tests | `testing/standards` |
 | Write Clojure code | `languages/clojure` |
@@ -68,6 +72,10 @@ foundations/
   code-quality.mdc            dewey: "002"
   result-handling.mdc         dewey: "003"
   validation-boundaries.mdc   dewey: "004"
+  exceptions-as-data.mdc      dewey: "005"
+  named-constants.mdc         dewey: "006"
+  config-as-data.mdc          dewey: "007"
+  no-dead-code.mdc            dewey: "008"
   simple-made-easy.mdc        dewey: "010"
   specification-standards.mdc dewey: "020"
   work-spec-authoring.mdc     dewey: "021"
@@ -104,6 +112,7 @@ testing/
 workflows/
   git-branch-management.mdc   dewey: "710"
   pre-commit-discipline.mdc   dewey: "715"
+  tests-with-code.mdc         dewey: "716"
   git-worktrees.mdc           dewey: "725"
   pr-documentation.mdc        dewey: "721"
   pr-layering.mdc             dewey: "722"
@@ -121,8 +130,12 @@ meta/
 000-099  Foundations     Architecture, design philosophy, code quality
   001      Stratified Design
   002      Code Quality (composable fns, pipelines, DRY)
-  003      Result Handling (success?/failed? predicates, constructors)
+  003      Result Handling (success?/failed? predicates, factory fns over hand-built maps)
   004      Validation Boundaries (schemas at interfaces/external only)
+  005      Exceptions as data (anomalies in flow; throw only at absolute boundaries)
+  006      Named Constants (no magic numbers/strings; intent-bearing `def` + docstring)
+  007      Config as Data (operational values in .edn with Malli schema; defaults in code)
+  008      No Dead Code (delete obsolete code in the same change; no legacy shims without removal plan)
   010      Simple Made Easy
   020      Specification Standards
   021      Work-Spec Authoring (priority, theme, testable criteria)
@@ -162,6 +175,7 @@ meta/
 700-799  Workflows       Git, PRs, releases
   710      Git Branch Management
   715      Pre-Commit Discipline
+  716      Tests With Code (no-test-diff PRs must claim pure restructuring)
   721      PR Documentation
   722      PR Layering (DAG, stratified PRs)
   725      Git Worktrees
