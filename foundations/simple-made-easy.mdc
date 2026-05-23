@@ -25,6 +25,21 @@ When choosing designs/constructs, prefer the option that **reduces intertwining*
 - **Queues over calls (when/where)**: decouple time/place with message queues or async boundaries; don’t make A know B unnecessarily.
 - **Rules live in one place (why)**: centralize policy in data/rules tables or a rules engine, not scattered conditionals.
 
+## Canonical data authority
+
+Internal data contracts need one producer-owned authority for each entity and field. When producer and
+consumer live in this codebase, the consumer reads the canonical path only; it does not search historical
+aliases, arbitrary top-level keys, or “shape-looking” maps to guess the same value.
+
+Compatibility is allowed only at an explicit boundary adapter or migration: name the shim, document the
+canonical target, add tests for both the accepted legacy input and the canonical output, and remove it when
+the migration window closes. If the display layer, CLI, dashboard, or report code needs data that is not at
+the canonical path, fix the producer or add the boundary migration rather than adding consumer fallback
+chains.
+
+Tests should pin this: canonical shape succeeds; stale aliases are ignored or rejected unless the adapter
+contract explicitly says otherwise.
+
 ## What / Who / How / When / Where / Why — keep separate
 
 - **What**: operations (names and contracts); small specs (inputs/outputs) live with the function/module.
@@ -72,6 +87,8 @@ When choosing designs/constructs, prefer the option that **reduces intertwining*
 
 - Deep inheritance trees; giant God objects/services.
 - Conditionals scattered across the codebase encoding policy ad hoc.
+- Consumer-side fallback chains or broad map walks that look in several places for the same internal entity
+  instead of using one producer-owned data authority.
 - ORM-driven domain models leaking persistence concerns everywhere.
 - Actor systems chosen “by default” where simple queues/calls suffice.
 - Tight coupling to frameworks in core logic (non-replaceable code).
