@@ -110,10 +110,11 @@ Default rule for agent/LLM backends:
   (`:backend`, `:model`, `:agent`, config path, attach URL), but should
   not read provider-specific secrets such as `ANTHROPIC_API_KEY` or
   `OPENAI_API_KEY` on the OpenCode path.
-- Direct provider SDK/HTTP integration is only acceptable when the
-  product surface is explicitly a provider adapter, the config schema
-  owns every operational value, and the PR explains why OpenCode cannot
-  satisfy the use case.
+- Direct provider SDK/HTTP integration is not acceptable for ordinary
+  miniforge agent runs. If a product needs a provider-specific adapter
+  for a non-agent surface, the adapter must be explicitly scoped as
+  non-agent infrastructure, the config schema must own every operational
+  value, and the PR must explain why OpenCode is not the right boundary.
 - Do not duplicate provider credential discovery across components.
   There should be one place to ask for LLM-provider credentials for
   ordinary agent runs; downstream callers select capabilities, not
@@ -127,9 +128,8 @@ When writing or reviewing code:
 3. When extracting to EDN, also add (or extend) the config's Malli schema.
 4. The code's `default-X` constant stays — it is the fallback if config is absent — but the operational value lives in EDN.
 5. Never use `eval`, `read-string` without binding `*read-eval* false`, or any other Turing-complete config-reading path.
-6. Reject new direct LLM provider-key wrappers for agent backends unless
-   the PR explicitly justifies why the OpenCode provider/auth wrapper is
-   not suitable.
+6. Reject new direct LLM provider-key wrappers for agent backends. The
+   supported provider API-key path for miniforge agent runs is OpenCode.
 
 ## Anti-patterns to reject
 
