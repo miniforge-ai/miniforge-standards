@@ -1,6 +1,6 @@
 ---
 dewey: "810"
-description: Enforce Miniforge.ai header and copyright on published content
+description: Enforce Miniforge.ai header and copyright on published content — OSS repositories only
 globs:
   - "docs/*.md"
   - "docs/**/*.md"
@@ -18,10 +18,18 @@ remediation.autoFixable: true
 
 # Miniforge.ai Header & Copyright
 
-<version>1.0.0</version>
+<version>1.1.0</version>
+
+## Scope — OSS repositories only
+
+**This rule applies exclusively to Apache-2.0 licensed (open source) repositories.**
+
+Detection: the repository root must contain a `LICENSE` file whose content includes the string `"Apache"`. If no such file exists, or the file contains `"Proprietary"` / `"All Rights Reserved"`, **do not apply this rule**.
+
+Proprietary Thesium products use `.thesium-standards/project/header-proprietary` instead. Never apply an Apache 2.0 copyright header to a proprietary file.
 
 ## Context
-- Use when authoring or editing site, docs, blog, or README content.
+- Use when authoring or editing site, docs, blog, or README content in an Apache-licensed repo.
 
 ## Requirements
 - Include this header block verbatim at the top of content.
