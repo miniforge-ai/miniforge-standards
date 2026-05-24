@@ -58,7 +58,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Plan a PR | `workflows/pr-layering` |
 | Document a PR | `workflows/pr-documentation` |
 | Version a release | `workflows/datever` |
-| Add copyright header | `project/header-copyright` |
+| Add copyright header (OSS repos only) | `project/header-copyright` — **skip in proprietary repos; use `.thesium-standards/project/header-proprietary` there** |
 | Create a new rule | `meta/rule-format` |
 
 ## Rules Catalog
