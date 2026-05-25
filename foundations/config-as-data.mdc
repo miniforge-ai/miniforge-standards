@@ -102,7 +102,7 @@ wrapper already owns that concern.
 
 Default rule for agent/LLM backends:
 
-- Use OpenCode (the open-source CLI tool that centralises LLM provider
+- Use OpenCode (the open-source CLI tool that centralizes LLM provider
   auth, model routing, and agent configuration) as the common
   provider/auth wrapper when adding a new agent backend path. OpenCode
   owns provider credentials, model aliases, provider discovery, project
