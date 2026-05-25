@@ -93,6 +93,35 @@ Every EDN config file has a Malli (or equivalent) schema. Validation runs at con
 
 See [validation-boundaries](./validation-boundaries.mdc) for the broader principle: validate at the boundary, trust inside.
 
+## Provider credentials and model routing
+
+LLM provider credentials and model/provider routing are operational
+configuration. Product code should not grow direct provider-key wrappers
+or one-off API calls for agent backends when a configurable CLI provider
+wrapper already owns that concern.
+
+Default rule for agent/LLM backends:
+
+- Use OpenCode (the open-source CLI tool that centralizes LLM provider
+  auth, model routing, and agent configuration) as the common
+  provider/auth wrapper when adding a new agent backend path. OpenCode
+  owns provider credentials, model aliases, provider discovery, project
+  config, `.env` loading, MCP configuration, and per-agent
+  tool/permission profiles.
+- Product code may pass provider/model/profile selections as data
+  (`:backend`, `:model`, `:agent`, config path, attach URL), but should
+  not read provider-specific secrets such as `ANTHROPIC_API_KEY` or
+  `OPENAI_API_KEY` on the OpenCode path.
+- Direct provider SDK/HTTP integration is not acceptable for ordinary
+  miniforge agent runs. If a product needs a provider-specific adapter
+  for a non-agent surface, the adapter must be explicitly scoped as
+  non-agent infrastructure, the config schema must own every operational
+  value, and the PR must explain why OpenCode is not the right boundary.
+- Do not duplicate provider credential discovery across components.
+  There should be one place to ask for LLM-provider credentials for
+  ordinary agent runs; downstream callers select capabilities, not
+  secret-loading strategies.
+
 ## Agent behavior
 
 When writing or reviewing code:
@@ -101,6 +130,8 @@ When writing or reviewing code:
 3. When extracting to EDN, also add (or extend) the config's Malli schema.
 4. The code's `default-X` constant stays — it is the fallback if config is absent — but the operational value lives in EDN.
 5. Never use `eval`, `read-string` without binding `*read-eval* false`, or any other Turing-complete config-reading path.
+6. Reject new direct LLM provider-key wrappers for agent backends. The
+   supported provider API-key path for miniforge agent runs is OpenCode.
 
 ## Anti-patterns to reject
 
