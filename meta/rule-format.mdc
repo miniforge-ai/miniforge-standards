@@ -12,10 +12,10 @@ globs: "**/*.mdc"
 ---
 dewey: "NNN"
 description: ACTION when TRIGGER to OUTCOME
-# Choose ONE activation strategy — see Frontmatter Fields below:
-alwaysApply: true           # OR omit and use globs:
+# Activation: include at least one; both are allowed together.
+alwaysApply: true           # inject into every prompt regardless of file context
 # globs:
-#   - "src/**/*.clj"
+#   - "src/**/*.clj"        # scope to matching files (combine with alwaysApply if needed)
 ---
 
 # Rule Title
@@ -100,9 +100,9 @@ actually needs.
 | Field | Type | Description |
 |-------|------|-------------|
 | `dewey` | string | Dewey classification number, e.g. `"210"`. Quoted. |
-| `description` | string | Activation hint in ACTION TRIGGER OUTCOME format. Keep under 120 chars. |
+| `description` | string | Activation hint in ACTION TRIGGER OUTCOME format. Aim for <120 chars when feasible; never truncate to the point of losing meaning. |
 
-### Activation — include exactly one of these
+### Activation — include at least one; both permitted together
 
 | Field | Type | When to use |
 |-------|------|-------------|
@@ -170,7 +170,7 @@ any loader; avoid adding them to new rules.
 
 ## AI Context Efficiency
 
-1. Keep frontmatter description under 120 characters (or less) while maintaining clear intent for rule selection by AI AGent
+1. Aim for frontmatter description under 120 characters while maintaining clear intent for rule selection by AI Agent; never truncate to the point of losing meaning
 2. Limit examples to essential patterns only
 3. Use hierarchical structure for quick parsing
 4. Remove redundant information across sections
