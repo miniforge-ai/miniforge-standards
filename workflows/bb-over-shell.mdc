@@ -10,7 +10,7 @@ globs: ["bb.edn", "scripts/**/*.sh"]
 
 Build, launch, package, lint, test, and dev-loop tasks **SHOULD** be Babashka tasks declared in `bb.edn`, **NOT** shell scripts under `scripts/*.sh`.
 
-The [miniforge repo's `bb.edn`](../../miniforge/bb.edn) is the canonical reference for the long-form, multi-namespace pattern. The [miniforge-control `bb.edn`](../../miniforge-control/bb.edn) (added in SA-1 PR #119) is the canonical reference for the self-contained, inline-body pattern.
+The `bb.edn` in `miniforge` is the canonical reference for the long-form, multi-namespace pattern. The `bb.edn` in `miniforge-control` (added in SA-1 PR #119) is the canonical reference for the self-contained, inline-body pattern.
 
 Operator framing, verbatim:
 
