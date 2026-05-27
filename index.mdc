@@ -78,7 +78,8 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   ├── pr-documentation.mdc             # dewey: "721"
 │   ├── pr-layering.mdc                  # dewey: "722"  alwaysApply: true
 │   ├── git-worktrees.mdc                # dewey: "725"
-│   └── datever.mdc                      # dewey: "730"
+│   ├── datever.mdc                      # dewey: "730"
+│   └── bb-over-shell.mdc                # dewey: "740"
 ├── project/
 │   ├── header-copyright.mdc             # dewey: "810"  alwaysApply: true
 │   └── rust-miniforge-shape.mdc         # dewey: "835"
@@ -157,6 +158,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 722 | `pr-layering` | ✓ | Stratified PR DAG; <400 lines; independently mergeable |
 | 725 | `git-worktrees` |  | Parallel workflows with worktrees, operator multi-loop |
 | 730 | `datever` |  | Date-based versioning strategy |
+| 740 | `bb-over-shell` |  | Build / launch / dev tasks live in bb.edn, not scripts/*.sh |
 
 ### project/
 
