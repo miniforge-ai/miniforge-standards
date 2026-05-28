@@ -4,6 +4,8 @@ description: Build / launch / dev tasks belong in bb.edn as Babashka tasks, not 
 globs: ["bb.edn", "scripts/**/*.sh"]
 ---
 
+<version>1.0.0</version>
+
 # Babashka Tasks Over Shell Scripts (ALWAYS)
 
 ## The rule
@@ -45,6 +47,14 @@ Everything else: bb.edn.
 |---|---|---|
 | Long-form, multi-namespace (tasks/ directory) | miniforge | `bb.edn` + `tasks/*.clj` |
 | Self-contained, inline-body | miniforge-control | `bb.edn` (SA-1 PR #119: `build-app`, `package-local-dev-app`, `run-local-apple-app`) |
+
+## EDN-reader gotchas
+
+bb.edn task bodies are read by the EDN reader, not a Clojure compiler. Two common pitfalls:
+
+- **No `#(...)` shorthand.** Use `(fn [x] ...)` instead.
+- **No `#"..."` regex literals.** Use `(re-pattern "...")` instead.
+- **Do not use `:in :inherit` in subprocess calls** when bb may be invoked through a wrapper that closed stdin (CI runners, `open -W`, GUI launchers). The child process will block waiting on input it will never receive. The default `babashka.process/shell` behavior — no stdin — is correct for build, cargo, and swift commands.
 
 ## Forbidden patterns
 
