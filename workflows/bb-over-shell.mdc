@@ -43,10 +43,13 @@ Everything else: bb.edn.
 
 ## Reference exemplars
 
+Stable GitHub URLs — these resolve regardless of how this rule file is
+consumed (in-repo, as `.standards/` submodule, or via the IDE plugin):
+
 | Pattern | Repo | File |
 |---|---|---|
-| Long-form, multi-namespace (tasks/ directory) | miniforge | `bb.edn` + `tasks/*.clj` |
-| Self-contained, inline-body | miniforge-control | `bb.edn` (SA-1 PR #119: `build-app`, `package-local-dev-app`, `run-local-apple-app`) |
+| Long-form, multi-namespace (tasks/ directory) | miniforge | [bb.edn](https://github.com/miniforge-ai/miniforge/blob/main/bb.edn) + [tasks/](https://github.com/miniforge-ai/miniforge/tree/main/tasks) |
+| Self-contained, inline-body | miniforge-control | [bb.edn](https://github.com/miniforge-ai/miniforge-control/blob/main/bb.edn) (SA-1 PR [#119](https://github.com/miniforge-ai/miniforge-control/pull/119): `build-app`, `package-local-dev-app`, `run-local-apple-app`) |
 
 ## EDN-reader gotchas
 
