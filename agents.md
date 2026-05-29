@@ -22,20 +22,41 @@ as a git submodule at `.standards/` in each repo.
 | Structure functions / avoid duplication | `foundations/code-quality` |
 | Handle success/failure results | `foundations/result-handling` |
 | Know where to put validation | `foundations/validation-boundaries` |
+| Treat exceptions as data / anomaly flow | `foundations/exceptions-as-data` |
+| Replace a magic number or string | `foundations/named-constants` |
+| Decide between code default and EDN config | `foundations/config-as-data` |
+| Remove or refactor old code | `foundations/no-dead-code` |
 | Add user-facing strings | `foundations/localization` |
+| Run tasks in OCI containers | `foundations/runtime-*` (dewey 030–033) |
 | Write tests | `testing/standards` |
+| Add code without tests | `workflows/tests-with-code` |
 | Write Clojure code | `languages/clojure` |
 | Catch exceptions in Clojure (`try` vs `try+`) | `languages/clojure-exception-handling` |
 | Write Python code | `languages/python` |
+| Write Rust code | `languages/rust` |
+| Write async/concurrent Rust | `languages/rust-async` |
+| Touch `unsafe` in Rust | `languages/rust-unsafe` |
+| Add Rust logging/tracing | `languages/rust-observability` |
+| Design Rust wire formats / serialization | `languages/rust-wire-protocols` |
+| Write Rust in a Miniforge product | `project/rust-miniforge-shape` |
+| Write Swift code | `languages/swift` |
+| Write browser JavaScript | `languages/javascript` |
+| Write CSS | `languages/css` |
+| Write HTML | `languages/html` |
 | Work with Polylith | `frameworks/polylith` |
 | Work with Kubernetes | `frameworks/kubernetes` |
+| Pick a web architecture mode | `frameworks/web-architecture-mode` |
+| Decide an API's surface class | `frameworks/api-surface-classes` |
+| Browser security checklist | `frameworks/browser-security` |
+| Build a Fulcro UI | `frameworks/fulcro` |
+| Use Fulcro RAD | `frameworks/fulcro-rad` |
 | Create a branch | `workflows/git-branch-management` |
 | **Commit code** | **`workflows/pre-commit-discipline`** (CRITICAL) |
 | Use git worktrees | `workflows/git-worktrees` |
 | Plan a PR | `workflows/pr-layering` |
 | Document a PR | `workflows/pr-documentation` |
 | Version a release | `workflows/datever` |
-| Add copyright header | `project/header-copyright` |
+| Add copyright header (OSS repos only) | `project/header-copyright` |
 | Create a new rule | `meta/rule-format` |
 
 ## Rules Catalog
@@ -51,29 +72,54 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 │   ├── code-quality.mdc                 # dewey: "002"  alwaysApply: true
 │   ├── result-handling.mdc              # dewey: "003"  alwaysApply: true
 │   ├── validation-boundaries.mdc        # dewey: "004"  alwaysApply: true
+│   ├── exceptions-as-data.mdc           # dewey: "005"  alwaysApply: true
+│   ├── named-constants.mdc              # dewey: "006"  alwaysApply: true
+│   ├── config-as-data.mdc               # dewey: "007"  alwaysApply: true
+│   ├── no-dead-code.mdc                 # dewey: "008"  alwaysApply: true
 │   ├── simple-made-easy.mdc             # dewey: "010"  alwaysApply: true
 │   ├── specification-standards.mdc      # dewey: "020"
 │   ├── work-spec-authoring.mdc          # dewey: "021"
+│   ├── runtime-no-host-docker-socket.mdc  # dewey: "030"  alwaysApply: true
+│   ├── runtime-require-rootless.mdc       # dewey: "031"  alwaysApply: true
+│   ├── runtime-restrict-host-mounts.mdc   # dewey: "032"  alwaysApply: true
+│   ├── runtime-require-image-digest-pin.mdc # dewey: "033"  alwaysApply: true
 │   └── localization.mdc                 # dewey: "050"  alwaysApply: true
 ├── languages/
 │   ├── clojure.mdc                      # dewey: "210"  alwaysApply: true
-│   └── python.mdc                       # dewey: "220"
+│   ├── clojure-exception-handling.mdc   # dewey: "211"  alwaysApply: true
+│   ├── python.mdc                       # dewey: "220"
+│   ├── rust.mdc                         # dewey: "230"
+│   ├── rust-async.mdc                   # dewey: "231"
+│   ├── rust-unsafe.mdc                  # dewey: "232"
+│   ├── rust-observability.mdc           # dewey: "233"
+│   ├── rust-wire-protocols.mdc          # dewey: "234"
+│   ├── swift.mdc                        # dewey: "240"
+│   ├── javascript.mdc                   # dewey: "250"
+│   ├── css.mdc                          # dewey: "260"
+│   └── html.mdc                         # dewey: "270"
 ├── frameworks/
-│   ├── polylith.mdc                     # dewey: "300"
+│   ├── polylith.mdc                     # dewey: "310"
 │   ├── polylith-composition.mdc         # dewey: "311"
 │   ├── polylith-tool.mdc                # dewey: "312"
-│   └── kubernetes.mdc                   # dewey: "320"
+│   ├── kubernetes.mdc                   # dewey: "320"
+│   ├── web-architecture-mode.mdc        # dewey: "330"
+│   ├── browser-security.mdc             # dewey: "331"
+│   ├── api-surface-classes.mdc          # dewey: "332"
+│   ├── fulcro.mdc                       # dewey: "340"
+│   └── fulcro-rad.mdc                   # dewey: "341"
 ├── testing/
 │   └── standards.mdc                    # dewey: "400"  alwaysApply: true
 ├── workflows/
 │   ├── git-branch-management.mdc        # dewey: "710"
 │   ├── pre-commit-discipline.mdc        # dewey: "715"  alwaysApply: true
+│   ├── tests-with-code.mdc              # dewey: "716"  alwaysApply: true
 │   ├── pr-documentation.mdc             # dewey: "721"
 │   ├── pr-layering.mdc                  # dewey: "722"  alwaysApply: true
 │   ├── git-worktrees.mdc                # dewey: "725"
 │   └── datever.mdc                      # dewey: "730"
 ├── project/
-│   └── header-copyright.mdc             # dewey: "810"  alwaysApply: true
+│   ├── header-copyright.mdc             # dewey: "810"  alwaysApply: true
+│   └── rust-miniforge-shape.mdc         # dewey: "835"
 └── meta/
     └── rule-format.mdc                  # dewey: "900"
 ```
