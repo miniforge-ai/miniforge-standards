@@ -150,10 +150,10 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 
 | Dewey | File | Always | Description |
 |-------|------|--------|-------------|
-| 710 | `git-branch-management` |  | Branch from main, single-purpose PRs |
+| 710 | `git-branch-management` | ✓ | Branch from main, single-purpose PRs |
 | 715 | `pre-commit-discipline` | ✓ | Never bypass hooks without investigation; fix root causes |
 | 716 | `tests-with-code` | ✓ | Code changes ship with test changes; "no test diff" requires an explicit pure-restructuring claim |
-| 721 | `pr-documentation` |  | Living PR docs in `docs/pull-requests/` |
+| 721 | `pr-documentation` | ✓ | Living PR docs in `docs/pull-requests/` |
 | 722 | `pr-layering` | ✓ | Stratified PR DAG; <400 lines; independently mergeable |
 | 725 | `git-worktrees` |  | Parallel workflows with worktrees, operator multi-loop |
 | 730 | `datever` |  | Date-based versioning strategy |
@@ -162,7 +162,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 
 | Dewey | File | Always | Description |
 |-------|------|--------|-------------|
-| 810 | `header-copyright` | ✓ | Miniforge.ai header + copyright ownership |
+| 810 | `header-copyright` |  | Miniforge.ai header + copyright ownership |
 | 835 | `rust-miniforge-shape` |  | Miniforge architectural Rust constraints: typed workflow state, `PolicyDecision` as value, structured `Finding`, adapter traits vs concrete domain, append-only evidence, UI never imported by core |
 
 ### meta/
