@@ -192,5 +192,5 @@ Implementation is conformant if:
 
 ## Related Rules
 
-- `001-stratified-design.mdc` - Layering principles (complements N1)
-- `721-pr-documentation.mdc` - PR docs (includes spec conformance notes)
+- `foundations/stratified-design.mdc` - Layering principles (complements N1)
+- `workflows/pr-documentation.mdc` - PR docs (includes spec conformance notes)
