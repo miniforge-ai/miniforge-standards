@@ -58,6 +58,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Plan a PR | `workflows/pr-layering` |
 | Document a PR | `workflows/pr-documentation` |
 | Version a release | `workflows/datever` |
+| Add a build / launch / dev task | `workflows/bb-over-shell` (bb.edn, not scripts/*.sh) |
 | Add copyright header (OSS repos only) | `project/header-copyright` — **skip in proprietary repos; use `.thesium-standards/project/header-proprietary` there** |
 | Create a new rule | `meta/rule-format` |
 
@@ -117,6 +118,7 @@ workflows/
   pr-documentation.mdc        dewey: "721"
   pr-layering.mdc             dewey: "722"
   datever.mdc                 dewey: "730"
+  bb-over-shell.mdc           dewey: "740"
 project/
   header-copyright.mdc        dewey: "810"
   rust-miniforge-shape.mdc    dewey: "835"
@@ -180,6 +182,7 @@ meta/
   722      PR Layering (DAG, stratified PRs)
   725      Git Worktrees
   730      Datever
+  740      Bb Over Shell (build/launch/dev tasks live in bb.edn, not scripts/*.sh)
 800-899  Project         Reserved for project-specific overrides
   810      Copyright Header
   835      Rust Miniforge Shape (typed workflow state, PolicyDecision as value, structured findings, adapters-behind-traits, append-only evidence)

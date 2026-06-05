@@ -1,0 +1,109 @@
+---
+dewey: "740"
+description: Build / launch / dev tasks belong in bb.edn as Babashka tasks, not in scripts/*.sh — workspace convention
+globs: ["bb.edn", "scripts/**/*.sh"]
+---
+
+<version>1.0.0</version>
+
+# Babashka Tasks Over Shell Scripts (ALWAYS)
+
+## The rule
+
+Build, launch, package, lint, test, and dev-loop tasks **SHOULD** be Babashka tasks declared in `bb.edn`, **NOT** shell scripts under `scripts/*.sh`.
+
+The `bb.edn` in `miniforge` is the canonical reference for the long-form, multi-namespace pattern. The `bb.edn` in `miniforge-control` (added in SA-1 PR #119) is the canonical reference for the self-contained, inline-body pattern.
+
+Operator framing, verbatim:
+
+> we have BB in the repo — why are we adding .sh scripts?
+
+## Why bb over bash
+
+- **Composability.** `:depends [other-task]` is one line. The bash equivalent needs `set -euo pipefail`, careful re-invocation guards, and an ad-hoc convention for what "already ran" means.
+- **Cross-platform.** Babashka runs on macOS, Linux, and Windows from a single source. Bash scripts assume a POSIX shell plus GNU coreutils plus macOS quirks (`install_name_tool`, `codesign`, BSD vs GNU `sed`).
+- **Helpers.** `babashka.process/shell` raises on non-zero exit — no `set -euo pipefail` boilerplate. `babashka.fs` covers path manipulation without `realpath` / `readlink -f` portability traps.
+- **Discovery.** `bb tasks` lists every task with its docstring. `ls scripts/` does not.
+- **Convention parity.** Every other Miniforge repo (miniforge, thesium-career sub-projects, and so on) is bb-first. A `scripts/*.sh` for a build/launch task is a one-off that breaks reader expectations.
+
+## When `.sh` is still acceptable
+
+- **Single-line shims** that just invoke a binary with one set of args (e.g. `scripts/codesign-release.sh ./dist/...`) — the bb wrapper would add no value.
+- **POSIX-only contexts** where bb is genuinely unavailable: Alpine container init scripts that run *before* bb is installed, bootstrapping a developer machine that does not yet have bb on PATH.
+- **Git hooks** where bb's startup cost matters and the hook is one shell builtin (`echo`, `test`, `exec`).
+
+Everything else: bb.edn.
+
+## How to apply
+
+- **New repos.** Drop a `bb.edn` at the root from day one. The miniforge `bb.edn` `:init` block (helpers like `run!`, `run-stream!`) is a reasonable starter template.
+- **Existing repos with `scripts/*.sh`.** Introduce `bb.edn` alongside, move tasks one at a time, delete the `.sh` once the bb task is verified equivalent. See [no-dead-code](../foundations/no-dead-code.mdc) — do not leave both versions in the tree.
+- **Naming.** One task per logical action, named after the verb (`build-app`, not `do-build-stuff`). Use `:depends [...]` for ordering.
+- **Long bodies.** When a task body exceeds ~40 lines, factor the logic into a `tasks/` directory namespace and reduce the `bb.edn` task body to a single call into it. The miniforge `tasks/lint.clj`, `tasks/test.clj` files are the pattern.
+
+## Reference exemplars
+
+Stable GitHub URLs — these resolve regardless of how this rule file is
+consumed (in-repo, as `.standards/` submodule, or via the IDE plugin):
+
+| Pattern | Repo | File |
+|---|---|---|
+| Long-form, multi-namespace (tasks/ directory) | miniforge | [bb.edn](https://github.com/miniforge-ai/miniforge/blob/main/bb.edn) + [tasks/](https://github.com/miniforge-ai/miniforge/tree/main/tasks) |
+| Self-contained, inline-body | miniforge-control | [bb.edn](https://github.com/miniforge-ai/miniforge-control/blob/main/bb.edn) (SA-1 PR [#119](https://github.com/miniforge-ai/miniforge-control/pull/119): `build-app`, `package-local-dev-app`, `run-local-apple-app`) |
+
+## EDN-reader gotchas
+
+bb.edn task bodies are read by the EDN reader, not a Clojure compiler. Two common pitfalls:
+
+- **No `#(...)` shorthand.** Use `(fn [x] ...)` instead.
+- **No `#"..."` regex literals.** Use `(re-pattern "...")` instead.
+- **Do not use `:in :inherit` in subprocess calls** when bb may be invoked through a wrapper that closed stdin (CI runners, `open -W`, GUI launchers). The child process will block waiting on input it will never receive. The default `babashka.process/shell` behavior — no stdin — is correct for build, cargo, and swift commands.
+
+## Forbidden patterns
+
+❌ Adding a new `scripts/*.sh` for a build, launch, package, lint, test, or dev-loop task when `bb` is on the developer's path and the repo (or any Miniforge repo) already has a `bb.edn`.
+
+❌ A `scripts/build.sh` that wraps `cargo build` plus `install_name_tool` plus `codesign` — that is a `(build-app)` bb task, not bash.
+
+❌ Adding bb.edn *and* keeping the equivalent `.sh` "for now". Pick one. The bb task wins.
+
+Cite this rule (`workflows/bb-over-shell`, dewey 740) in PR review when a `scripts/*.sh` appears in a diff that should have been a bb task.
+
+## Agent behavior
+
+When asked to add a build/launch/package/dev task:
+
+1. **Check** for `bb.edn` at the repo root. If present, the new task goes there.
+2. If **not** present, check whether `bb` is on PATH (`which bb`). If yes, create `bb.edn` and add the task there — do not start with `scripts/*.sh`.
+3. If proposing a `scripts/*.sh`, justify against the "When `.sh` is still acceptable" list. If no item applies, the proposal is wrong.
+4. When refactoring an existing `.sh` into a bb task, delete the `.sh` in the same change once the bb task is verified — see [no-dead-code](../foundations/no-dead-code.mdc).
+
+<example>
+Adding a new `build-app` task in a repo that already has `bb.edn`:
+
+```clojure
+;; bb.edn
+{:tasks
+ {build-app
+  {:doc "Build the release binary and codesign it."
+   :task (do (shell "cargo build --release")
+             (shell "install_name_tool" "-id" "@rpath/libfoo.dylib" "target/release/libfoo.dylib")
+             (shell "codesign" "--sign" "-" "target/release/libfoo.dylib"))}}}
+```
+
+Invoke with `bb build-app`. Discoverable via `bb tasks`. Cross-platform-safe (the macOS-only parts are in `shell` invocations that fail loudly on Linux, which is the right behavior).
+</example>
+
+<example type="invalid">
+Same repo, same task, as `scripts/build-app.sh`:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+cargo build --release
+install_name_tool -id @rpath/libfoo.dylib target/release/libfoo.dylib
+codesign --sign - target/release/libfoo.dylib
+```
+
+Wrong: bb is already in the repo, the task is build/launch tier, none of the "When `.sh` is still acceptable" exceptions apply, and the script is now invisible to `bb tasks`. Reviewer cites `workflows/bb-over-shell` (dewey 740) and the PR removes it in favor of a bb task.
+</example>
