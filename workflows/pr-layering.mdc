@@ -1,5 +1,5 @@
 ---
-dewey: "720"
+dewey: "722"
 description: PR Layering — decompose work into stratified, incremental pull requests
 alwaysApply: true
 ---
