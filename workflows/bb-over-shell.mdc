@@ -6,7 +6,7 @@ globs: ["bb.edn", "scripts/**/*.sh"]
 
 <version>1.0.0</version>
 
-# Babashka Tasks Over Shell Scripts (ALWAYS)
+# Babashka Tasks Over Shell Scripts
 
 ## The rule
 

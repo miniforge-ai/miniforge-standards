@@ -6,6 +6,26 @@ globs: "**/*.mdc"
 ---
 # LLM Rules Format
 
+## Agent behavior
+
+When asked to create or update a rule, or to capture a lesson learned as a
+new rule:
+
+1. Pick the right Dewey category (see `## Dewey Ranges` below) and put the
+   numeric code in frontmatter (`dewey: "NNN"`), never in the filename or
+   path.
+2. Choose activation. Either `alwaysApply: true` (injected into every
+   prompt) or `globs: [...]` (scoped to matching files). A rule with
+   neither is never injected.
+3. Author the body to the `## Core Structure` template. Keep it tight — see
+   `## Formatting Guidelines` and `## AI Context Efficiency` for length and
+   token-density expectations.
+4. Add a `## Agent behavior` section yourself if the rule prescribes a
+   distinct agent workflow; the loader uses it (or the first body
+   paragraph) as the prompt-injected directive.
+5. Update the master index (`index.mdc`) and the consuming repo's
+   `CLAUDE.md` quick-reference table.
+
 ## Core Structure
 
 ```mdc
@@ -155,7 +175,7 @@ any loader; avoid adding them to new rules.
   - <critical>
   - <version>
 - Always indent content within XML or nested XML tags by 2 spaces
-- Keep rules as short as possbile
+- Keep rules as short as possible
 - Use Mermaid syntax if it will be shorter or clearer than describing a complex rule
 - Use Emojis where appropriate to convey meaning that will improve rule understanding by the AI Agent
 - Keep examples as short as possible to clearly convey the positive or negative example
