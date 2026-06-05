@@ -1,7 +1,8 @@
 ---
 dewey: "900"
-description: Use ALWAYS when asked to CREATE A RULE or UPDATE A RULE or taught a lesson from the user that should be retained as a new rule for Cursor
-globs: .cursor/rules/**/*.mdc
+description: Use ALWAYS when asked to CREATE A RULE or UPDATE A RULE or taught a lesson from the user that should be retained as a new rule
+alwaysApply: false
+globs: "**/*.mdc"
 ---
 # LLM Rules Format
 
@@ -11,7 +12,10 @@ globs: .cursor/rules/**/*.mdc
 ---
 dewey: "NNN"
 description: ACTION when TRIGGER to OUTCOME
-globs: *.mdc
+# Activation: include at least one; both are allowed together.
+alwaysApply: true           # inject into every prompt regardless of file context
+# globs:
+#   - "src/**/*.clj"        # scope to matching files (combine with alwaysApply if needed)
 ---
 
 # Rule Title
@@ -85,12 +89,52 @@ Common glob patterns for different rule types:
 - Multiple extensions: src/**/*.{js,jsx,ts,tsx}
 - Multiple files: dist/**/*, docs/**/*.md
 
-## Required Fields
+## Frontmatter Fields
 
-### Frontmatter
+Every rule file opens with a YAML frontmatter block. The full set of recognised
+fields is listed below. Keep the block minimal — include only fields the rule
+actually needs.
 
-- description: ACTION TRIGGER OUTCOME format
-- globs: `glob pattern for files and folders`
+### Always required
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `dewey` | string | Dewey classification number, e.g. `"210"`. Quoted. |
+| `description` | string | Activation hint in ACTION TRIGGER OUTCOME format. Aim for <120 chars when feasible; never truncate to the point of losing meaning. |
+
+### Activation — include at least one; both permitted together
+
+| Field | Type | When to use |
+|-------|------|-------------|
+| `alwaysApply` | boolean | `true` — inject rule into every agent prompt regardless of file context. Use for universal principles (stratified design, result handling, etc.). `false` — explicit opt-out (rare; most rules without `alwaysApply` simply omit it). |
+| `globs` | string or list | Path patterns scoping the rule to matching files. Use when the rule is language- or file-type-specific. A rule with neither `alwaysApply: true` nor `globs` is effectively never injected. |
+
+Rules may carry both `alwaysApply: true` and `globs` (e.g. `languages/clojure.mdc`
+combines universal injection with a glob that helps IDE tooling narrow context).
+
+### Automated-fix fields (optional)
+
+Used by lint runners and agent auto-fix pipelines. Only include when the rule
+has a mechanical fix that can be applied programmatically.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `detection.mode` | `positive` \| `negative` | `positive` — flag matches; `negative` — flag absences. |
+| `detection.pattern` | string | Regex the runner applies against file content. |
+| `detection.emailPattern` | string | Secondary regex (e.g. for copyright checks). |
+| `remediation.strategy` | string | `mechanical` (auto-apply) or `manual`. |
+| `remediation.replacement` | string | Replacement expression (supports `$N` capture groups). |
+| `remediation.type` | string | `prepend`, `append`, `replace`, etc. |
+| `remediation.template` | string | Full text to insert when `remediation.type` is `prepend`/`append`. |
+| `remediation.autoFixable` | boolean | `true` if the runner may apply the fix without confirmation. |
+| `remediation.excludePathContains` | list | Skip files whose path contains any of these substrings. |
+| `remediation.excludeCurrentContains` | list | Skip when the matched line already contains any of these strings. |
+
+### Discouraged / non-standard fields
+
+`title`, `category`, `tags`, `confidence`, `impact` — occasionally appear in
+older rules (e.g. `workflows/git-worktrees.mdc`). These are not processed by
+any loader; avoid adding them to new rules.
 
 ### Body
 
@@ -126,7 +170,7 @@ Common glob patterns for different rule types:
 
 ## AI Context Efficiency
 
-1. Keep frontmatter description under 120 characters (or less) while maintaining clear intent for rule selection by AI AGent
+1. Aim for frontmatter description under 120 characters while maintaining clear intent for rule selection by AI Agent; never truncate to the point of losing meaning
 2. Limit examples to essential patterns only
 3. Use hierarchical structure for quick parsing
 4. Remove redundant information across sections
@@ -135,7 +179,10 @@ Common glob patterns for different rule types:
 
 <critical>
   - NEVER include verbose explanations or redundant context that increases AI token overhead
-  - Keep file as short and to the point as possible BUT NEVER at the expense of sacrificing 
+  - Keep file as short and to the point as possible BUT NEVER at the expense of sacrificing
     rule impact and usefulness for the AI Agent.
-  - the front matter can ONLY have the fields description and globs.
+  - Frontmatter must contain only fields from the schema above. Do NOT invent new fields.
+  - Every rule must have `dewey` and `description`. Every rule must have either `alwaysApply`
+    or `globs` (or both) — a rule with neither is never injected.
+  - `detection.*` and `remediation.*` fields are only appropriate when a mechanical fix exists.
 </critical>
