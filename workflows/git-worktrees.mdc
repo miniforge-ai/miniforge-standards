@@ -491,7 +491,7 @@ Worktrees enable **local multi-loop** execution. For distributed:
 - Git worktree docs: `git help worktree`
 - See also: [git-branch-management.mdc](./git-branch-management.mdc)
 - See also: [pr-documentation.mdc](./pr-documentation.mdc)
-- Architecture: `docs/specs/operational-modes.spec` (Operator agent)
+- Architecture: `specs/normative/N5-delta-supervisory-control-plane.md` (Operator agent / supervisory control plane)
 
 ---
 
