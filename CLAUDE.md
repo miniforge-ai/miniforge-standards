@@ -111,12 +111,12 @@ frameworks/
 testing/
   standards.mdc               dewey: "400"
 workflows/
-  git-branch-management.mdc   dewey: "710"
-  pre-commit-discipline.mdc   dewey: "715"
-  tests-with-code.mdc         dewey: "716"
+  git-branch-management.mdc   dewey: "710"  alwaysApply: true
+  pre-commit-discipline.mdc   dewey: "715"  alwaysApply: true
+  tests-with-code.mdc         dewey: "716"  alwaysApply: true
+  pr-documentation.mdc        dewey: "721"  alwaysApply: true
+  pr-layering.mdc             dewey: "722"  alwaysApply: true
   git-worktrees.mdc           dewey: "725"
-  pr-documentation.mdc        dewey: "721"
-  pr-layering.mdc             dewey: "722"
   datever.mdc                 dewey: "730"
   bb-over-shell.mdc           dewey: "740"
 project/
