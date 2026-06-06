@@ -1,8 +1,7 @@
 ---
 dewey: "720"
 description: Adversarial PR-review obligations — happy-path tracing, bootstrap-order verification, compile-test fact-claims, default-value scrutiny, intent over symptoms
-globs:
-  - "**/*"
+alwaysApply: true
 ---
 
 # Code-Review Rigor (ALWAYS)
