@@ -24,8 +24,8 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Apply design philosophy | `foundations/simple-made-easy` |
 | Structure functions / avoid duplication | `foundations/code-quality` |
 | Handle success/failure results | `foundations/result-handling` |
-| **Propagate errors as values; throw only at absolute boundaries** | **`foundations/exceptions-as-data`** (CRITICAL) |
 | Know where to put validation | `foundations/validation-boundaries` |
+| **Propagate errors as values; throw only at absolute boundaries** | **`foundations/exceptions-as-data`** (CRITICAL) |
 | Add user-facing strings | `foundations/localization` |
 | Replace a magic number or string | `foundations/named-constants` |
 | Decide between code default and EDN config | `foundations/config-as-data` |
