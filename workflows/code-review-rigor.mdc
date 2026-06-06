@@ -1,0 +1,151 @@
+---
+dewey: "720"
+description: Adversarial PR-review obligations — happy-path tracing, bootstrap-order verification, compile-test fact-claims, default-value scrutiny, intent over symptoms
+globs:
+  - "**/*"
+---
+
+# Code-Review Rigor (ALWAYS)
+
+<version>1.0.0</version>
+
+## Why this exists
+
+`feedback_standards_review_per_pr` already says: run a standards audit on every PR before push. That memory specifies *which* rule files to scan against. It does not specify *how* the scan must be conducted.
+
+Across a recent burst of subagent-authored PRs (miniforge-control #126, #127, #128) significant correctness bugs landed in the spot-check-passed diff and were caught only by GitHub Copilot's review. Pattern audit:
+
+- A `repo_root` resolution that fell back to a non-git directory on the **default** code path. Guaranteed failure for the most common operator flow. Not an edge case; the common case.
+- A restoration trigger keyed on `handshake == .ready` when the store's own source line 51 said ready flips *before any payload arrives*. The subagent's report described the timing correctly; the reviewer (me) read the report and did not connect the dots.
+- A subagent claim that a Swift language feature "doesn't work" — accepted at face value, the workaround built around it. The claim was wrong. A thirty-second compile-test would have refuted it.
+- A `codesign --remove-signature` that exits non-zero on unsigned files and aborts the pipeline on first run. Default-value path again.
+
+The common shape across all four: **symptom-grep passed; trace-execution would have caught them.** The reviewer scanned for missing `final`, inline strings, force-unwraps — patterns subagents are already trained to avoid — and skipped the questions that catch real bugs.
+
+This rule codifies the five questions the reviewer MUST answer before declaring a PR review clean.
+
+## Scope
+
+Applies to every PR review pass — self-authored, subagent-delegated, Copilot-suggested, human-collaborator. Fires alongside `feedback_standards_review_per_pr` (which selects *what* to scan); this rule governs *how* to scan.
+
+## The five obligations
+
+### 1. Happy-path trace
+
+Walk one realistic operator flow field-by-field through the diff before declaring the spot-check clean.
+
+For each step:
+
+- State the value each parameter takes when the operator does the simplest thing.
+- For each guard / `if let` / validation: confirm the value passes.
+- For each function boundary: confirm the receiving side accepts the shape the calling side produced.
+
+The bug-class this catches: **default-value holes**. The operator does what feels natural — leaves an optional field blank, accepts the picker default, types nothing where typing was optional — and the code under review rejects them at a downstream guard.
+
+Worked example (real, from PR #128):
+
+> Operator opens the LaunchAgentSheet, picks createNew worktree mode, types a branch name (the only required field), leaves cwd blank, hits Launch.
+>
+> - `LaunchAgentSheet.launch()` calls `coordinator.createWorktreeAndLaunchAgent(branch: "x", base: nil, path: nil, ..., cwd: nil)`.
+> - `createWorktreeAndLaunchAgent` calls `createWorktree(branch: "x", base: nil, path: nil)`. FFI returns a worktree id.
+> - Resolved cwd chain: cwd is nil → path is nil → empty string.
+> - `launchAgent(cwd: "")` hits the empty-cwd guard → `requestEncodeFailed`. The launch phase never fires.
+
+That trace takes ninety seconds. The bug was invisible to the standards-pass that ran instead.
+
+### 2. State-machine / bootstrap-order verification
+
+For any race / state-transition / lifecycle code, READ THE SOURCE ORDER. Do not take a subagent's prose timing claim at face value.
+
+Specifically:
+
+- For `init` / `bootstrap` / `start!` / `attach!` functions: list the steps in execution order. Note what state exists between each step.
+- For `@Observable` / observer-driven view code: identify what counter or flag triggers the observation. Confirm that counter is non-zero (or whatever invariant the consumer assumed) at the moment the consumer fires.
+- For supervisor / replay / handshake paths: ask what the bucket / queue / state looks like at the FIRST observation point. Note that "marked ready" is not the same as "has data."
+
+The bug-class this catches: **observation-before-data**. State flips to a sentinel value before any payload populates the structure the observation depends on. The consumer fires, sees nothing, latches, and never refires.
+
+Worked example (real, from PR #127):
+
+> `SupervisoryStateStore.bootstrap()` line 51, verbatim: `// Mark ready optimistically; the first snapshot delta will populate the buckets.`
+>
+> The view-side restoration triggered on `.onChange(of: store.handshake)`. That observation fires when handshake flips to `.ready` — which the source comment says is BEFORE the first delta lands. The bucket-membership check failed against an empty bucket; the one-shot latch flipped; the snapshot that arrived a moment later was permanently ignored.
+>
+> The line 51 comment was in the subagent's reference frame the whole time. The reviewer read past it. Fixing the bug after Copilot caught it took fifteen minutes; preventing it would have taken thirty seconds of "wait, ready before any data?"
+
+### 3. Compile-test fact-claims
+
+When a subagent (or memory entry, or past intuition, or operator-recalled lore) claims "X does not work" or "this language has constraint Y," verify by compilation BEFORE building the workaround.
+
+Specifically:
+
+- If the claim is "Swift rejects this pattern" → write the pattern in the worktree, run `swift build`, read the compiler's actual error.
+- If the claim is "the FFI rejects this payload shape" → write the test, run it, read the rejection.
+- If the claim is "this library does not expose Y" → grep the library source for `pub fn Y` / `public func Y` / etc.
+
+The bug-class this catches: **workarounds built on wrong premises**. The wrong premise persists indefinitely because no one tests it; the workaround accumulates context and becomes load-bearing.
+
+Worked example (real, from PR #127):
+
+> Subagent claim: `Swift rejects Self.<key> in a stored-property initializer` (covariant Self). The subagent proposed string-literal duplication as the workaround.
+>
+> Copilot review pointed out `DetailActionBar.swift` uses exactly `@AppStorage(Self.confirmDestructiveKey)`. The narrower truth: `Self.<key>` fails in `final class`, succeeds in `struct`. The reviewer accepted the broader-claim workaround without testing.
+>
+> Compile cost to refute: thirty seconds. Real fix once refuted: a file-scope enum sidesteps both the literal-required constraint AND the covariant-Self constraint.
+
+### 4. First-run / default-value / nil-path scrutiny
+
+Treat default values as the **common** case, not the edge case. For every parameter, ask:
+
+- What value does this hold if the operator does the simplest thing? (Often: nil, empty string, the default in the picker, the env var unset.)
+- What value does this hold on the very first cold run, with no prior state?
+- Does the code accept that value, or reject it via a guard?
+
+Default values are the path most operators take most often. A code path that fails on the default is broken for the modal user, not for an edge case.
+
+Worked example (real, from PR #126):
+
+> `codesign --remove-signature` exits non-zero when the target is unsigned. The sign-app task ran this as a "best-effort cleanup" before re-signing.
+>
+> First-run state: a freshly-built dylib is unsigned. `--remove-signature` fails. `shell!` aborts the task. The very first invocation of sign-app fails.
+>
+> The fix: `:continue true` on the cleanup step. The diagnosis is one sentence; the question that would have surfaced it is "what happens on the first run?"
+
+### 5. Intent, not symptoms
+
+Standards-pass that grep for missing `final`, inline strings, force-unwraps, `Any` usage catches style violations subagents are *already trained to avoid*. Style violations are not where bugs hide. Trace intent.
+
+Specifically:
+
+- For every numeric or string literal in the diff: ask "what does this value mean?" Not "is it through a `Tokens.*` / `Strings.*` namespace?" The namespace catches the obvious 2; the meaning catches the wrong 3.
+- For every error variant: ask "when does this fire, and what is the operator-visible consequence?" Not "is it a typed enum?" The enum catches the obvious failure; the wrong-arm-for-the-failure catches the bug. (PR #123 conflated request-encode and response-decode errors. Both were typed; the wrong one fired on request-encode.)
+- For every test assertion: ask "what fails this test that the production code currently does correctly?" Not "is it a typed assertion?" Tests that always pass catch nothing.
+
+## How to apply
+
+After the implementation is done, before pushing the PR:
+
+1. Re-read the diff with the five obligations as a checklist.
+2. For obligation 1: pick one realistic operator flow. State each parameter's value at each step. Confirm each guard.
+3. For obligation 2: identify any race / bootstrap / observation site. Read its source order. List what state exists at each step.
+4. For obligation 3: identify any "X doesn't work" claim in subagent reports, memory entries, or your own reasoning. Verify by compiling / grepping / testing.
+5. For obligation 4: for each parameter, write down its first-run / nil / default value. Confirm the code accepts it.
+6. For obligation 5: pick three literals + three error variants + three test assertions from the diff. Apply the intent question. If any fails, fix before push.
+
+If any obligation surfaces a bug: fix it in a same-branch commit before push. Do NOT push and rely on Copilot to catch it — Copilot is not your QA pass, and Copilot's catches add review-round-trip latency.
+
+## What this rule does NOT do
+
+- It does not replace the per-language standards rules. `swift.mdc`, `rust.mdc`, `clojure.mdc` still govern *style*. This rule governs *correctness review*.
+- It does not require a written audit document. The obligations are mental and quick; capture them in your reasoning, not as an artifact.
+- It does not apply to trivial conversational turns or single-line typo fixes. It applies when a diff carries meaningful behaviour.
+
+## Cross-references
+
+- `feedback_standards_review_per_pr` (operator memory) — the *what* to audit against. This rule is the *how*.
+- `pre-commit-discipline` (dewey 715) — what blocks the commit. This rule fires before the commit succeeds.
+- `pr-layering` (dewey 722) — what the PR contains. This rule reviews that content.
+
+## Agent behaviour
+
+When a subagent reports "standards-pass clean on first read" or "no fix commits needed", treat that as *zero* signal toward correctness. Run the five obligations yourself. If you cannot run them — the diff is too large to trace in a session, or you lack context for the realistic operator flow — say so and ask the operator to pause before merge rather than rubber-stamping the subagent's confidence.
