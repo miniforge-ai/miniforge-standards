@@ -1,0 +1,84 @@
+---
+dewey: "009"
+description: Code is the artifact — comments explain WHY when non-obvious, never restate WHAT; self-document with names and structure first
+alwaysApply: true
+---
+
+# Self-Documenting Code (ALWAYS)
+
+**The code is the primary artifact. A comment is an admission that the code could not say it itself.** Reach for a better name, a smaller function, a named constant, or a type *before* reaching for a comment. When a comment is warranted, it explains **why** — a reason not visible in the code — never **what** the code already states.
+
+This is the operational complement to `foundations/code-quality` (002), `foundations/named-constants` (006), and `foundations/no-dead-code` (008, no commented-out blocks).
+
+## The rule
+
+1. **Default to no comment.** First make the code self-evident. A comment is the last resort, not the first.
+2. **Comment WHY, never WHAT.** If a comment restates what the next line does, delete it. If it captures a reason, constraint, or tradeoff the code cannot express, keep it.
+3. **Self-document first.** Before writing a comment, try: a clearer name, extracting a well-named function, a named constant (006), an intermediate `let` binding, or a more precise type.
+4. **Test before keeping a comment:** would the code lose meaning if this comment were deleted? If no → delete it. If yes → it is a real "why."
+
+```clojure
+;; BAD — narrates the code; every line is noise
+;; loop over the users
+(doseq [u users]
+  ;; if the user is active
+  (when (:active? u)
+    ;; send them an email
+    (send-email u)))
+
+;; GOOD — the code says what; no comment needed
+(doseq [u (filter :active? users)]
+  (send-email u))
+
+;; GOOD — a real WHY the code cannot show
+;; Datalevin returns :db.cardinality/one as a bare value, not a set,
+;; so we must wrap before set/union — see datalevin#412.
+(update entity :tags (comp set wrap-single))
+```
+
+```rust
+// BAD — restates the call
+// acquire the lock
+let guard = state.lock().unwrap();
+
+// GOOD — WHY this ordering matters, not visible locally
+// Lock `accounts` before `ledger` everywhere; the reverse order
+// deadlocks with the settlement task (see ADR-021).
+let _a = accounts.lock();
+let _l = ledger.lock();
+```
+
+## Comments that are NOT noise — keep these
+
+- **File / license headers.** Governed by `project/header-copyright` (810) for OSS and `.thesium-standards/project/header-proprietary` for proprietary repos. **Never strip or compress these.** They are required, not commentary.
+- **Docstrings on public namespaces, fns, and vars.** State the contract (purpose, args, return, failure mode) and the why — do not restate the body. A docstring that only echoes the name is noise; delete or improve it.
+- **Genuine "why" notes:** non-obvious invariants, rationale for a surprising choice, performance tradeoffs, security constraints, workarounds with a linked cause (issue/ADR/spec).
+- **Rust `SAFETY:` comments** on `unsafe` blocks — required by `languages/rust-unsafe` (232).
+- **Named-constant docstrings** — required by `named-constants` (006) to carry intent.
+
+## Reject in review — comment noise
+
+- **What-comments:** any comment that paraphrases the line(s) below it.
+- **Step narration:** `;; step 1`, `// now we validate`, `;; return the result`.
+- **Process / changelog commentary in code:** `;; Wave 6 PR adds this`, `;; renamed from foo`, `;; added 2026-05-01`. Git history and the PR carry this, not the source.
+- **Decorative banners** that dwarf the code (`;; ===== HUGE SECTION =====` repeated, ASCII art). A sparse section divider in a genuinely large file is fine; prefer splitting the file.
+- **Redundant docstrings** that restate the fn name (`"Gets the user."` on `get-user`).
+- **Commented-out code** of any size — see `no-dead-code` (008).
+- **Agent reasoning narrated in comments.** Explanation of *how you arrived at* the code belongs in the PR description, not the source. Do not leave a trail of "first I tried X, then Y."
+
+## Agent behavior
+
+When writing or reviewing code:
+1. After writing a function, delete every comment, then re-add only the ones whose removal lost a real "why."
+2. Never narrate your own reasoning in the code. The diff and PR description are for that.
+3. When a comment is needed, prefer fixing the code (rename, extract, constant) so the comment becomes unnecessary.
+4. When editing existing files, leave them less commented than you found them — compress what-comments, keep the why.
+5. Headers and docstrings are out of scope for compression — preserve them.
+
+## Anti-patterns to reject
+
+- A file where comments outnumber or visually dominate the code
+- Comments that must be updated whenever the adjacent line changes (they restate it)
+- "Why" written as "what" — `;; set x to 5` instead of `;; 5 = max retries the gateway tolerates before lockout`
+- Section banners used to navigate a file that should have been split into smaller namespaces
+- Reintroducing a deleted comment because "it might help" — apply the deletion test
