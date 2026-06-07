@@ -197,8 +197,9 @@ reads it. Before opening a rule PR, verify the document against itself:
 - **No internal contradictions.** When a rule states a constraint in more than one place
   (frontmatter description, body, examples, cross-references), they must say the same thing.
 
-This is the rule-authoring application of `code-review-rigor` obligations 4 (trace types/defaults)
-and 5 (intent over symptoms): the document is the artifact under review.
+This is the rule-authoring application of `code-review-rigor` obligations 4 ("First-run /
+default-value / nil-path scrutiny") and 5 ("Intent, not symptoms"): the document is the artifact
+under review.
 
 ## AI Optimization Tips
 
