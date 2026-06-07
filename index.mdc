@@ -76,6 +76,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   ├── git-branch-management.mdc        # dewey: "710"
 │   ├── pre-commit-discipline.mdc        # dewey: "715"  alwaysApply: true
 │   ├── tests-with-code.mdc              # dewey: "716"  alwaysApply: true
+│   ├── code-review-rigor.mdc            # dewey: "720"  alwaysApply: true
 │   ├── pr-documentation.mdc             # dewey: "721"
 │   ├── pr-layering.mdc                  # dewey: "722"  alwaysApply: true
 │   ├── git-worktrees.mdc                # dewey: "725"
@@ -156,6 +157,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 710 | `git-branch-management` | ✓ | Branch from main, single-purpose PRs |
 | 715 | `pre-commit-discipline` | ✓ | Never bypass hooks without investigation; fix root causes |
 | 716 | `tests-with-code` | ✓ | Code changes ship with test changes; "no test diff" requires an explicit pure-restructuring claim |
+| 720 | `code-review-rigor` | ✓ | Adversarial PR-review obligations — happy-path trace, bootstrap order, default-value scrutiny, compile-test fact-claims, intent over symptoms |
 | 721 | `pr-documentation` | ✓ | Living PR docs in `docs/pull-requests/` |
 | 722 | `pr-layering` | ✓ | Stratified PR DAG; <400 lines; independently mergeable |
 | 725 | `git-worktrees` |  | Parallel workflows with worktrees, operator multi-loop |
