@@ -1,0 +1,118 @@
+---
+dewey: "009"
+description: Code is the artifact — comments explain WHY when non-obvious, never restate WHAT; self-document first; document the public boundary, keep the impl light
+alwaysApply: true
+---
+
+# Self-Documenting Code (ALWAYS)
+
+**The code is the primary artifact. A comment is an admission that the code could not say it itself.** Reach for a better name, a smaller function, a named constant, or a type *before* reaching for a comment. When a comment is warranted, it explains **why** — a reason not visible in the code — never **what** the code already states.
+
+This is the operational complement to `foundations/code-quality` (002), `foundations/named-constants` (006), and `foundations/no-dead-code` (008, no commented-out blocks).
+
+## The rule
+
+1. **Default to no comment.** First make the code self-evident. A comment is the last resort, not the first.
+2. **Comment WHY, never WHAT.** If a comment restates what the next line does, delete it. If it captures a reason, constraint, or tradeoff the code cannot express, keep it.
+3. **Self-document first.** Before writing a comment, try: a clearer name, extracting a well-named function, a named constant (006), an intermediate `let` binding, or a more precise type.
+4. **Test before keeping a comment:** would the code lose meaning if this comment were deleted? If no → delete it. If yes → it is a real "why."
+
+```clojure
+;; BAD — narrates the code; every line is noise
+;; loop over the users
+(doseq [u users]
+  ;; if the user is active
+  (when (:active? u)
+    ;; send them an email
+    (send-email u)))
+
+;; GOOD — the code says what; no comment needed
+(doseq [u (filter :active? users)]
+  (send-email u))
+
+;; GOOD — a real WHY the code cannot show
+;; Datalevin returns :db.cardinality/one as a bare value, not a set,
+;; so we must wrap before set/union — see datalevin#412.
+(update entity :tags (comp set wrap-single))
+```
+
+```rust
+// BAD — restates the call
+// acquire the lock
+let guard = state.lock().unwrap();
+
+// GOOD — WHY this ordering matters, not visible locally
+// Lock `accounts` before `ledger` everywhere; the reverse order
+// deadlocks with the settlement task (see ADR-021).
+let _a = accounts.lock();
+let _l = ledger.lock();
+```
+
+## Comments that are NOT noise — keep these
+
+- **File / license headers.** Governed by `project/header-copyright` (810) for OSS and `.thesium-standards/project/header-proprietary` for proprietary repos. **Never strip or compress these.** They are required, not commentary.
+- **Docstrings on public namespaces, fns, and vars.** State the contract (purpose, args, return, failure mode) and the why — do not restate the body. A docstring that only echoes the name carries no contract; rewrite it to express the why, or remove it if there is no why to express (a self-evident one-liner like `(defn cargo-target-dir [config] ...)` does not need a docstring just to have one).
+- **Genuine "why" notes:** non-obvious invariants, rationale for a surprising choice, performance tradeoffs, security constraints, workarounds with a linked cause (issue/ADR/spec).
+- **Rust `SAFETY:` comments** on `unsafe` blocks — required by `languages/rust-unsafe` (232).
+- **Named-constant docstrings** — required by `named-constants` (006) to carry intent.
+
+## Where documentation lives — the published boundary, not the impl
+
+Documentation density follows **visibility**, not effort. The published boundary is the contract every consumer reads; the implementation is internal and changes freely. So:
+
+- **Document the public boundary.** Every exported var/fn carries a docstring stating the contract: purpose, args, return shape, failure mode, and any why a caller must know. This is where a reader should learn the API without opening the internals.
+- **Keep the impl light.** In an internal namespace (`core`, `impl/*`, `defn-`, or a `def` re-exported through an interface), **remove a docstring that merely duplicates the boundary's contract doc** — the boundary now carries it. **Keep** an impl docstring that carries information the boundary does not: a non-obvious invariant, an implementation tradeoff, or a roadmap note. The boundary holds the contract; the impl holds only what is genuinely additional.
+- **The common inversion to reject:** a thin, undocumented public interface re-exporting a heavily-docstringed `core`. The contract ends up hidden inside the implementation; consumers must read internals to use the component. Flip it — lift the contract doc to the boundary, leave the impl with only its *why*.
+
+In **Polylith**, the `interface` namespace is the boundary; `core` and other impl namespaces are internal (see `frameworks/polylith`). A bare passthrough export carries no docstring, so it documents nothing:
+
+```clojure
+;; BAD — interface.clj: undocumented passthrough; the contract is hidden in core
+(def create-envelope core/create-envelope)
+
+;; core.clj: the deep contract doc lives here, where no consumer looks
+(defn create-envelope
+  "Create an event envelope with sequence numbering. When the stream
+   carries a :snowflake-generator, :event/id is a snowflake-encoded UUID …"
+  [stream opts] …)
+
+;; GOOD — interface.clj: the contract is documented at the boundary
+(defn create-envelope
+  "Create an event envelope with sequence numbering. When the stream
+   carries a :snowflake-generator, :event/id is a snowflake-encoded UUID …"
+  [stream opts]
+  (core/create-envelope stream opts))
+
+;; core.clj: impl keeps only a why-note, if any
+(defn create-envelope [stream opts] …)
+```
+
+When a passthrough must stay a `def` (re-exporting a value, not wrapping a fn), give it a docstring: `(def create-envelope "…contract…" core/create-envelope)`.
+
+## Reject in review — comment noise
+
+- **What-comments:** any comment that paraphrases the line(s) below it.
+- **Step narration:** `;; step 1`, `// now we validate`, `;; return the result`.
+- **Process / changelog commentary in code:** `;; Wave 6 PR adds this`, `;; renamed from foo`, `;; added 2026-05-01`. Git history and the PR carry this, not the source.
+- **Decorative banners** that dwarf the code (`;; ===== HUGE SECTION =====` repeated, ASCII art). A sparse section divider in a genuinely large file is fine; prefer splitting the file.
+- **Redundant docstrings** that restate the fn name (`"Gets the user."` on `get-user`).
+- **Commented-out code** of any size — see `no-dead-code` (008).
+- **Agent reasoning narrated in comments.** Explanation of *how you arrived at* the code belongs in the PR description, not the source. Do not leave a trail of "first I tried X, then Y."
+
+## Agent behavior
+
+When writing or reviewing code:
+1. After writing a function, delete every comment, then re-add only the ones whose removal lost a real "why."
+2. Never narrate your own reasoning in the code. The diff and PR description are for that.
+3. When a comment is needed, prefer fixing the code (rename, extract, constant) so the comment becomes unnecessary.
+4. When editing existing files, leave them less commented than you found them — compress what-comments, keep the why.
+5. **File / license headers**: preserve verbatim — never compress or strip.
+6. **Docstrings**: do not mechanically strip. Rewrite them to capture contract + why; remove only when the function name plus signature already says everything a caller needs to know.
+
+## Anti-patterns to reject
+
+- A file where comments outnumber or visually dominate the code
+- Comments that must be updated whenever the adjacent line changes (they restate it)
+- "Why" written as "what" — `;; set x to 5` instead of `;; 5 = max retries the gateway tolerates before lockout`
+- Section banners used to navigate a file that should have been split into smaller namespaces
+- Reintroducing a deleted comment because "it might help" — apply the deletion test

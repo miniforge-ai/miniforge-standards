@@ -26,6 +26,7 @@ as a git submodule at `.standards/` in each repo.
 | Replace a magic number or string | `foundations/named-constants` |
 | Decide between code default and EDN config | `foundations/config-as-data` |
 | Remove or refactor old code | `foundations/no-dead-code` |
+| Decide whether to write a comment / where docs live | `foundations/self-documenting-code` |
 | Add user-facing strings | `foundations/localization` |
 | Run tasks in OCI containers | `foundations/runtime-*` (dewey 030–033) |
 | Write tests | `testing/standards` |
@@ -76,6 +77,7 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 │   ├── named-constants.mdc              # dewey: "006"  alwaysApply: true
 │   ├── config-as-data.mdc               # dewey: "007"  alwaysApply: true
 │   ├── no-dead-code.mdc                 # dewey: "008"  alwaysApply: true
+│   ├── self-documenting-code.mdc        # dewey: "009"  alwaysApply: true
 │   ├── simple-made-easy.mdc             # dewey: "010"  alwaysApply: true
 │   ├── specification-standards.mdc      # dewey: "020"
 │   ├── work-spec-authoring.mdc          # dewey: "021"

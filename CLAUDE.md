@@ -30,6 +30,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Replace a magic number or string | `foundations/named-constants` |
 | Decide between code default and EDN config | `foundations/config-as-data` |
 | Remove or refactor old code | `foundations/no-dead-code` |
+| Decide whether to write a comment / where docs live | `foundations/self-documenting-code` |
 | Write a normative specification | `foundations/specification-standards` |
 | Author a work spec or task brief | `foundations/work-spec-authoring` |
 | Add code without tests | `workflows/tests-with-code` |
@@ -83,6 +84,7 @@ foundations/
   named-constants.mdc         dewey: "006"
   config-as-data.mdc          dewey: "007"
   no-dead-code.mdc            dewey: "008"
+  self-documenting-code.mdc   dewey: "009"
   simple-made-easy.mdc        dewey: "010"
   specification-standards.mdc dewey: "020"
   work-spec-authoring.mdc     dewey: "021"
@@ -145,6 +147,7 @@ meta/
   006      Named Constants (no magic numbers/strings; intent-bearing `def` + docstring)
   007      Config as Data (operational values in .edn with Malli schema; defaults in code)
   008      No Dead Code (delete obsolete code in the same change; no legacy shims without removal plan)
+  009      Self-Documenting Code (code is the artifact; comment WHY not WHAT; document the public boundary, keep impl light; headers + docstrings exempt)
   010      Simple Made Easy
   020      Specification Standards
   021      Work-Spec Authoring (priority, theme, testable criteria)
