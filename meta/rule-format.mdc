@@ -180,6 +180,26 @@ any loader; avoid adding them to new rules.
 - Use Emojis where appropriate to convey meaning that will improve rule understanding by the AI Agent
 - Keep examples as short as possible to clearly convey the positive or negative example
 
+## Authoring discipline — self-consistency
+
+A rule is normative the moment it merges; an error in it propagates to every agent that
+reads it. Before opening a rule PR, verify the document against itself:
+
+- **Example code is normative — trace it as if compiled.** Readers copy it verbatim. Apply
+  the same scrutiny a real diff gets: walk the types, the nil/default paths, the return value.
+  A markdown fence is not an excuse to skip review. (PR #39: an `Int` example claimed an
+  `Int64` round-trip in prose but returned `n.intValue` — a doc/code drift inside the example.)
+- **Every summary, "what not to do," and catalog line must agree with the detailed rule it
+  condenses.** Re-read the section as a whole and check each short restatement against the body;
+  a punchy summary that contradicts the rule is worse than no summary. (PR #36: a docstring rule
+  said both "delete redundant docstrings" and "preserve docstrings." PR #39: a summary implied
+  `as? Bool`-first was a safe type test when the body said it was ambiguous.)
+- **No internal contradictions.** When a rule states a constraint in more than one place
+  (frontmatter description, body, examples, cross-references), they must say the same thing.
+
+This is the rule-authoring application of `code-review-rigor` obligations 4 (trace types/defaults)
+and 5 (intent over symptoms): the document is the artifact under review.
+
 ## AI Optimization Tips
 
 1. Use precise, deterministic ACTION TRIGGER OUTCOME format in descriptions
