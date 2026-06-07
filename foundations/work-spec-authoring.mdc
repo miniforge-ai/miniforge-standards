@@ -63,7 +63,7 @@ Tier semantics:
 | Tier | Use when |
 |---|---|
 | `:blocker` | Nothing above it moves until this lands. Costs real tokens or blocks release. Use sparingly. |
-| `:high` | Next-in-line when blockers clear. |
+| `:high` | Next-in-line when blockers clear; compounds blocker value. |
 | `:medium` | Default. Useful but not critical-path. |
 | `:low` | Discretionary. |
 
@@ -72,10 +72,10 @@ Axis semantics:
 | Axis | Meaning |
 |---|---|
 | `:dogfood-enabler` | Makes miniforge more capable of running miniforge |
-| `:token-conservation` | Cuts cost per run |
+| `:token-conservation` | cuts cost per successful run |
 | `:observation` | Improves what humans + automation can see |
 | `:correctness` | Closes a correctness gap (bug, silent failure) |
-| `:scale` | Enables larger deployment |
+| `:scale` | enables a larger deployment or use case |
 | `:ux` | Improves human-facing experience |
 
 Pick all that apply — most specs are multi-axis.
@@ -158,6 +158,8 @@ the plan phase cannot decompose the change.
 ## Good example
 
 See [templates/work-spec.edn.template](../templates/work-spec.edn.template) — a complete, valid spec showing all required fields.
+
+> **Normative-refs inheritance:** A spec inherits `:theme/normative-refs` from its theme automatically. Only add a spec-level `:normative-refs` when the spec cites a section the theme doesn't already cover.
 
 ## Agent behavior
 
