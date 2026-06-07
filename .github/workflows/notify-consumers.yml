@@ -1,0 +1,51 @@
+# notify-consumers.yml
+#
+# Fires a `standards-updated` repository_dispatch event to every repo that
+# pins miniforge-standards as a submodule, whenever a commit lands on main.
+# Each consumer's CI can then open an automated PR to bump the submodule.
+#
+# Required: provision STANDARDS_DISPATCH_TOKEN as an org or repo secret.
+# The token must be a PAT or GitHub App token with `repo` scope on all
+# consuming repos listed in the matrix below.
+
+name: Notify consumers
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # allows manual trigger for testing
+
+jobs:
+  dispatch:
+    name: Dispatch to ${{ matrix.repo }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - repo: miniforge-ai/miniforge
+            submodule_path: standards/miniforge
+          - repo: miniforge-ai/thesium-career
+            submodule_path: standards/miniforge
+          - repo: miniforge-ai/thesium
+            submodule_path: standards/miniforge
+          - repo: miniforge-ai/thesium-workflows
+            submodule_path: .standards
+          - repo: miniforge-ai/thesium-app-foundation
+            submodule_path: .standards
+          - repo: miniforge-ai/miniforge-control
+            submodule_path: .standards
+
+    steps:
+      - uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.STANDARDS_DISPATCH_TOKEN }}
+          repository: ${{ matrix.repo }}
+          event-type: standards-updated
+          client-payload: |
+            {
+              "sha": "${{ github.sha }}",
+              "ref": "${{ github.ref }}",
+              "submodule_path": "${{ matrix.submodule_path }}"
+            }
