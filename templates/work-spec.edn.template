@@ -1,0 +1,23 @@
+{:spec/title "Agent stream watchdog + session-resume"
+ :spec/description "..."
+ :spec/intent
+ {:type :refactor
+  :scope ["components/agent/src"
+          "components/workflow-runner/src"
+          "components/self-healing/src"
+          "resources/config/default-user-config.edn"]}
+ :spec/constraints
+ ["Watchdog must not block event emission"
+  "Default gap threshold 90s; per-backend override in config"]
+ :spec/acceptance-criteria
+ ["A synthetic backend that stops responding triggers a watchdog kill within 90s"
+  "Kill emits :agent/stream-stalled with accurate gap duration"
+  "Resumed agent continues from last checkpoint"]
+ :spec/priority
+ {:tier :blocker
+  :axes #{:dogfood-enabler :token-conservation}
+  :theme :dogfood-resilience
+  :rationale "Without this, a provider stall costs us the full phase budget. Minutes saved per interrupt."
+  :blocks []
+  :blocked-by ["event-log-tool-visibility.spec.edn"]}
+ :spec/workflow-type :canonical-sdlc}

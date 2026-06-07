@@ -60,21 +60,23 @@ Every spec MUST carry:
 
 Tier semantics:
 
-- `:blocker` — nothing above it moves forward until this lands. Use
-  sparingly. Reserved for things that cost real tokens or block the
-  release path.
-- `:high` — next-in-line when blockers clear; compounds blocker value.
-- `:medium` — default. Useful but not critical-path.
-- `:low` — discretionary. Nice-to-have.
+| Tier | Use when |
+|---|---|
+| `:blocker` | Nothing above it moves until this lands. Costs real tokens or blocks release. Use sparingly. |
+| `:high` | Next-in-line when blockers clear. |
+| `:medium` | Default. Useful but not critical-path. |
+| `:low` | Discretionary. |
 
 Axis semantics:
 
-- `:dogfood-enabler` — makes miniforge more capable of running miniforge
-- `:token-conservation` — cuts cost per successful run
-- `:observation` — improves what humans + automation can see
-- `:correctness` — closes a correctness gap (a bug, a silent failure)
-- `:scale` — enables a larger deployment or use case
-- `:ux` — improves human-facing experience (CLI, TUI, dashboard)
+| Axis | Meaning |
+|---|---|
+| `:dogfood-enabler` | Makes miniforge more capable of running miniforge |
+| `:token-conservation` | Cuts cost per run |
+| `:observation` | Improves what humans + automation can see |
+| `:correctness` | Closes a correctness gap (bug, silent failure) |
+| `:scale` | Enables larger deployment |
+| `:ux` | Improves human-facing experience |
 
 Pick all that apply — most specs are multi-axis.
 </required>
@@ -153,54 +155,9 @@ cannot compute affected bricks, change-classifiers cannot filter, and
 the plan phase cannot decompose the change.
 </example>
 
-<example type="invalid">
-Unknown theme:
-
-```clojure
-:spec/priority {:tier :medium
-                :axes #{:scale}
-                :theme :supercool-epic-2026   ; NOT in work/themes.edn
-                :rationale "..."}
-```
-
-Rejected. Add the theme to `work/themes.edn` first, or pick an existing
-theme.
-</example>
-
 ## Good example
 
-<example>
-```clojure
-{:spec/title "Agent stream watchdog + session-resume"
- :spec/description "..."
- :spec/intent
- {:type :refactor
-  :scope ["components/agent/src"
-          "components/workflow-runner/src"
-          "components/self-healing/src"
-          "resources/config/default-user-config.edn"]}
- :spec/constraints
- ["Watchdog must not block event emission"
-  "Default gap threshold 90s; per-backend override in config"]
- :spec/acceptance-criteria
- ["A synthetic backend that stops responding triggers a watchdog kill within 90s"
-  "Kill emits :agent/stream-stalled with accurate gap duration"
-  "Resumed agent continues from last checkpoint"]
- :spec/priority
- {:tier :blocker
-  :axes #{:dogfood-enabler :token-conservation}
-  :theme :dogfood-resilience
-  :rationale "Without this, a provider stall costs us the full phase budget. Minutes saved per interrupt."
-  :blocks []
-  :blocked-by ["event-log-tool-visibility.spec.edn"]}
- :spec/workflow-type :canonical-sdlc}
-```
-
-The spec inherits its normative-refs from the `:dogfood-resilience`
-theme's `:theme/normative-refs` (N2-delta + N3 §3.17). No additional
-`:normative-refs` needed on the spec itself unless it cites a specific
-section not covered by the theme.
-</example>
+See [templates/work-spec.edn.template](../templates/work-spec.edn.template) — a complete, valid spec showing all required fields.
 
 ## Agent behavior
 
