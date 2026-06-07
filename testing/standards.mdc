@@ -49,6 +49,27 @@ Test data construction must use factory functions. Never build event maps, entit
 - Any map with more than 3 fields — factory even if used once (for readability)
 - Any map that varies by a few fields across tests — factory with keyword args for the varying parts
 
+## Fixtures mirror the producer's real shape
+
+A factory's job is not just to be DRY — it must construct data in the **same shape the real producer emits**: same field *types*, key namespaces, and enum domains. A fixture you reshape to make a test pass is not a simplification — it is the bug surfacing in the code under test. Reshaping the input to dodge a failing path makes the test green while production stays broken.
+
+- When a test builds an input that another component or function produces, mirror that producer's **actual output**. Reuse the producer's factory (or a captured real artifact) where you can; across a brick boundary where you cannot import it, replicate the exact types and reference the producer in a comment.
+- Loose schemas (`any?`, open maps) do **not** pin the shape — they make this rule *more* important, because nothing mechanical will catch the drift.
+- If, while choosing test inputs, you reason "this would be a bug" — stop. That divergence is the bug. Fix the code under test, or commit the failing test. Never route a fixture around a known-bad path.
+
+```clojure
+;; BAD — the producer emits a keyword track id (:track/manager), but the
+;; consumer's normalize fn mishandles keywords. Making the fixture a string
+;; gets a match — green test, broken production.
+(defn- recon-row [overrides]
+  (merge {:track-id "em"} overrides))        ; producer never emits a string here
+
+;; GOOD — mirror the keyword shape the pipeline actually emits; the test then
+;; FAILS until the normalize fn is fixed to handle keywords.
+(defn- recon-row [overrides]
+  (merge {:track-id :track/manager} overrides))
+```
+
 ## Same structural standards as production code
 
 Tests are organized by the same stratified-design and code quality rules:
@@ -104,6 +125,7 @@ When writing tests:
 2. Extract them immediately at Layer 0, not after the fact.
 3. Apply the same code review lens to tests as to production code — no magic numbers, no nested conditionals, no raw string literals.
 4. If a test helper is used in more than one test file in the same component, move it to a shared `fixtures.clj`.
+5. Build each fixture in the shape the real producer emits. If you have to reshape an input to make the test pass, fix the code under test instead — never paper over a known-bad path with a convenient fixture.
 
 ## Anti-patterns to reject
 
@@ -112,3 +134,4 @@ When writing tests:
 - `(str "test-" (random-uuid))` repeated everywhere — extract to a factory
 - Tests named after functions: `test-wf-status` → name for behavior: `test-stale-workflow-detection`
 - 100-line `deftest` functions — split into smaller, focused tests
+- Reshaping a fixture's types or shape away from what the real producer emits, to get a green test instead of fixing the code under test
