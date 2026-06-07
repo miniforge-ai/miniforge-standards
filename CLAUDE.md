@@ -54,6 +54,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Use Fulcro RAD | `frameworks/fulcro-rad` |
 | Create a branch | `workflows/git-branch-management` |
 | **Commit code** | **`workflows/pre-commit-discipline`** (CRITICAL) |
+| **Review a PR before push** | **`workflows/code-review-rigor`** (CRITICAL — happy-path trace, bootstrap order, default-value scrutiny, compile-test claims, intent over symptoms) |
 | Use git worktrees | `workflows/git-worktrees` |
 | Plan a PR | `workflows/pr-layering` |
 | Document a PR | `workflows/pr-documentation` |
@@ -114,6 +115,7 @@ workflows/
   git-branch-management.mdc   dewey: "710"  alwaysApply: true
   pre-commit-discipline.mdc   dewey: "715"  alwaysApply: true
   tests-with-code.mdc         dewey: "716"  alwaysApply: true
+  code-review-rigor.mdc       dewey: "720"  alwaysApply: true
   pr-documentation.mdc        dewey: "721"  alwaysApply: true
   pr-layering.mdc             dewey: "722"  alwaysApply: true
   git-worktrees.mdc           dewey: "725"
@@ -178,6 +180,7 @@ meta/
   710      Git Branch Management
   715      Pre-Commit Discipline
   716      Tests With Code (no-test-diff PRs must claim pure restructuring)
+  720      Code Review Rigor (adversarial PR-review obligations — happy-path trace, bootstrap order, default scrutiny, compile-test fact-claims, intent over symptoms)
   721      PR Documentation
   722      PR Layering (DAG, stratified PRs)
   725      Git Worktrees
