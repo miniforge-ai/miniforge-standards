@@ -130,7 +130,7 @@ See [templates/worktree-operator-pattern.clj](../templates/worktree-operator-pat
 | Leave worktrees after merge | Remove immediately after merge |
 | Long-lived branch worktrees (staging, production) | Worktrees are for short-lived feature branches |
 | Reuse old AI session worktrees | Fresh worktree per session |
-| Start new session without cleanup | Always prune before adding new session worktree |
+| Start new session without cleanup | Remove old AI session worktrees first (`git worktree remove`), then prune stale refs (`git worktree prune`), before creating a new session worktree. |
 
 ## Troubleshooting
 

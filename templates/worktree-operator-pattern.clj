@@ -22,7 +22,7 @@
 {:workflows
  [{:id #uuid "..."
    :type :main
-   :worktree "/Users/chris/Local/miniforge.ai/miniforge"
+   :worktree "/path/to/miniforge/miniforge"
    :branch "feat/user-feature"
    :status :running}
 
@@ -35,6 +35,6 @@
 
   {:id #uuid "..."
    :type :review
-   :worktree "/Users/chris/Local/miniforge.ai/miniforge-cursor"
+   :worktree "/path/to/miniforge/miniforge-cursor"
    :branch "main"
    :status :read-only}]}
