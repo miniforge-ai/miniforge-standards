@@ -105,6 +105,25 @@ specs/
 Agent emits events following N3 schema exactly.
 </example>
 
+<example type="valid">
+✅ GOOD: Semantic intent validation
+
+Semantic validation catches intent violations before any resource change is committed.
+
+```clojure
+;; Following N6 semantic validation
+(validate-intent {:declared :import
+                  :actual-creates 0
+                  :actual-destroys 0})
+;; => {:passed? true}
+
+(validate-intent {:declared :import
+                  :actual-creates 3   ; VIOLATION
+                  :actual-destroys 0})
+;; => {:passed? false :violation "Declared IMPORT but creates 3 resources"}
+```
+</example>
+
 <example type="invalid">
 ❌ BAD: Extracting spec from code
 
