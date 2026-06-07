@@ -225,6 +225,44 @@ Every user-facing string must go through a `Strings.*` namespace (backed by `NSL
 `Localizable.strings`). No hardcoded English strings in views or view models. This is the Swift
 application of simple-made-easy "rules (and data) live in one place".
 
+## JSON scalar extraction (Bool vs NSNumber)
+
+`JSONSerialization` bridges every JSON number AND every JSON boolean to `NSNumber` — a
+JSON `true` becomes an `__NSCFBoolean`, which *is* an `NSNumber`. Two casts are therefore
+ambiguous on any value decoded from JSON (FFI payloads, `[String: Any]` dictionaries):
+
+- `value as? NSNumber` **succeeds for booleans** — `true` pulled out as a number is `1`.
+- `value as? Bool` **succeeds for `0`/`1`** — the integer `1` pulled out as a bool is `true`.
+
+Rules:
+
+1. **Known-boolean key** (a field that is always a JSON bool, e.g. `attention/resolved?`):
+   `as? Bool` is correct and safe. The ambiguity only bites when the slot could also hold a
+   number.
+2. **Extracting an integer**: a bare `as? NSNumber` is wrong — a boolean slips through.
+   Reject booleans by exact CoreFoundation type and require integrality:
+
+   ```swift
+   func jsonInt(_ value: Any) -> Int? {
+       guard let n = value as? NSNumber,
+             CFGetTypeID(n) != CFBooleanGetTypeID(),   // reject __NSCFBoolean
+             n == NSNumber(value: n.int64Value)         // reject non-integers (1.5 → nil)
+       else { return nil }
+       return n.intValue
+   }
+   ```
+
+3. **Generic value renderer** (type unknown): test boolean BEFORE number, again via
+   `CFGetTypeID(x) == CFBooleanGetTypeID()`, so booleans render as `true`/`false`, not `1`/`0`.
+
+Never order `as? NSNumber` before `as? Bool`, and never use a bare `as? NSNumber` to pull an
+integer out of untrusted JSON.
+
+This class recurred across miniforge-control PR #132 (a value renderer printed booleans as
+`1`/`0`) and PR #134 (a PR-number parser accepted `["repo", true]` as `repo#1`) — both caught
+by Copilot, not self-review. Treat every `as? NSNumber` / `as? Bool` on a decoded payload as
+suspect, and test the bool-and-float cases, not just structurally-malformed input.
+
 ## Documentation and comments
 
 - Document all `internal` and higher access-level declarations with `///` doc comments.
@@ -247,6 +285,8 @@ application of simple-made-easy "rules (and data) live in one place".
 
 - Do not scatter policy conditionals across view files. Pull them into L0/L1 tables.
 - Do not use `Any` or `AnyObject` — use typed protocols.
+- Do not pull an integer from decoded JSON with a bare `as? NSNumber`, or order `as? NSNumber`
+  before `as? Bool` — `__NSCFBoolean` bridges to `NSNumber` (see JSON scalar extraction).
 - Do not force-unwrap optionals in production code without documenting the invariant.
 - Do not put business logic into view bodies or computed view properties.
 - Do not mix UI state and network/storage concerns in the same type (see stratified-design).
