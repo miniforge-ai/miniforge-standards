@@ -60,7 +60,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Use Fulcro RAD | `frameworks/fulcro-rad` |
 | Create a branch | `workflows/git-branch-management` |
 | **Commit code** | **`workflows/pre-commit-discipline`** (CRITICAL) |
-| **Review a PR before push** | **`workflows/code-review-rigor`** (CRITICAL — happy-path trace, bootstrap order, default-value scrutiny, compile-test claims, intent over symptoms) |
+| **Review a PR before push** | **`workflows/code-review-rigor`** (CRITICAL — happy-path trace, bootstrap order, default-value scrutiny, compile-test claims, intent over symptoms, refactor-not-exempt) |
 | Use git worktrees | `workflows/git-worktrees` |
 | Plan a PR | `workflows/pr-layering` |
 | Document a PR | `workflows/pr-documentation` |
@@ -188,7 +188,7 @@ meta/
   710      Git Branch Management
   715      Pre-Commit Discipline
   716      Tests With Code (no-test-diff PRs must claim pure restructuring)
-  720      Code Review Rigor (adversarial PR-review obligations — happy-path trace, bootstrap order, default scrutiny, compile-test fact-claims, intent over symptoms)
+  720      Code Review Rigor (adversarial PR-review obligations — happy-path trace, bootstrap order, default-value scrutiny, compile-test fact-claims, intent over symptoms, refactor-not-exempt)
   721      PR Documentation
   722      PR Layering (DAG, stratified PRs)
   725      Git Worktrees
