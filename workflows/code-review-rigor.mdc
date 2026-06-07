@@ -122,7 +122,7 @@ Specifically:
 
 ### 6. Refactor is not exempt
 
-A "pure restructuring" / "no behaviour change" / "just a move" claim is a **scrutiny suppressant**, not a scrutiny waiver. Moved code is new code at its new site. Apply obligations 1–5 to the moved lines as if you had just written them — *especially* obligation 4 (type / default scrutiny), because latent bugs ride along invisibly: the diff reads as a move, so the eye skips the body.
+A "pure restructuring" / "no behaviour change" / "just a move" claim is a **scrutiny suppressant**, not a scrutiny waiver. Moved code is new code at its new site. Apply obligations 1–5 to the moved lines as if you had just written them — *especially* obligation 4 (first-run / default-value / nil-path scrutiny), because latent bugs ride along invisibly: the diff reads as a move, so the eye skips the body.
 
 Specifically:
 
