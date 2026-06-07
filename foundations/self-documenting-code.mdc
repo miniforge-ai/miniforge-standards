@@ -89,6 +89,8 @@ In **Polylith**, the `interface` namespace is the boundary; `core` and other imp
 
 When a passthrough must stay a `def` (re-exporting a value, not wrapping a fn), give it a docstring: `(def create-envelope "…contract…" core/create-envelope)`.
 
+**Two-tier interfaces:** when a component publishes both `component.interface` and `component.interface.*` sub-namespaces and *both* are consumed, document **both tiers**. `(def x sub/x)` does not copy the sub's docstring, so a bare top-level re-export documents nothing to the consumers who require the top interface — and vice versa. Each consumed tier is a public surface and carries the contract. (This is not impl duplication; both tiers are boundary.) If only one tier is consumed, document that one.
+
 ## Reject in review — comment noise
 
 - **What-comments:** any comment that paraphrases the line(s) below it.
