@@ -4,9 +4,12 @@
 # pins miniforge-standards as a submodule, whenever a commit lands on main.
 # Each consumer's CI can then open an automated PR to bump the submodule.
 #
-# Required: provision STANDARDS_DISPATCH_TOKEN as an org or repo secret.
-# The token must be a PAT or GitHub App token with `repo` scope on all
-# consuming repos listed in the matrix below.
+# Accepted token types:
+#   - Classic PAT: requires 'repo' scope on all consuming repos
+#   - GitHub App installation token: requires 'contents: write' and
+#     'metadata: read' permissions on each consuming repo (GitHub Apps
+#     use permissions, not OAuth scopes)
+# Add as org secret STANDARDS_DISPATCH_TOKEN.
 
 name: Notify consumers
 
@@ -15,6 +18,8 @@ on:
     branches:
       - main
   workflow_dispatch: # allows manual trigger for testing
+
+permissions: {}
 
 jobs:
   dispatch:
@@ -38,7 +43,7 @@ jobs:
             submodule_path: .standards
 
     steps:
-      - uses: peter-evans/repository-dispatch@v3
+      - uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3
         with:
           token: ${{ secrets.STANDARDS_DISPATCH_TOKEN }}
           repository: ${{ matrix.repo }}
