@@ -25,10 +25,13 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Structure functions / avoid duplication | `foundations/code-quality` |
 | Handle success/failure results | `foundations/result-handling` |
 | Know where to put validation | `foundations/validation-boundaries` |
+| **Propagate errors as values; throw only at absolute boundaries** | **`foundations/exceptions-as-data`** (CRITICAL) |
 | Add user-facing strings | `foundations/localization` |
 | Replace a magic number or string | `foundations/named-constants` |
 | Decide between code default and EDN config | `foundations/config-as-data` |
 | Remove or refactor old code | `foundations/no-dead-code` |
+| Write a normative specification | `foundations/specification-standards` |
+| Author a work spec or task brief | `foundations/work-spec-authoring` |
 | Add code without tests | `workflows/tests-with-code` |
 | Run tasks in OCI containers | `foundations/runtime-*` (dewey 030–033) |
 | Write tests | `testing/standards` |
@@ -46,6 +49,8 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Write CSS | `languages/css` |
 | Write HTML | `languages/html` |
 | Work with Polylith | `frameworks/polylith` |
+| Compose Polylith bricks / validate workspace | `frameworks/polylith-composition` |
+| Use the Polylith CLI tool | `frameworks/polylith-tool` |
 | Work with Kubernetes | `frameworks/kubernetes` |
 | Pick a web architecture mode | `frameworks/web-architecture-mode` |
 | Decide an API's surface class | `frameworks/api-surface-classes` |
