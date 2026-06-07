@@ -75,7 +75,8 @@ Developer-facing — metric descriptions, observability-bound text (same pattern
 
 ## Anomaly → user-locale mapping
 
-`:anomaly/type` is a coarse vocabulary (`:not-found`, `:conflict`, `:invalid-input`, …).
+`:anomaly/type` is a coarse category vocabulary (`:not-found`, `:conflict`, `:invalid-input`, …)
+(see `foundations/exceptions-as-data` for the full vocabulary).
 It can't uniquely identify a specific user-facing message; mapping requires a finer key.
 
 **Producer responsibility.** When an anomaly might surface in a UI, attach `:user/error-key`:
@@ -126,6 +127,8 @@ New strings go into the appropriate catalog FIRST, then are referenced by key.
 ## What goes where
 
 Namespace prefixes: user locale uses `:workflow/`, `:cp/`, `:error/`; system locale uses `:log/`, `:anomaly/`, `:metric-desc/`, `:debug/`.
+Use domain semantics, not UI position: `:workflow/none-heading` not `:sidebar/empty-title`.
+Common suffixes: `-heading`, `-body`, `-hint`, `-label`, `-prefix`, `-suffix`, `-placeholder`.
 
 | Category | Example | Catalog |
 |----------|---------|---------|
