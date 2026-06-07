@@ -26,7 +26,7 @@ as a git submodule at `.standards/` in each repo.
 | Replace a magic number or string | `foundations/named-constants` |
 | Decide between code default and EDN config | `foundations/config-as-data` |
 | Remove or refactor old code | `foundations/no-dead-code` |
-| Decide whether to write a comment | `foundations/self-documenting-code` |
+| Decide whether to write a comment / where docs live | `foundations/self-documenting-code` |
 | Add user-facing strings | `foundations/localization` |
 | Run tasks in OCI containers | `foundations/runtime-*` (dewey 030–033) |
 | Write tests | `testing/standards` |

@@ -1,6 +1,6 @@
 ---
 dewey: "009"
-description: Code is the artifact — comments explain WHY when non-obvious, never restate WHAT; self-document with names and structure first
+description: Code is the artifact — comments explain WHY when non-obvious, never restate WHAT; self-document first; document the public boundary, keep the impl light
 alwaysApply: true
 ---
 
@@ -55,6 +55,39 @@ let _l = ledger.lock();
 - **Genuine "why" notes:** non-obvious invariants, rationale for a surprising choice, performance tradeoffs, security constraints, workarounds with a linked cause (issue/ADR/spec).
 - **Rust `SAFETY:` comments** on `unsafe` blocks — required by `languages/rust-unsafe` (232).
 - **Named-constant docstrings** — required by `named-constants` (006) to carry intent.
+
+## Where documentation lives — the published boundary, not the impl
+
+Documentation density follows **visibility**, not effort. The published boundary is the contract every consumer reads; the implementation is internal and changes freely. So:
+
+- **Document the public boundary.** Every exported var/fn carries a docstring stating the contract: purpose, args, return shape, failure mode, and any why a caller must know. This is where a reader should learn the API without opening the internals.
+- **Keep the impl light.** Private/internal namespaces (`core`, `impl/*`, `defn-`) get a docstring only for a genuine *why* (a non-obvious invariant or tradeoff). They do not re-document the contract — the boundary already does.
+- **The common inversion to reject:** a thin, undocumented public interface re-exporting a heavily-docstringed `core`. The contract ends up hidden inside the implementation; consumers must read internals to use the component. Flip it — lift the contract doc to the boundary, leave the impl with only its *why*.
+
+In **Polylith**, the `interface` namespace is the boundary; `core` and other impl namespaces are internal (see `frameworks/polylith`). A bare passthrough export carries no docstring, so it documents nothing:
+
+```clojure
+;; BAD — interface.clj: undocumented passthrough; the contract is hidden in core
+(def create-envelope core/create-envelope)
+
+;; core.clj: the deep contract doc lives here, where no consumer looks
+(defn create-envelope
+  "Create an event envelope with sequence numbering. When the stream
+   carries a :snowflake-generator, :event/id is a snowflake-encoded UUID …"
+  [stream opts] …)
+
+;; GOOD — interface.clj: the contract is documented at the boundary
+(defn create-envelope
+  "Create an event envelope with sequence numbering. When the stream
+   carries a :snowflake-generator, :event/id is a snowflake-encoded UUID …"
+  [stream opts]
+  (core/create-envelope stream opts))
+
+;; core.clj: impl keeps only a why-note, if any
+(defn create-envelope [stream opts] …)
+```
+
+When a passthrough must stay a `def` (re-exporting a value, not wrapping a fn), give it a docstring: `(def create-envelope "…contract…" core/create-envelope)`.
 
 ## Reject in review — comment noise
 

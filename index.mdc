@@ -102,7 +102,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 006 | `named-constants` | ✓ | No magic numbers / magic strings; every meaningful literal extracted to a `def` with an intent-bearing docstring |
 | 007 | `config-as-data` | ✓ | Operational config lives in `.edn` files with a Malli schema; code holds only fallback defaults |
 | 008 | `no-dead-code` | ✓ | Delete unused code in the change that obsoletes it; no commented-out blocks, no `_legacy` shims without an explicit removal plan |
-| 009 | `self-documenting-code` | ✓ | Code is the artifact; comments explain WHY when non-obvious, never restate WHAT; self-document with names/structure first (headers + docstrings exempt) |
+| 009 | `self-documenting-code` | ✓ | Code is the artifact; comments explain WHY when non-obvious, never restate WHAT; self-document first; document the public boundary (interface), keep impl light (headers + docstrings exempt) |
 | 010 | `simple-made-easy` | ✓ | Simplicity over familiarity, uncomplected artifacts |
 | 020 | `specification-standards` |  | Normative specs (N1-N6), spec governance, conformance |
 | 021 | `work-spec-authoring` |  | `work/*.spec.edn` format: priority, theme, normative-refs, testable acceptance criteria |
