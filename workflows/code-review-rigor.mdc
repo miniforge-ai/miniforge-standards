@@ -1,12 +1,12 @@
 ---
 dewey: "720"
-description: Adversarial PR-review obligations — happy-path tracing, bootstrap-order verification, compile-test fact-claims, default-value scrutiny, intent over symptoms
+description: Adversarial PR-review obligations — happy-path tracing, bootstrap-order verification, compile-test fact-claims, default-value scrutiny, intent over symptoms, refactor-not-exempt
 alwaysApply: true
 ---
 
 # Code-Review Rigor (ALWAYS)
 
-<version>1.0.0</version>
+<version>1.1.0</version>
 
 ## Why this exists
 
@@ -21,13 +21,13 @@ Across a recent burst of subagent-authored PRs (miniforge-control #126, #127, #1
 
 The common shape across all four: **symptom-grep passed; trace-execution would have caught them.** The reviewer scanned for missing `final`, inline strings, force-unwraps — patterns subagents are already trained to avoid — and skipped the questions that catch real bugs.
 
-This rule codifies the five questions the reviewer MUST answer before declaring a PR review clean.
+This rule codifies the obligations the reviewer MUST satisfy before declaring a PR review clean.
 
 ## Scope
 
 Applies to every PR review pass — self-authored, subagent-delegated, Copilot-suggested, human-collaborator. Fires alongside `feedback_standards_review_per_pr` (which selects *what* to scan); this rule governs *how* to scan.
 
-## The five obligations
+## The obligations
 
 ### 1. Happy-path trace
 
@@ -120,16 +120,35 @@ Specifically:
 - For every error variant: ask "when does this fire, and what is the operator-visible consequence?" Not "is it a typed enum?" The enum catches the obvious failure; the wrong-arm-for-the-failure catches the bug. (PR #123 conflated request-encode and response-decode errors. Both were typed; the wrong one fired on request-encode.)
 - For every test assertion: ask "what fails this test that the production code currently does correctly?" Not "is it a typed assertion?" Tests that always pass catch nothing.
 
+### 6. Refactor is not exempt
+
+A "pure restructuring" / "no behaviour change" / "just a move" claim is a **scrutiny suppressant**, not a scrutiny waiver. Moved code is new code at its new site. Apply obligations 1–5 to the moved lines as if you had just written them — *especially* obligation 4 (type / default scrutiny), because latent bugs ride along invisibly: the diff reads as a move, so the eye skips the body.
+
+Specifically:
+
+- For every block lifted from elsewhere (extracted helper, inlined function, relocated file): re-trace it at the destination. Do not let the provenance ("this already shipped") stand in for a review.
+- If the moved code arrived with **no tests**, the move is the moment to add them — the absence at the origin is why the bug survived. `tests-with-code` (716) already says a no-test-diff PR must claim pure restructuring; this obligation closes the loop by making that claim *cost* a re-trace, not buy a pass.
+- A bug that was latent in `main` becomes **yours** the moment your PR ships it into a new file or call site. "It was already broken" is not a defence in review.
+
+The bug-class this catches: **latent bugs laundered through a refactor**. The original site never got obligation-4 scrutiny; the move re-presents the code as already-trusted, so it never gets it at the destination either.
+
+Worked example (real, from PR #132):
+
+> `renderValue` was lifted verbatim from SA-1's `PropertyList` into a new `detailValueString` helper, labelled "no behaviour change." It checked `as? NSNumber` before `as? Bool` — and `JSONSerialization` bridges JSON booleans to `__NSCFBoolean`, which IS an `NSNumber`, so every boolean field rendered as `1`/`0`.
+>
+> The bug had shipped in SA-1 and was untested. The extraction PR re-presented it as a trusted move; obligation 4 ("what does a boolean value render as?") was never asked because the helper was tagged moved-not-written. Compile-and-test cost to surface: one assertion decoding `{"x": true}`. Caught by Copilot instead.
+
 ## How to apply
 
 After the implementation is done, before pushing the PR:
 
-1. Re-read the diff with the five obligations as a checklist.
+1. Re-read the diff with the obligations as a checklist.
 2. For obligation 1: pick one realistic operator flow. State each parameter's value at each step. Confirm each guard.
 3. For obligation 2: identify any race / bootstrap / observation site. Read its source order. List what state exists at each step.
 4. For obligation 3: identify any "X doesn't work" claim in subagent reports, memory entries, or your own reasoning. Verify by compiling / grepping / testing.
 5. For obligation 4: for each parameter, write down its first-run / nil / default value. Confirm the code accepts it.
 6. For obligation 5: pick three literals + three error variants + three test assertions from the diff. Apply the intent question. If any fails, fix before push.
+7. For obligation 6: for every block the diff *moves* rather than writes, re-run obligations 1–5 on it at the destination. If it arrived untested, add the test now.
 
 If any obligation surfaces a bug: fix it in a same-branch commit before push. Do NOT push and rely on Copilot to catch it — Copilot is not your QA pass, and Copilot's catches add review-round-trip latency.
 
@@ -143,8 +162,9 @@ If any obligation surfaces a bug: fix it in a same-branch commit before push. Do
 
 - `feedback_standards_review_per_pr` (operator memory) — the *what* to audit against. This rule is the *how*.
 - `pre-commit-discipline` (dewey 715) — what blocks the commit. This rule fires before the commit succeeds.
+- `tests-with-code` (dewey 716) — a no-test-diff PR must claim pure restructuring. Obligation 6 makes that claim cost a re-trace instead of buying a pass.
 - `pr-layering` (dewey 722) — what the PR contains. This rule reviews that content.
 
 ## Agent behaviour
 
-When a subagent reports "standards-pass clean on first read" or "no fix commits needed", treat that as *zero* signal toward correctness. Run the five obligations yourself. If you cannot run them — the diff is too large to trace in a session, or you lack context for the realistic operator flow — say so and ask the operator to pause before merge rather than rubber-stamping the subagent's confidence.
+When a subagent reports "standards-pass clean on first read" or "no fix commits needed", treat that as *zero* signal toward correctness. Run the obligations yourself. If you cannot run them — the diff is too large to trace in a session, or you lack context for the realistic operator flow — say so and ask the operator to pause before merge rather than rubber-stamping the subagent's confidence. Treat "it's just a refactor" with the same suspicion (obligation 6) — that phrase has shipped a latent bug into a new file at least once (PR #132).

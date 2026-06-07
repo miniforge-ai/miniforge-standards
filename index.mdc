@@ -157,7 +157,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 710 | `git-branch-management` | ✓ | Branch from main, single-purpose PRs |
 | 715 | `pre-commit-discipline` | ✓ | Never bypass hooks without investigation; fix root causes |
 | 716 | `tests-with-code` | ✓ | Code changes ship with test changes; "no test diff" requires an explicit pure-restructuring claim |
-| 720 | `code-review-rigor` | ✓ | Adversarial PR-review obligations — happy-path trace, bootstrap order, default-value scrutiny, compile-test fact-claims, intent over symptoms |
+| 720 | `code-review-rigor` | ✓ | Adversarial PR-review obligations — happy-path trace, bootstrap order, default-value scrutiny, compile-test fact-claims, intent over symptoms, refactor-not-exempt |
 | 721 | `pr-documentation` | ✓ | Living PR docs in `docs/pull-requests/` |
 | 722 | `pr-layering` | ✓ | Stratified PR DAG; <400 lines; independently mergeable |
 | 725 | `git-worktrees` |  | Parallel workflows with worktrees, operator multi-loop |
