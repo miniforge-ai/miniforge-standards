@@ -84,16 +84,6 @@ specs/
 
 **Most leverageful:** N3 (Event Stream) and N6 (Evidence & Provenance) - everything builds on these.
 
-## Governance Rules
-
-**Prevent spec explosion:**
-
-1. **No new normative spec files** - Only amend N1-N6
-2. **Every new concept must land in N1** - Or it's not real
-3. **Every new runtime datum must land in N3 or N6** - Or it's unobservable
-4. **Every UX feature must point to a contract** - Or it's just a mock
-5. **Roadmaps never contain contracts** - They link to specs
-
 ## Examples
 
 <example>
@@ -112,26 +102,7 @@ specs/
              :message "Generating Terraform code..."})
 ```
 
-Agent emits events following N3 schema exactly. Event stream is product infrastructure.
-</example>
-
-<example>
-✅ GOOD: Semantic intent validation
-
-```clojure
-;; Following N6 semantic validation
-(validate-intent {:declared :import
-                  :actual-creates 0    ; MUST be 0 for :import
-                  :actual-destroys 0}) ; MUST be 0 for :import
-;; => {:passed? true}
-
-(validate-intent {:declared :import
-                  :actual-creates 3    ; VIOLATION!
-                  :actual-destroys 0})
-;; => {:passed? false :violation "Declared IMPORT but creates 3 resources"}
-```
-
-Semantic validation catches intent violations (declared IMPORT but code creates resources).
+Agent emits events following N3 schema exactly.
 </example>
 
 <example type="invalid">
@@ -143,8 +114,7 @@ Semantic validation catches intent violations (declared IMPORT but code creates 
 ;; Then writing spec based on what code does
 ```
 
-NEVER extract specs from code. Specs define requirements, code implements them.
-Extract from strategic documents (software-factory-vision.md, oss-paid-roadmap.md).
+NEVER extract specs from code. Extract from strategic documents (software-factory-vision.md, oss-paid-roadmap.md).
 </example>
 
 <example type="invalid">
@@ -154,41 +124,8 @@ Extract from strategic documents (software-factory-vision.md, oss-paid-roadmap.m
 specs/normative/N7-new-feature.md  # WRONG!
 ```
 
-NO new normative specs. Amend existing N1-N6 only. This prevents spec explosion.
+NO new normative specs. Amend existing N1-N6 only.
 </example>
-
-<example type="invalid">
-❌ BAD: Using MUST/SHALL in informative docs
-
-```markdown
-# Informative Guide
-
-The TUI MUST display workflow progress...  # WRONG in informative!
-```
-
-Only normative specs (N1-N6) use RFC 2119 keywords. Informative docs use descriptive language.
-</example>
-
-## Conformance
-
-Implementation is conformant if:
-
-- ✅ Events follow N3 schema, maintain sequencing, support replay
-- ✅ Evidence bundles follow N6 schema, immutable, complete provenance
-- ✅ Workflows execute N2 phase graph, inner/outer loops work
-- ✅ Policy packs follow N4 schema, semantic validation works
-- ✅ CLI/TUI/API match N5 taxonomy, event streaming works
-- ✅ Architecture follows N1 layering, components respect boundaries
-
-**Enforcement:** Schema validation + integration tests + conformance suite
-
-## Quick Reference
-
-**Building agents?** → N3 (emit events), N6 (create evidence)
-**Building CLI/TUI?** → N5 (interface), N3 (consume events)
-**Building policy packs?** → N4 (pack schema, gate contract)
-**Understanding execution?** → N2 (workflows), N6 (semantic validation)
-**Architecture questions?** → N1 (core concepts, layering)
 
 ## Related Rules
 
