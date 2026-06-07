@@ -61,7 +61,7 @@ let _l = ledger.lock();
 Documentation density follows **visibility**, not effort. The published boundary is the contract every consumer reads; the implementation is internal and changes freely. So:
 
 - **Document the public boundary.** Every exported var/fn carries a docstring stating the contract: purpose, args, return shape, failure mode, and any why a caller must know. This is where a reader should learn the API without opening the internals.
-- **Keep the impl light.** Private/internal namespaces (`core`, `impl/*`, `defn-`) get a docstring only for a genuine *why* (a non-obvious invariant or tradeoff). They do not re-document the contract — the boundary already does.
+- **Keep the impl light.** In an internal namespace (`core`, `impl/*`, `defn-`, or a `def` re-exported through an interface), **remove a docstring that merely duplicates the boundary's contract doc** — the boundary now carries it. **Keep** an impl docstring that carries information the boundary does not: a non-obvious invariant, an implementation tradeoff, or a roadmap note. The boundary holds the contract; the impl holds only what is genuinely additional.
 - **The common inversion to reject:** a thin, undocumented public interface re-exporting a heavily-docstringed `core`. The contract ends up hidden inside the implementation; consumers must read internals to use the component. Flip it — lift the contract doc to the boundary, leave the impl with only its *why*.
 
 In **Polylith**, the `interface` namespace is the boundary; `core` and other impl namespaces are internal (see `frameworks/polylith`). A bare passthrough export carries no docstring, so it documents nothing:
