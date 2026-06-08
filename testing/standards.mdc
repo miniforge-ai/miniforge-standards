@@ -58,12 +58,11 @@ A factory's job is not just to be DRY — it must construct data in the **same s
 - If, while choosing test inputs, you reason "this would be a bug" — stop. That divergence is the bug. Fix the code under test, or commit the failing test. Never route a fixture around a known-bad path.
 
 ```clojure
-;; BAD — the producer emits a keyword track id (:track/manager), but the
+;; BAD — the producer emits a keyword track-id (:track/manager), but the
 ;; consumer's normalize fn mishandles keywords. Making the fixture a string
 ;; gets a match — green test, broken production.
 (defn- recon-row [overrides]
-  (merge {:track-id "em"} overrides))        ; producer never emits a string here
-
+  (merge {:reconciliation/track-id "em"} overrides))        ; producer never emits a string here
 ;; GOOD — mirror the keyword shape the pipeline actually emits; the test then
 ;; FAILS until the normalize fn is fixed to handle keywords.
 (defn- recon-row [overrides]
