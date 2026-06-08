@@ -66,7 +66,7 @@ A factory's job is not just to be DRY — it must construct data in the **same s
 ;; GOOD — mirror the keyword shape the pipeline actually emits; the test then
 ;; FAILS until the normalize fn is fixed to handle keywords.
 (defn- recon-row [overrides]
-  (merge {:track-id :track/manager} overrides))
+  (merge {:reconciliation/track-id :track/manager} overrides))
 ```
 
 ## Same structural standards as production code
