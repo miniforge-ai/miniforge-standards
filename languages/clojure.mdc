@@ -52,10 +52,11 @@ structure is legible.
   - `;------------------------------------------------------------------------------ Layer 0`
   - `;------------------------------------------------------------------------------ Layer 1`
   - …
-- **Reverse DAG**: Layer 0 at the top (pure/value-level); a function may call any
-  layer at or below it, never above. The DAG **branches** — a higher fn composes
-  several lower ones and a lower fn is shared by many above; that is expected, not
-  a violation.
+- **Reverse DAG**: Layer 0 sits at the top of the file (pure/value-level, lowest
+  in the dependency order). A function in **Layer N may call functions in Layer ≤ N**
+  (same or lower-numbered), never a higher-numbered layer. The DAG **branches** —
+  a higher fn composes several lower ones and a lower fn is shared by many above;
+  that is expected, not a violation.
 - **The heading must be true.** If a "higher" layer inlines work that belongs
   below, the label is decorative — extract that work into its own fn at the right
   layer. A label the code crosses is worse than no label.

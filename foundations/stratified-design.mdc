@@ -87,5 +87,5 @@ chain.
   coarse, module-level instance of one-way dependencies.
 - `languages/clojure` (210) — the per-file instance (`Layer N` headings,
   reverse-DAG within a namespace).
-- `foundations/simple-made-easy` (010) — strata keep each level un-braided.
+- `foundations/simple-made-easy` (010) — strata keep each level unbraided.
 - `workflows/pr-layering` (722) — the same DAG discipline applied to PRs.

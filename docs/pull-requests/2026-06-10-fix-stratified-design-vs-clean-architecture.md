@@ -9,19 +9,28 @@ canonical strata —
 0 Foundations → 1 Domain → 2 Application → 3 Adapters → 4 Infrastructure
 ```
 
-— are **Clean Architecture / Hexagonal / Ports-and-Adapters** (Martin, Cockburn).
-That is a different idea from stratified design (SICP §2.2.4, Abelson & Sussman),
-and structurally it is a **linear chain**, not the branching **DAG of
-abstraction** stratified design actually describes. The rule imported the *name*
-and filled it with the *wrong substance* — and because 001 is `alwaysApply: true`,
-every agent faithfully reproduced the confusion (the `Layer N` cargo-culting
-across the codebases traces back here).
+— are **Clean Architecture / Hexagonal / Ports-and-Adapters** (Martin, Cockburn):
+a different idea from stratified design (SICP §2.2.4, Abelson & Sussman), and
+structurally a **linear chain**, not the branching **DAG of abstraction**
+stratified design actually describes. This PR splits the two concepts into their
+own rules and corrects the always-injected 001.
 
-## Changes
+## Motivation
+
+001 is the most foundational, `alwaysApply: true` rule — injected into every agent
+prompt. With the wrong concept encoded, "compiling it to policy" enforces a
+five-layer chain, not stratified design, and the prompt injection teaches every
+agent the cargo-cult form. The `Layer N` layering drift across the codebases
+traces back to this rule importing the *name* of stratified design while filling
+it with Clean-Architecture *substance*. Fixing the source rule is the root-cause
+fix; remediating existing `Layer N` usage is a follow-up that now has a correct
+definition to check against.
+
+## Changes in Detail
 
 - **`foundations/stratified-design.mdc` (001) — rewritten to real SICP.** A system
   is a sequence of layers, each a small *language* built on the one below; one
-  layer's constructs are the next layer's primitives. A one-way DAG of
+  layer's constructs become the next layer's primitives. A one-way DAG of
   abstraction that **branches** (lower constructs shared by many above). Strata
   are **discovered per problem**, not a fixed universal stack. Picture-language
   worked shape; robustness/localized-change as the payoff; anti-patterns name the
@@ -30,9 +39,8 @@ across the codebases traces back here).
 - **`foundations/layered-architecture.mdc` (011) — new.** The Clean-Architecture /
   Dependency-Rule content moved here and named correctly: the inward-only module
   dependency stack, pure core, ports & adapters, boundary DTOs, enforcement hooks.
-  Framed explicitly as *one coarse, module-level instance* of 001 — and as a chain
-  by deliberate coarsening, with the finer branching strata living within its
-  bands.
+  Framed explicitly as *one coarse, module-level instance* of 001 — a chain by
+  deliberate coarsening, with the finer branching strata living within its bands.
 - **`languages/clojure.mdc` (210) — reframed.** The per-file `Layer N` convention
   is now stated as the per-file instance of 001: the in-file DAG may branch, the
   heading must be *true* (extract work that a higher band inlines), and "max 3" is
@@ -42,22 +50,19 @@ across the codebases traces back here).
   into Stratified Design (the discipline) + Layered Architecture (the Dependency
   Rule).
 
-## Why it matters
+## Testing Plan
 
-001 is the most foundational, always-injected rule. With the wrong concept
-encoded, "compiling it to policy" enforces a five-layer chain — not stratified
-design — and the prompt injection teaches every agent the cargo-cult form. Fixing
-the source rule is the root-cause fix for the downstream layering drift; the
-remediation of existing `Layer N` usage (lint for decorative bands, opportunistic
-re-stratification) is a follow-up that now has a correct definition to check
-against.
+N/A (docs/rule-only change — no code). Verified manually: no remaining
+"Stratified Design = Adapters→…→Foundations" conflation; the new 011 rule is
+referenced consistently across `index.mdc`, `CLAUDE.md`, `agents.md`, and the
+001 ↔ 011 ↔ 210 cross-refs resolve.
 
-## Deployment
+## Deployment Plan
 
 Doc/rule-only. Consuming repos pick it up on their next `.standards` submodule
 bump. No code, no migration.
 
-## Related
+## Related Issues/PRs
 
 - SICP §2.2.4 "Example: A Picture Language" → "Stratified Design".
 - Triggered by a per-file instance found in review (a Layer-2 entrypoint inlining
@@ -68,4 +73,4 @@ bump. No code, no migration.
 - [x] New rule follows `meta/rule-format` (frontmatter, dewey 011, alwaysApply).
 - [x] Index + CLAUDE + agents + README updated; cross-refs consistent (001 ↔ 011 ↔ 210).
 - [x] No remaining "Stratified Design = Adapters→…→Foundations" conflation.
-- [x] PR doc (721).
+- [x] PR doc conforms to `workflows/pr-documentation` (721) minimum sections.
