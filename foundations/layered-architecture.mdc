@@ -1,0 +1,85 @@
+---
+dewey: "011"
+description: Layered Architecture (the Dependency Rule) — module dependencies point inward only; pure core; ports & adapters
+alwaysApply: true
+---
+
+# Layered Architecture — the Dependency Rule (ALWAYS)
+
+One common, coarse-grained **instance** of stratified design
+(`foundations/stratified-design`, 001), applied at the module / namespace level:
+organize a system into a small fixed stack and let source dependencies point
+**one way only**. This is Clean Architecture / Hexagonal / Ports-and-Adapters —
+*an* instance of one-way dependencies, not the whole of stratified design.
+
+## Canonical strata
+
+Innermost (most stable) to outermost (most volatile). A module may depend only on
+strata at its level or below:
+
+0. **Foundations** — pure utilities, types, data schemas, constants (no I/O)
+1. **Domain** — business rules, pure functions, policies, invariants (no I/O)
+2. **Application / Use-Cases** — orchestration of domain operations; defines ports
+   (no infra details)
+3. **Adapters** — HTTP controllers, CLIs, schedulers, event handlers, API/DTO
+   mapping
+4. **Infrastructure** — DB/ORM, queues, caches, cloud SDKs, filesystems, external
+   services
+
+> **Allowed dependencies:** `Adapters → Application → Domain → Foundations`, and
+> `Infrastructure → (Application | Domain | Foundations)` **through
+> ports/interfaces only**. No upward dependencies.
+
+This is a chain by construction — a deliberate coarsening. The finer,
+problem-specific, branching strata live *within* these bands and are governed by
+stratified design (001).
+
+## Principles
+
+- **No cycles** — reject any PR that introduces an import / namespace cycle.
+- **Pure core** — Domain has no I/O, frameworks, or runtime state. Inject effects
+  at the edges.
+- **Ports & adapters** — define *ports* (interfaces) in Application; implement
+  *adapters* in Adapters / Infrastructure. Domain never names a concrete adapter.
+- **Boundary DTOs** — translate at the edge; never leak transport / DB types into
+  Domain.
+- **Data flow** — inbound adapter → Application (use-case) → Domain → (ports) →
+  outbound adapter. Never reverse it.
+- **Policy location** — Domain for timeless rules; Application for workflow;
+  Adapters for translation; Infrastructure for mechanics.
+
+## When designing / implementing
+
+1. **Sketch the dependency graph** — modules by stratum, arrows down only.
+2. **Name your ports** — `UserRepo`, `PaymentGateway`; Domain depends on the
+   port, not the concrete.
+3. **Decouple by data** — pass plain data across boundaries; map near the edges.
+4. **Confine effects** — thin effectful shells at the outermost layer; inner
+   layers referentially transparent.
+5. **Prove it** — include a tiny import graph in the PR showing no upward edges
+   and no cycles.
+
+## Anti-patterns to reject
+
+- Domain importing framework / ORM / cloud SDKs.
+- Adapters calling Infrastructure directly, bypassing Application ports.
+- God modules mixing controller logic, business rules, and DB calls.
+- Cross-strata singletons / service locators.
+- Treating this five-name stack as the *definition* of stratified design — it is
+  one instance (see 001).
+
+## Enforcement hooks
+
+- Clojure: clj-kondo + namespace-graph check failing on cycles / upward deps.
+- TS/JS: dependency-cruiser contracts. Python: import-linter. Rust: crate-graph /
+  workspace layering checks.
+
+## Related
+
+- `foundations/stratified-design` (001) — the general discipline this
+  instantiates.
+- `frameworks/polylith` (310) / `frameworks/polylith-composition` (311) — brick /
+  interface boundaries that enforce this in Clojure.
+- `languages/clojure` (210) — the per-file `Layer N` instance.
+- `foundations/validation-boundaries` (004) — validate at the inbound edge, trust
+  the core.

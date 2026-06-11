@@ -20,7 +20,8 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 
 | Need to... | Consult |
 |------------|---------|
-| Understand architecture | `foundations/stratified-design` |
+| Understand architecture (stratified design) | `foundations/stratified-design` |
+| Enforce module dependency direction (the Dependency Rule) | `foundations/layered-architecture` |
 | Apply design philosophy | `foundations/simple-made-easy` |
 | Structure functions / avoid duplication | `foundations/code-quality` |
 | Handle success/failure results | `foundations/result-handling` |
@@ -86,6 +87,7 @@ foundations/
   no-dead-code.mdc            dewey: "008"
   self-documenting-code.mdc   dewey: "009"
   simple-made-easy.mdc        dewey: "010"
+  layered-architecture.mdc    dewey: "011"
   specification-standards.mdc dewey: "020"
   work-spec-authoring.mdc     dewey: "021"
   runtime-no-host-docker-socket.mdc      dewey: "030"
@@ -139,7 +141,7 @@ meta/
 
 ```
 000-099  Foundations     Architecture, design philosophy, code quality
-  001      Stratified Design
+  001      Stratified Design (each layer a language on the one below; a one-way DAG of abstraction — SICP §2.2.4; not a fixed layer stack)
   002      Code Quality (composable fns, pipelines, DRY)
   003      Result Handling (success?/failed? predicates, factory fns over hand-built maps)
   004      Validation Boundaries (schemas at interfaces/external only)
@@ -149,6 +151,7 @@ meta/
   008      No Dead Code (delete obsolete code in the same change; no legacy shims without removal plan)
   009      Self-Documenting Code (code is the artifact; comment WHY not WHAT; document the public boundary, keep impl light; headers + docstrings exempt)
   010      Simple Made Easy
+  011      Layered Architecture (the Dependency Rule: module deps inward only; pure core; ports & adapters — one coarse instance of 001)
   020      Specification Standards
   021      Work-Spec Authoring (priority, theme, testable criteria)
   030      Runtime: No Host Docker Socket (capsule isolation)
@@ -204,9 +207,14 @@ meta/
 ## Core Principles (Always Apply)
 
 ### Stratified Design
-- Dependencies flow **downward only**: Adapters → Application → Domain → Foundations
-- No cycles in the import graph; no layer reaches up
-- Pure core — the Domain layer has no I/O
+- Build each layer as a small **language** on the one below; the constructs of one layer are the primitives of the next (SICP §2.2.4)
+- A one-way **DAG of abstraction** — it branches; it is not a fixed layer stack or a linear chain
+- Strata are discovered from the problem; name a layer for what it means
+
+### Layered Architecture (the Dependency Rule)
+- One coarse, module-level instance of stratified design: dependencies flow **inward/downward only** — Adapters → Application → Domain → Foundations
+- No cycles in the import graph; no module reaches up
+- Pure core — the Domain layer has no I/O; inject effects at the edges
 
 ### Simple Made Easy
 - Prefer **simple** (unbraided) over **easy** (familiar)

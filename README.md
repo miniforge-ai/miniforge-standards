@@ -19,7 +19,7 @@ that declares its category (`dewey`), description, and applicability.
 
 | Range | Category | Examples |
 |-------|----------|----------|
-| 000-099 | Foundations | Stratified design, Simple Made Easy, code quality |
+| 000-099 | Foundations | Stratified design, layered architecture, Simple Made Easy, code quality |
 | 100-199 | Tools | Linters, formatters, build tools |
 | 200-299 | Languages | Clojure, Python, Rust, Swift |
 | 300-399 | Frameworks | Polylith, Kubernetes |

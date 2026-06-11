@@ -1,64 +1,91 @@
 ---
 dewey: "001"
-description: Stratified Design — enforce one-way dependencies and clear data flow
+description: Stratified Design — build each layer as a small language on the one below; a one-way DAG of abstraction
 alwaysApply: true
 ---
 
 # Stratified Design (ALWAYS)
 
-Use a single-direction DAG for code dependencies. No cycles. Modules only depend “down” the stack. Keep data flow explicit.
+Structure a system as a sequence of layers, each a small **language** built on
+the one below (SICP §2.2.4 — Abelson & Sussman). Every layer has primitives,
+means of combination, and means of abstraction; the constructs you define at one
+layer become the primitives of the next.
 
-## Canonical strata
+> "A complex system should be structured as a sequence of levels that are
+> described using a sequence of languages. Each level is constructed by combining
+> parts that are regarded as primitive at that level, and the parts constructed at
+> each level are used as primitives at the next level." — SICP
 
-Order from innermost (most stable) to outermost (most volatile). Depend only on strata at the same level or below:
+## What it is — and is not
 
-0. **Foundations** — pure utilities, types, data schemas, constants (no I/O)
-1. **Domain** — business rules, pure functions, policies, invariants (no I/O)
-2. **Application / Use-Cases** — orchestration of domain operations, ports (no infra details)
-3. **Adapters** — HTTP controllers, CLIs, schedulers, event handlers, API/DTO mapping
-4. **Infrastructure** — DB/ORM, queues, caches, cloud SDKs, filesystems, external services
-
-> **Allowed imports:**<br> 
-> `Adapters → Application → Domain → Foundations` and <br>
-> `Infrastructure → (Application|Domain|Foundations)` via **ports/interfaces** only. No “upward” imports.
+- It **is** a one-way dependency **DAG of abstraction**. Higher layers are
+  expressed in the vocabulary of lower layers. The graph **branches**: one
+  construct combines several lower primitives, and a single primitive is shared
+  by many constructs above it.
+- It is **not** a fixed, universal stack of named layers. Strata are
+  **discovered from the problem** — they are *this* system's vocabularies, not a
+  checklist. The coarse module-level stack (Foundations → Domain → Application →
+  Adapters → Infrastructure) is the **Dependency Rule**; see
+  `foundations/layered-architecture` (011). That is *one instance* of one-way
+  dependencies, not the design discipline itself.
+- It is **not a linear chain.** A line of N named boxes is a degenerate special
+  case; real strata fan out and reconverge.
 
 ## Principles
 
-- **No cycles**: reject any PR that introduces an import/namespace cycle.
-- **Pure core**: Domain must be free of I/O, frameworks, and runtime state. Inject effects at edges.
-- **Ports & Adapters**: Define *ports* (interfaces) in the Application layer; implement *adapters* in   Adapters/Infrastructure.
-- **Boundary DTOs**: Translate at the edge; don’t leak transport/DB types into Domain.
-- **Data flow clarity**: Inbound Adapter → Application (use-case) → Domain → (ports) → Outbound Adapter.<br>
- Never reverse this flow.
-- **Policy location**: Domain for timeless rules; Application for workflow; Adapters for translation;<br>
-Infrastructure for mechanics.
+- **Layer = language.** Each layer exposes primitives + means of combination + a
+  way to name new constructs. Build the next layer using only that vocabulary.
+- **One direction, no cycles.** A construct may use any layer at or below it,
+  never above. Reject cycles and upward references.
+- **Closure.** Prefer combinators whose results are the same kind as their
+  inputs, so results recompose (`beside`/`below` take painters and return a
+  painter).
+- **Discover the strata.** Find the vocabulary the problem wants at each level;
+  don't impose a template. Name a layer for what it *means*, not by ordinal alone.
+- **Robustness is the payoff.** A spec change should touch one layer behind its
+  vocabulary. If a small change ripples across layers, the strata are wrong.
 
-## When designing/implementing
+## Worked shape — SICP picture language
 
-1. **Sketch the DAG**: list modules by stratum and draw arrows downward only.
-2. **Name your ports**: e.g., `UserRepo`, `PaymentGateway`. Domain never knows the concrete.
-3. **Decouple by data**: pass plain data structures across boundaries; map near edges.
-4. **Confine effects**: create thin effectful functions at the outermost layer; keep inner layers referentially transparent.
-5. **Prove it**: in PRs, include a tiny import graph (or summary) showing no upward edges/no cycles.
+primitive painters → geometric combinators (`beside`, `below`, `flip-vert`,
+`rotate`) → schemes of combination (`right-split`, `corner-split`,
+`square-limit`).
 
-## Agent behavior
+`square-limit` rests on `corner-split`, which rests on `right-split` / `up-split`,
+which rest on the combinators, which rest on painters — and those lower constructs
+are **shared** by many above them. That sharing is exactly why it is a DAG, not a
+chain.
 
-- Before writing code for a feature, output:
-  - A short stratified plan (modules, their stratum, and allowed dependencies).
-  - The ports/interfaces to be introduced or reused.
-- When editing existing code:
-  - Detect and call out any “upward” import or cross-strata leakage.
-  - If a cycle is present, propose a minimal refactor (move interface “down,” split module, or add adapter).
+## When designing / implementing
+
+1. **Name the vocabulary at each level** — what is primitive here, and what
+   combines it?
+2. **Build up, never reach down** — express a layer only in the terms of the
+   layer below; don't skip levels into raw primitives.
+3. **Prove the DAG** — sketch the call/dependency graph; show no upward edges and
+   no cycles. Branching is expected; a single chain usually signals
+   under-abstraction.
+4. **Apply the instances** — per Clojure file, the `Layer N` headings in
+   `languages/clojure` (210); per module dependency direction, the Dependency
+   Rule in `foundations/layered-architecture` (011).
 
 ## Anti-patterns to reject
 
-- Domain importing framework/ORM/cloud SDKs.
-- Adapters calling Infrastructure directly without going through Application ports.
-- “God modules” mixing controller logic, business rules, and DB calls.
-- Cross-strata singletons/service-locators.
+- Calling a **fixed five-name stack** (Foundations/Domain/Application/Adapters/
+  Infrastructure) "stratified design." That is the Dependency Rule (011) — a
+  coarse instance — and it is a chain, not this discipline.
+- **Decorative strata** — `Layer 0/1/2` headings or section banners that don't
+  correspond to real one-way vocabularies; labels the code then crosses (a "top"
+  layer inlining work that belongs below).
+- **Skip-level reaches** — a high construct dipping several layers down into
+  primitives instead of going through the intermediate vocabulary.
+- **Cycles, upward calls, god modules** mixing levels in one unit.
 
-## (Optional) Enforcement hooks (suggest when asked)
+## Related
 
-- TS/JS: dependency-cruiser rules to forbid upward imports & cycles.
-- Python: import-linter contracts for layered architecture.
-- Clojure: clj-kondo + namespace graph check to fail on cycles.
+- `foundations/layered-architecture` (011) — the Dependency Rule: one common,
+  coarse, module-level instance of one-way dependencies.
+- `languages/clojure` (210) — the per-file instance (`Layer N` headings,
+  reverse-DAG within a namespace).
+- `foundations/simple-made-easy` (010) — strata keep each level unbraided.
+- `workflows/pr-layering` (722) — the same DAG discipline applied to PRs.
