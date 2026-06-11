@@ -43,13 +43,25 @@ remediation.excludeCurrentContains:
 
 ## Per-file stratified design (ALWAYS)
 
+The per-file instance of `foundations/stratified-design` (001): inside one
+namespace, the call graph is a one-way DAG of abstraction. Mark the strata so the
+structure is legible.
+
 - Structure each ns with **labeled strata** as headings:
 
   - `;------------------------------------------------------------------------------ Layer 0`
   - `;------------------------------------------------------------------------------ Layer 1`
   - …
-- **Reverse DAG**: Layer 0 at the top (pure/value-level); higher layers may call lower ones but not vice-versa.
-- **Max 3 strata** per file. If you need more, split the namespace.
+- **Reverse DAG**: Layer 0 at the top (pure/value-level); a function may call any
+  layer at or below it, never above. The DAG **branches** — a higher fn composes
+  several lower ones and a lower fn is shared by many above; that is expected, not
+  a violation.
+- **The heading must be true.** If a "higher" layer inlines work that belongs
+  below, the label is decorative — extract that work into its own fn at the right
+  layer. A label the code crosses is worse than no label.
+- **Max 3 strata** is a **split heuristic**, not the shape of the idea: a file
+  wanting a fourth band is the signal to split the namespace (see splitting
+  strategy above), never to flatten real strata into three.
 - Reserve the **very bottom** of the file for a `(comment …)` section (REPL testing). No `def/defn/defmacro` after it.
 
 ## Component layout conventions

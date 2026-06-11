@@ -17,7 +17,8 @@ as a git submodule at `.standards/` in each repo.
 
 | Need to... | Rule file |
 |------------|-----------|
-| Understand architecture | `foundations/stratified-design` |
+| Understand architecture (stratified design) | `foundations/stratified-design` |
+| Enforce module dependency direction (the Dependency Rule) | `foundations/layered-architecture` |
 | Apply design philosophy | `foundations/simple-made-easy` |
 | Structure functions / avoid duplication | `foundations/code-quality` |
 | Handle success/failure results | `foundations/result-handling` |
@@ -79,6 +80,7 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 │   ├── no-dead-code.mdc                 # dewey: "008"  alwaysApply: true
 │   ├── self-documenting-code.mdc        # dewey: "009"  alwaysApply: true
 │   ├── simple-made-easy.mdc             # dewey: "010"  alwaysApply: true
+│   ├── layered-architecture.mdc         # dewey: "011"  alwaysApply: true
 │   ├── specification-standards.mdc      # dewey: "020"
 │   ├── work-spec-authoring.mdc          # dewey: "021"
 │   ├── runtime-no-host-docker-socket.mdc  # dewey: "030"  alwaysApply: true
@@ -184,9 +186,14 @@ The following are the highest-priority, always-on principles:
 - See: `testing/standards`
 
 ### Stratified Design
-- Dependencies flow **downward only**: Adapters → Application → Domain → Foundations
-- No cycles in the import graph; no layer reaches up
-- Pure core — the Domain layer has no I/O
+- Build each layer as a small **language** on the one below; one layer's constructs are the next layer's primitives (SICP §2.2.4)
+- A one-way **DAG of abstraction** — it branches; not a fixed layer stack or a linear chain
+- Strata are discovered from the problem; name a layer for what it means
+
+### Layered Architecture (the Dependency Rule)
+- One coarse, module-level instance of stratified design: dependencies flow **inward/downward only** — Adapters → Application → Domain → Foundations
+- No cycles in the import graph; no module reaches up
+- Pure core — the Domain layer has no I/O; inject effects at the edges
 
 ### Simple Made Easy
 - Prefer **simple** (unbraided) over **easy** (familiar)
