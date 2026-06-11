@@ -134,7 +134,7 @@ project/
   header-copyright.mdc        dewey: "810"
   rust-miniforge-shape.mdc    dewey: "835"
 meta/
-  rule-format.mdc             dewey: "900"  alwaysApply: true
+  rule-format.mdc             dewey: "900"
 ```
 
 ## Dewey Ranges
