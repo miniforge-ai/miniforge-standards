@@ -114,13 +114,15 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 ├── testing/
 │   └── standards.mdc                    # dewey: "400"  alwaysApply: true
 ├── workflows/
-│   ├── git-branch-management.mdc        # dewey: "710"
+│   ├── git-branch-management.mdc        # dewey: "710"  alwaysApply: true
 │   ├── pre-commit-discipline.mdc        # dewey: "715"  alwaysApply: true
 │   ├── tests-with-code.mdc              # dewey: "716"  alwaysApply: true
-│   ├── pr-documentation.mdc             # dewey: "721"
+│   ├── code-review-rigor.mdc            # dewey: "720"  alwaysApply: true
+│   ├── pr-documentation.mdc             # dewey: "721"  alwaysApply: true
 │   ├── pr-layering.mdc                  # dewey: "722"  alwaysApply: true
 │   ├── git-worktrees.mdc                # dewey: "725"
-│   └── datever.mdc                      # dewey: "730"
+│   ├── datever.mdc                      # dewey: "730"
+│   └── bb-over-shell.mdc                # dewey: "740"
 ├── project/
 │   ├── header-copyright.mdc             # dewey: "810"  alwaysApply: true
 │   └── rust-miniforge-shape.mdc         # dewey: "835"
