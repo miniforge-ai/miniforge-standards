@@ -126,7 +126,7 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 │   ├── datever.mdc                      # dewey: "730"
 │   └── bb-over-shell.mdc                # dewey: "740"
 ├── project/
-│   ├── header-copyright.mdc             # dewey: "810"  alwaysApply: true
+│   ├── header-copyright.mdc             # dewey: "810"
 │   └── rust-miniforge-shape.mdc         # dewey: "835"
 └── meta/
     └── rule-format.mdc                  # dewey: "900"
