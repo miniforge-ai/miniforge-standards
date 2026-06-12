@@ -77,27 +77,27 @@ Rules live at the repo root with slug filenames. Dewey codes are in frontmatter
 
 ```
 foundations/
-  stratified-design.mdc       dewey: "001"
-  code-quality.mdc            dewey: "002"
-  result-handling.mdc         dewey: "003"
-  validation-boundaries.mdc   dewey: "004"
-  exceptions-as-data.mdc      dewey: "005"
-  named-constants.mdc         dewey: "006"
-  config-as-data.mdc          dewey: "007"
-  no-dead-code.mdc            dewey: "008"
-  self-documenting-code.mdc   dewey: "009"
-  simple-made-easy.mdc        dewey: "010"
-  layered-architecture.mdc    dewey: "011"
+  stratified-design.mdc       dewey: "001"  alwaysApply: true
+  code-quality.mdc            dewey: "002"  alwaysApply: true
+  result-handling.mdc         dewey: "003"  alwaysApply: true
+  validation-boundaries.mdc   dewey: "004"  alwaysApply: true
+  exceptions-as-data.mdc      dewey: "005"  alwaysApply: true
+  named-constants.mdc         dewey: "006"  alwaysApply: true
+  config-as-data.mdc          dewey: "007"  alwaysApply: true
+  no-dead-code.mdc            dewey: "008"  alwaysApply: true
+  self-documenting-code.mdc   dewey: "009"  alwaysApply: true
+  simple-made-easy.mdc        dewey: "010"  alwaysApply: true
+  layered-architecture.mdc    dewey: "011"  alwaysApply: true
   specification-standards.mdc dewey: "020"
   work-spec-authoring.mdc     dewey: "021"
-  runtime-no-host-docker-socket.mdc      dewey: "030"
-  runtime-require-rootless.mdc           dewey: "031"
-  runtime-restrict-host-mounts.mdc       dewey: "032"
-  runtime-require-image-digest-pin.mdc   dewey: "033"
-  localization.mdc            dewey: "050"
+  runtime-no-host-docker-socket.mdc      dewey: "030"  alwaysApply: true
+  runtime-require-rootless.mdc           dewey: "031"  alwaysApply: true
+  runtime-restrict-host-mounts.mdc       dewey: "032"  alwaysApply: true
+  runtime-require-image-digest-pin.mdc   dewey: "033"  alwaysApply: true
+  localization.mdc            dewey: "050"  alwaysApply: true
 languages/
-  clojure.mdc                 dewey: "210"
-  clojure-exception-handling.mdc  dewey: "211"
+  clojure.mdc                 dewey: "210"  alwaysApply: true
+  clojure-exception-handling.mdc  dewey: "211"  alwaysApply: true
   python.mdc                  dewey: "220"
   rust.mdc                    dewey: "230"
   rust-async.mdc              dewey: "231"
@@ -119,7 +119,7 @@ frameworks/
   fulcro.mdc                  dewey: "340"
   fulcro-rad.mdc              dewey: "341"
 testing/
-  standards.mdc               dewey: "400"
+  standards.mdc               dewey: "400"  alwaysApply: true
 workflows/
   git-branch-management.mdc   dewey: "710"  alwaysApply: true
   pre-commit-discipline.mdc   dewey: "715"  alwaysApply: true
