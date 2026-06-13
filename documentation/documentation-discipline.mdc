@@ -1,6 +1,6 @@
 ---
 dewey: "600"
-description: Documentation describes the current contract only — default to less; length limits per surface; schemas/fields document contracts not history; narrative → external docs; examples → tests
+description: Keep source documentation to the current contract when writing or reviewing any file, so it stays scarce and high-fidelity — per-surface length limits, schemas/fields document contracts not history, narrative → external docs, examples → tests
 alwaysApply: true
 ---
 
@@ -85,4 +85,4 @@ When an example would clarify a schema or data model, put it in a test or fixtur
 
 ## When touching over-documented code
 
-Leave it cleaner than found — shorten schema docs to the current contract, drop docstrings that only narrate, move still-useful rationale to an ADR or the PR doc. Preserve license/copyright headers (`project/header-copyright`, 810) and `006` named-constant docstrings verbatim. Do not churn unrelated files solely to trim prose.
+Leave it cleaner than found — shorten schema docs to the current contract, drop docstrings that only narrate, move still-useful rationale to an ADR or the PR doc. Preserve license/copyright headers (`project/header-copyright` (810)) and `foundations/named-constants` (006) docstrings verbatim. Do not churn unrelated files solely to trim prose.

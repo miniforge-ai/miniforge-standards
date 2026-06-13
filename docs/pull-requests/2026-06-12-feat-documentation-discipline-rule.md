@@ -34,7 +34,7 @@ Two distinct concerns:
 They compose: 600 defers to 009 on comment quality; 009's Quick-Reference row, which
 over-claimed "where docs live," now points the placement/length question at 600.
 
-## What this adds
+## Changes in Detail
 
 - `documentation/documentation-discipline.mdc` — 88 lines:
   - Lead principle: source describes the current contract only; default to less.
@@ -50,7 +50,7 @@ over-claimed "where docs live," now points the placement/length question at 600.
 - `CLAUDE.md` — Rules Catalog tree, Quick-Reference (split the 009 row), Dewey Ranges
   600 entry.
 
-## Verification
+## Testing Plan
 
 Documentation-only; validation is structural (no `bb test` in this repo — the pack is
 consumed as a `.standards/` submodule):
@@ -66,6 +66,12 @@ consumed as a `.standards/` submodule):
 Additive. Downstream repos re-pulling the standards submodule pick it up; no migration.
 Existing over-documented code is addressed opportunistically under the "when touching"
 clause, not in a sweep.
+
+## Related Issues/PRs
+
+- Complements `foundations/self-documenting-code` (009); deferred enforcement
+  (detection block / `code-review-rigor` 720 obligation) is a separate decision —
+  miniforge already compiles these rules to policy and gates on them in review.
 
 ## Checklist
 
