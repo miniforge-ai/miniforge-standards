@@ -31,7 +31,8 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Replace a magic number or string | `foundations/named-constants` |
 | Decide between code default and EDN config | `foundations/config-as-data` |
 | Remove or refactor old code | `foundations/no-dead-code` |
-| Decide whether to write a comment / where docs live | `foundations/self-documenting-code` |
+| Decide whether to write a comment (WHY, not WHAT) | `foundations/self-documenting-code` |
+| Decide how much to document / where docs live (schemas, length, narrative) | `documentation/documentation-discipline` |
 | Write a normative specification | `foundations/specification-standards` |
 | Author a work spec or task brief | `foundations/work-spec-authoring` |
 | Add code without tests | `workflows/tests-with-code` |
@@ -120,6 +121,8 @@ frameworks/
   fulcro-rad.mdc              dewey: "341"
 testing/
   standards.mdc               dewey: "400"  alwaysApply: true
+documentation/
+  documentation-discipline.mdc  dewey: "600"  alwaysApply: true
 workflows/
   git-branch-management.mdc   dewey: "710"  alwaysApply: true
   pre-commit-discipline.mdc   dewey: "715"  alwaysApply: true
@@ -187,6 +190,7 @@ meta/
   400      Testing Standards (factory fns, same quality as prod)
 500-599  Operations      CI/CD, monitoring, security
 600-699  Documentation   API docs, architecture docs
+  600      Documentation Discipline (current contract only; length limits; schemas/fields document contracts not history; narrative → external docs; examples → tests)
 700-799  Workflows       Git, PRs, releases
   710      Git Branch Management
   715      Pre-Commit Discipline

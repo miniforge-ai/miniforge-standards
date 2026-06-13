@@ -73,6 +73,8 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   └── fulcro-rad.mdc                   # dewey: "341"
 ├── testing/
 │   └── standards.mdc                    # dewey: "400"  alwaysApply: true
+├── documentation/
+│   └── documentation-discipline.mdc     # dewey: "600"  alwaysApply: true
 ├── workflows/
 │   ├── git-branch-management.mdc        # dewey: "710"  alwaysApply: true
 │   ├── pre-commit-discipline.mdc        # dewey: "715"  alwaysApply: true
@@ -151,6 +153,12 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | Dewey | File | Always | Description |
 |-------|------|--------|-------------|
 | 400 | `standards` | ✓ | Factory functions, same standards as production code |
+
+### documentation/
+
+| Dewey | File | Always | Description |
+|-------|------|--------|-------------|
+| 600 | `documentation-discipline` | ✓ | Documentation states the current contract only; per-surface length limits; schemas/fields document contracts not history; narrative → external docs; examples → tests |
 
 ### workflows/
 

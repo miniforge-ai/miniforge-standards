@@ -1,0 +1,88 @@
+---
+dewey: "600"
+description: Documentation describes the current contract only — default to less; length limits per surface; schemas/fields document contracts not history; narrative → external docs; examples → tests
+alwaysApply: true
+---
+
+# Documentation Discipline (ALWAYS)
+
+**Source files describe the current contract, not the story of how it came to exist.** Documentation earns its place only where it states a durable contract — a boundary, invariant, or data-model semantic — that naming, decomposition, a schema, or a test cannot carry. Default to less. When you reach for prose, first try to make the code carry it.
+
+This is the **how-much-and-where** complement to `foundations/self-documenting-code` (009), which governs comment *quality* (WHY, never WHAT). 009 decides whether a comment earns its place; this rule decides how long documentation may be and where each kind belongs.
+
+## Length limits
+
+Exceed these only for a stated boundary-contract reason. Longer material belongs outside the source file (see the placement table).
+
+| Surface | Limit |
+|---|---|
+| Namespace docstring | 1–5 lines |
+| Schema docstring | 1–3 sentences |
+| Field description | one sentence |
+| Ordinary `defn` docstring | **omitted by default** |
+| Inline comment | one line |
+
+Most `defn` forms carry no docstring: the name, args, schema, and tests say it. A docstring is for a real boundary — a public/interface fn, a protocol or lifecycle entry point, or a fn whose nil/empty/ordering/failure/determinism behavior is load-bearing (the `009` boundary-vs-impl rule). Even then it states the obligation, never the implementation.
+
+## Schemas are contracts — document them as such
+
+A schema docstring states what the concept is and what non-obvious fields, optional/absent values, and invariants mean — what producers and consumers may rely on. It does not carry history, prior designs, future plans, or downstream pipeline behavior.
+
+```clojure
+;; GOOD — current contract, one line
+(def SkillTag
+  "Canonical :tech/* technology keyword. Weighted evidence, not a hard gate."
+  [:and keyword?
+   [:fn {:error/message ":requirement/skills entries must be :tech/* keywords"}
+    (fn [k] (= "tech" (namespace k)))]])
+
+;; BAD — mixes contract with rationale and downstream architecture
+(def SkillTag
+  "A skill from the NER vocabulary. Exists because the original character
+   taxonomy did not model skills, and the assembler later compiles this into
+   weighted clauses for the skills dimension..."
+  ...)
+```
+
+Document a **field** only when the type does not carry the meaning — and put it in the field's `:description`, not a comment above it. Obvious fields get nothing.
+
+```clojure
+;; GOOD — semantics the type can't show, on the field
+[:jd/tenure-gates
+ {:optional true :description "Absent means no hard tenure floor, not unknown."}
+ [:vector TenureGate]]
+
+;; BAD — a comment restating the type
+;; The title of the job.
+[:jd/title :string]
+```
+
+## Where each kind of documentation lives
+
+The source file holds the current contract. Everything else has a home outside it.
+
+| Content | Lives in |
+|---|---|
+| Design rationale, "why this way" | an ADR (`docs/adr/`) |
+| Architecture / pipeline narrative | architecture docs (`docs/`) |
+| Change / migration history | the PR doc (`workflows/pr-documentation`, 721) or changelog |
+| Examples | tests, fixtures, generated docs |
+| How you arrived at the code | the PR description, never the source |
+
+If a comment would start with *previously*, *originally*, *for now*, or *later phase*, it belongs in one of those, not the code.
+
+## Prefer executable examples
+
+When an example would clarify a schema or data model, put it in a test or fixture, where it validates against the schema and cannot rot. Reserve inline examples for a namespace that is itself a small public API reference.
+
+## Reject in review
+
+- A docstring or comment that restates the name, type, or body.
+- A `defn` docstring on ordinary internal code (no boundary contract).
+- History, rationale, or roadmap in a schema or namespace docstring (`previously`, `Wave 6 adds`, `TODO later`).
+- An architecture essay in a namespace docstring; a field comment above an obvious field.
+- Documentation that must change whenever the adjacent line changes.
+
+## When touching over-documented code
+
+Leave it cleaner than found — shorten schema docs to the current contract, drop docstrings that only narrate, move still-useful rationale to an ADR or the PR doc. Preserve license/copyright headers (`project/header-copyright`, 810) and `006` named-constant docstrings verbatim. Do not churn unrelated files solely to trim prose.
