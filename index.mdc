@@ -108,7 +108,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 008 | `no-dead-code` | ✓ | Delete unused code in the change that obsoletes it; no commented-out blocks, no `_legacy` shims without an explicit removal plan |
 | 009 | `self-documenting-code` | ✓ | Code is the artifact; comments explain WHY when non-obvious, never restate WHAT; self-document first; document the public boundary (interface), keep impl light (headers + docstrings exempt) |
 | 010 | `simple-made-easy` | ✓ | Simplicity over familiarity, uncomplected artifacts |
-| 011 | `layered-architecture` | ✓ | The Dependency Rule: module deps point inward only (Foundations→Domain→Application→Adapters→Infrastructure); pure core; ports & adapters — one coarse module-level instance of 001 |
+| 011 | `layered-architecture` | ✓ | The Dependency Rule: module deps point inward only (Adapters→Application→Domain→Foundations); pure core; ports & adapters — one coarse module-level instance of 001 |
 | 020 | `specification-standards` |  | Normative specs (N1-N6), spec governance, conformance |
 | 021 | `work-spec-authoring` |  | `work/*.spec.edn` format: priority, theme, normative-refs, testable acceptance criteria |
 | 030 | `runtime-no-host-docker-socket` | ✓ | Reject bind mounts of `/var/run/docker.sock` and equivalents (capsule isolation) |
