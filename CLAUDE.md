@@ -40,6 +40,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Write tests | `testing/standards` |
 | Write Clojure code | `languages/clojure` |
 | Catch exceptions in Clojure (`try` vs `try+`) | `languages/clojure-exception-handling` |
+| Resolve a dependency (never `requiring-resolve`) | `languages/clojure-no-requiring-resolve` |
 | Write Python code | `languages/python` |
 | Write Rust code | `languages/rust` |
 | Write async/concurrent Rust | `languages/rust-async` |
@@ -99,6 +100,7 @@ foundations/
 languages/
   clojure.mdc                 dewey: "210"  alwaysApply: true
   clojure-exception-handling.mdc  dewey: "211"  alwaysApply: true
+  clojure-no-requiring-resolve.mdc  dewey: "212"
   python.mdc                  dewey: "220"
   rust.mdc                    dewey: "230"
   rust-async.mdc              dewey: "231"
@@ -166,6 +168,7 @@ meta/
 200-299  Languages       Clojure, Python, JS/TS, Go, Rust, Swift
   210      Clojure (Polylith, stratified files, map access patterns)
   211      Clojure exception handling (prefer `try+` / `throw+`; plain `try` allowed in three narrow cases — no-dep leaf catch, leaf inside try+, REPL)
+  212      Clojure: no requiring-resolve (BLOCKING; use a direct require, fix load-order/design instead of lazy-resolving)
   220      Python
   230      Rust (error handling, rule tables, context structs, linting, toolchain, deps)
   231      Rust async/concurrency (no blocking, no locks across .await, cancellation, bounded channels, task lifecycle)
