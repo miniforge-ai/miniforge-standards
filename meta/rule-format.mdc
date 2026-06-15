@@ -142,6 +142,8 @@ has a mechanical fix that can be applied programmatically.
 | `detection.mode` | `positive` \| `negative` | `positive` — flag matches; `negative` — flag absences. |
 | `detection.pattern` | string | Regex the runner applies against file content. |
 | `detection.emailPattern` | string | Secondary regex (e.g. for copyright checks). |
+| `enforcement.action` | `hard-halt` \| `require-approval` \| `warn` \| `audit` | How a pack-derived gate treats a violation. `hard-halt` **blocks** (fails the gate); the others are non-blocking (recorded / surfaced). Omit to default — `warn` for `alwaysApply` rules, `audit` for advisory ones. A blocking rule compiles at `:major` severity or higher. |
+| `enforcement.message` | string | Override the default `"Standard: <title>"` violation message. |
 | `remediation.strategy` | string | `mechanical` (auto-apply) or `manual`. |
 | `remediation.replacement` | string | Replacement expression (supports `$N` capture groups). |
 | `remediation.type` | string | `prepend`, `append`, `replace`, etc. |

@@ -1,0 +1,44 @@
+---
+dewey: "212"
+description: No requiring-resolve — fix the underlying load-order/design, don't lazy-resolve around it
+globs: ["**/*.clj", "**/*.cljc"]
+detection.mode: positive
+detection.pattern: '[(/]requiring-resolve\b'
+enforcement.action: hard-halt
+enforcement.message: "requiring-resolve is an anti-pattern. Use a direct (:require [ns :as alias]) and call alias/fn. If a direct require would cause a load-order cycle, fix the design (move the interface down a stratum, split the namespace, or introduce an adapter) — do not lazy-resolve around it."
+---
+
+# No requiring-resolve (BLOCKING)
+
+`requiring-resolve` is an agent-smell. It almost always papers over a load-order
+or design problem that should be fixed at the source, not deferred to runtime.
+
+## The rule
+
+Do not call `requiring-resolve`. Resolve dependencies with a direct
+`(:require [some.ns :as alias])` in the namespace form and call `alias/fn`.
+
+The only legitimate use is a genuine plugin/extension point where the dependency
+is *optionally* present at the module level (a true late-binding seam, declared
+as such). That is rare; default to a direct require.
+
+## Why it's blocked
+
+A direct require that would cause a cycle is signalling a real design issue:
+
+- an "upward" dependency (a lower stratum reaching into a higher one),
+- a namespace that does too much and should be split, or
+- a missing adapter/interface between two components.
+
+`requiring-resolve` hides that signal and lets the cycle persist. Fixing the
+design keeps the dependency graph honest and the load order static.
+
+## Agent behavior
+
+Never introduce `(requiring-resolve ...)`. When you need a function from another
+namespace, add a direct `(:require [ns :as alias])` to the `ns` form and call
+`alias/fn`. If a direct require would create a load-order cycle, do NOT reach for
+`requiring-resolve` — instead fix the underlying design: move the shared
+interface to a lower stratum, split the over-large namespace, or add an adapter
+component. If you believe a case is a genuine optional plugin/extension point,
+call it out explicitly in the code and the PR rather than using it silently.
