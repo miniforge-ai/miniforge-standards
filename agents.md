@@ -35,6 +35,7 @@ as a git submodule at `.standards/` in each repo.
 | Add code without tests | `workflows/tests-with-code` |
 | Write Clojure code | `languages/clojure` |
 | Catch exceptions in Clojure (`try` vs `try+`) | `languages/clojure-exception-handling` |
+| Resolve a dependency (never `requiring-resolve`) | `languages/clojure-no-requiring-resolve` |
 | Write Python code | `languages/python` |
 | Write Rust code | `languages/rust` |
 | Write async/concurrent Rust | `languages/rust-async` |
@@ -94,6 +95,7 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 ├── languages/
 │   ├── clojure.mdc                      # dewey: "210"  alwaysApply: true
 │   ├── clojure-exception-handling.mdc   # dewey: "211"  alwaysApply: true
+│   ├── clojure-no-requiring-resolve.mdc # dewey: "212"  globs: clj/cljc
 │   ├── python.mdc                       # dewey: "220"
 │   ├── rust.mdc                         # dewey: "230"
 │   ├── rust-async.mdc                   # dewey: "231"
