@@ -29,6 +29,8 @@ as a git submodule at `.standards/` in each repo.
 | Remove or refactor old code | `foundations/no-dead-code` |
 | Decide whether to write a comment (WHY, not WHAT) | `foundations/self-documenting-code` |
 | Decide how much to document / where docs live (schemas, length, narrative) | `documentation/documentation-discipline` |
+| Write a normative specification | `foundations/specification-standards` |
+| Author a work spec or task brief | `foundations/work-spec-authoring` |
 | Add user-facing strings | `foundations/localization` |
 | Run tasks in OCI containers | `foundations/runtime-*` (dewey 030–033) |
 | Write tests | `testing/standards` |
@@ -47,6 +49,8 @@ as a git submodule at `.standards/` in each repo.
 | Write CSS | `languages/css` |
 | Write HTML | `languages/html` |
 | Work with Polylith | `frameworks/polylith` |
+| Compose Polylith bricks / validate workspace | `frameworks/polylith-composition` |
+| Use the Polylith CLI tool | `frameworks/polylith-tool` |
 | Work with Kubernetes | `frameworks/kubernetes` |
 | Pick a web architecture mode | `frameworks/web-architecture-mode` |
 | Decide an API's surface class | `frameworks/api-surface-classes` |
