@@ -68,7 +68,7 @@ Invalid concise example with explanation
 - Dewey code: in frontmatter (`dewey: "NNN"`), not in the filename or path
 
 ```
-miniforge-standards/        # repo root (or .standards/ when used as submodule)
+<standards-root>/           # repo root (or .standards/ when used as submodule)
 ├── index.mdc               # Master catalog
 ├── foundations/            # dewey 000-099
 ├── languages/              # dewey 200-299
@@ -101,7 +101,7 @@ Private rules: `_name.mdc` (underscore prefix)
 
 Common glob patterns for different rule types:
 
-- All rules: **/*.mdc
+- All rules: `**/*.mdc`
 - Language rules: src/**/*.{js,ts}
 - Testing standards: **/*.test.{js,ts}
 - React components: src/components/**/*.tsx
