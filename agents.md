@@ -34,7 +34,7 @@ as a git submodule at `.standards/` in each repo.
 | Add user-facing strings | `foundations/localization` |
 | Run tasks in OCI containers | `foundations/runtime-*` (dewey 030–033) |
 | Write tests | `testing/standards` |
-| Add code without tests | `workflows/tests-with-code` |
+| Understand when a code change can omit test changes | `workflows/tests-with-code` |
 | Write Clojure code | `languages/clojure` |
 | Catch exceptions in Clojure (`try` vs `try+`) | `languages/clojure-exception-handling` |
 | Resolve a dependency (never `requiring-resolve`) | `languages/clojure-no-requiring-resolve` |
