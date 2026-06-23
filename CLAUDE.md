@@ -35,7 +35,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Decide how much to document / where docs live (schemas, length, narrative) | `documentation/documentation-discipline` |
 | Write a normative specification | `foundations/specification-standards` |
 | Author a work spec or task brief | `foundations/work-spec-authoring` |
-| Add code without tests | `workflows/tests-with-code` |
+| Understand when a code change can omit test changes | `workflows/tests-with-code` |
 | Run tasks in OCI containers | `foundations/runtime-*` (dewey 030–033) |
 | Write tests | `testing/standards` |
 | Write Clojure code | `languages/clojure` |
