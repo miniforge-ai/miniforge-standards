@@ -2,6 +2,8 @@
 dewey: "005"
 description: Exceptions are data — return anomalies in normal flows; throw only at absolute boundaries
 alwaysApply: true
+enforcement.action: hard-halt
+enforcement.message: "Exception thrown in normal control flow. Return the anomaly as data (anomaly/response value) and let callers branch on it; throw only at an absolute boundary."
 ---
 
 # Exceptions Are Data, Not Control Flow (ALWAYS)

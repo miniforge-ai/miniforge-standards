@@ -2,6 +2,8 @@
 dewey: "006"
 description: Named constants — no magic numbers or magic strings in code, always extract to a well-named def with a docstring that explains intent
 alwaysApply: true
+enforcement.action: hard-halt
+enforcement.message: "Magic number or string in code. Extract it to a well-named def (or let-binding) with a docstring that explains intent — no unexplained literals in logic."
 ---
 
 # Named Constants (ALWAYS)
