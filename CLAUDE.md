@@ -78,6 +78,7 @@ Rules live at the repo root with slug filenames. Dewey codes are in frontmatter
 (`dewey: "NNN"`), not encoded in filenames or paths.
 
 ```
+index.mdc                   dewey: "000"
 foundations/
   stratified-design.mdc       dewey: "001"  alwaysApply: true
   code-quality.mdc            dewey: "002"  alwaysApply: true
