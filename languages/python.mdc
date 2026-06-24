@@ -3,7 +3,6 @@ dewey: "220"
 description: Python + Poetry rules
 globs:
   - "**/*.py"
-alwaysApply: false
 ---
 
 # Python style guide
@@ -14,7 +13,7 @@ alwaysApply: false
   `[tool.poetry.scripts]`.
 - Source layout: `src/<package>/`; never implicit namespace packages.
 - Pin a minimum Python version in `pyproject.toml` (`python = "^3.12"`).
-- Separate runtime deps from dev deps (`[tool.poetry.dev-dependencies]`).
+- Separate runtime deps from dev deps (`[tool.poetry.group.dev.dependencies]`).
 - Lock file (`poetry.lock`) is committed; CI runs `poetry install --frozen`.
 
 ## Type annotations
@@ -30,7 +29,7 @@ alwaysApply: false
 
 - No star imports (`from module import *`).
 - One import per line inside each import block.
-- Order: stdlib → third-party → local. `isort` enforces this.
+- Order: stdlib → third-party → local. `ruff` enforces this.
 - Never use `importlib.import_module` or `__import__` for runtime
   dynamic dispatch — fix the design instead (see
   `languages/clojure-no-requiring-resolve` for the same principle in Clojure).
@@ -60,7 +59,7 @@ alwaysApply: false
       return lst
 
   # GOOD
-  def append(item, lst=None):
+  def append(item: object, lst: list[object] | None = None) -> list[object]:
       result = lst if lst is not None else []
       result.append(item)
       return result
@@ -84,9 +83,7 @@ alwaysApply: false
 ## Error handling
 
 - Raise specific exceptions, not bare `Exception` or `BaseException`.
-- Never silence exceptions with a bare `except:` or `except Exception:
-  pass`. At minimum log the error and re-raise, or return an explicit
-  failure value.
+- Never silence exceptions with a bare `except:` or `except Exception: pass`. At minimum log the error and re-raise, or return an explicit failure value.
 - Chain exceptions with `raise NewError("...") from original` so the
   traceback is preserved.
 - At I/O boundaries, validate inputs before doing work and raise
@@ -128,7 +125,7 @@ alwaysApply: false
 | Global mutable state | pass state explicitly or use a context object |
 | `type()` equality check | `isinstance()` |
 | Magic string literals throughout code | module-level constants (Dewey 006) |
-| Bare `raise` re-raise that loses context | `raise ... from err` |
+| `raise NewError(...)` without chaining | `raise NewError(...) from original` |
 
 ## Linting and formatting
 
