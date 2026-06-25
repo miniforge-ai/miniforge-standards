@@ -7,15 +7,138 @@ globs:
 
 # Python style guide
 
-## General
+## Project structure
 
-- Use Poetry and `pyproject.toml`; add console scripts for CLIs.
-- typing: `from __future__ import annotations`, `mypy` clean where feasible.
-- Structure: src/ layout, no implicit namespace pkgs.
-- Tests: `pytest -q`; prefer small, focused unit tests
+- Use Poetry and `pyproject.toml`; add console scripts for CLIs under
+  `[tool.poetry.scripts]`.
+- Source layout: `src/<package>/`; never implicit namespace packages.
+- Pin a minimum Python version in `pyproject.toml` (`python = "^3.12"`).
+- Separate runtime deps from dev deps (`[tool.poetry.group.dev.dependencies]`).
+- Lock file (`poetry.lock`) is committed; CI runs `poetry install --frozen`.
 
-## Functional Python
+## Type annotations
 
-- Always generate functional python when possible
-- Always separate data out into pure data classes
-- Use pure functions and follow Stratified Design and Simple Made Easy principles.
+- All public functions carry complete type annotations.
+- `from __future__ import annotations` at the top of every file
+  (enables forward references without import cycles).
+- Run `mypy --strict` on production modules; disable only with a
+  per-line comment and a WHY comment explaining the exception.
+- Prefer `X | None` over `Optional[X]`; prefer `X | Y` over `Union[X, Y]`.
+
+## Imports
+
+- No star imports (`from module import *`).
+- One import per line inside each import block.
+- Order: stdlib → third-party → local. `ruff` enforces this.
+- Never use `importlib.import_module` or `__import__` for runtime
+  dynamic dispatch — fix the design instead (see
+  `languages/clojure-no-requiring-resolve` for the same principle in Clojure).
+
+## Naming
+
+- `snake_case` for modules, functions, variables, parameters.
+- `PascalCase` for classes and type aliases.
+- `UPPER_SNAKE_CASE` for module-level constants (see
+  `foundations/named-constants` — the same intent-bearing rule applies).
+- Private helpers: single leading underscore (`_helper`); no double
+  underscores except for genuine dunder methods.
+- No abbreviations unless universally understood (`url`, `id`, `db`).
+
+## Functions and pure design
+
+- Write pure functions wherever possible: same inputs → same outputs,
+  no implicit state reads.
+- Keep each function to one level of abstraction (Stratified Design —
+  `foundations/stratified-design`).
+- No mutable default arguments:
+
+  ```python
+  # BAD
+  def append(item, lst=[]):
+      lst.append(item)
+      return lst
+
+  # GOOD
+  def append(item: object, lst: list[object] | None = None) -> list[object]:
+      result = lst if lst is not None else []
+      result.append(item)
+      return result
+  ```
+
+- Prefer data classes over plain dicts for structured data:
+
+  ```python
+  from dataclasses import dataclass
+
+  @dataclass(frozen=True)
+  class JobRecord:
+      job_id: str
+      url: str
+      status: str
+  ```
+
+  `frozen=True` enforces immutability; drop it only when mutation is
+  genuinely required and document why.
+
+## Error handling
+
+- Raise specific exceptions, not bare `Exception` or `BaseException`.
+- Never silence exceptions with a bare `except:` or `except Exception: pass`. At minimum log the error and re-raise, or return an explicit failure value.
+- Chain exceptions with `raise NewError("...") from original` so the
+  traceback is preserved.
+- At I/O boundaries, validate inputs before doing work and raise
+  `ValueError` / `TypeError` with a human-readable message (see
+  `foundations/validation-boundaries`).
+- For recoverable failures, prefer returning a value that encodes
+  success/failure over exceptions (aligns with
+  `foundations/result-handling`):
+
+  ```python
+  # Preferred at internal boundaries
+  def parse_config(raw: str) -> tuple[Config, None] | tuple[None, str]:
+      ...
+  ```
+
+- Do not use `try`/`except` for flow control.
+
+## Testing
+
+- Framework: `pytest -q`; no `unittest.TestCase` unless wrapping legacy code.
+- Test files mirror the source tree: `src/foo/bar.py` → `tests/foo/test_bar.py`.
+- One `assert` per logical assertion; use `pytest.raises` for expected exceptions.
+- Use `@pytest.fixture` for shared setup; keep fixtures small and focused.
+- No `#` commented-out test functions — delete them or open an issue.
+- Parameterize repeated cases with `@pytest.mark.parametrize` rather than
+  hand-rolled loops.
+- Never `@pytest.mark.skip` without a tracking issue reference in the reason string.
+- Test module-level constants and pure functions directly; mock only at
+  explicit I/O boundaries.
+
+## Anti-patterns
+
+| Avoid | Use instead |
+|-------|-------------|
+| `except Exception: pass` | explicit failure value or re-raise |
+| Mutable default arguments | `None` sentinel |
+| `print()` for logging | `logging` or `structlog` |
+| `os.system()` / `subprocess.call()` with shell=True | `subprocess.run([...])` with `shell=False` |
+| Global mutable state | pass state explicitly or use a context object |
+| `type()` equality check | `isinstance()` |
+| Magic string literals throughout code | module-level constants (Dewey 006) |
+| `raise NewError(...)` without chaining | `raise NewError(...) from original` |
+
+## Linting and formatting
+
+- `ruff` for linting and formatting (replaces flake8 + black + isort).
+- `mypy --strict` for type checking.
+- Add both to CI; pre-commit hooks enforce both locally.
+- `pyproject.toml` is the single config source for all tools:
+
+  ```toml
+  [tool.ruff]
+  line-length = 100
+  select = ["E", "F", "I", "UP", "B", "SIM"]
+
+  [tool.mypy]
+  strict = true
+  ```
