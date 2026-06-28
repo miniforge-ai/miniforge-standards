@@ -104,7 +104,7 @@ Values that the user can override at runtime live in `.edn` config files (see [c
 When writing or reviewing code:
 1. Every numeric literal larger than 2 or smaller than -1 → check if it deserves a name.
 2. Every string literal with structure (path fragment, format placeholder, enum value) → check if it deserves a name *or* belongs in i18n.
-3. If the same magic literal (a number or opaque string) appears across files — or many times within one file — it MUST be extracted to a shared constant. A self-documenting domain keyword used in a few related spots (e.g. a catch selector and its matching failure tag) is not a magic literal.
+3. If the same magic literal appears across files — or many times within one file — it MUST be extracted to a shared constant. This covers every "Magic" category above: numbers, opaque strings, and structured strings (file paths, format placeholders, status codes). The only exception: a self-documenting domain keyword used in a few related spots (e.g. a catch selector and its matching failure tag) is not a magic literal.
 4. The `def`'s docstring must explain the *intent* (what does this value mean?) and the *rationale* (why this value?). "Default timeout" is not a docstring; "Default timeout — 90s allows two missed Claude-Code event heartbeats before declaring the stream stalled" is.
 
 ## Anti-patterns to reject
