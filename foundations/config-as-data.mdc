@@ -2,6 +2,8 @@
 dewey: "007"
 description: Configuration is data — operational values live in .edn files, not as embedded literals in code, and never as runtime constructions of the configuration shape
 alwaysApply: true
+enforcement.action: hard-halt
+enforcement.message: "Operator-tunable value hardcoded in code. Timeouts, retries, sizes, endpoints and similar operational values belong in an .edn config with a Malli schema; keep a named def only as the silent-config fallback, resolved through a config lookup."
 ---
 
 # Configuration is Data (ALWAYS)
