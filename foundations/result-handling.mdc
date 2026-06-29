@@ -1,9 +1,9 @@
 ---
 dewey: "003"
-description: Result handling — use success?/failed? predicates and success/anomaly constructors
+description: Result handling — use succeeded?/failed? predicates and success/anomaly constructors
 alwaysApply: true
 enforcement.action: hard-halt
-enforcement.message: "Hand-built result map or structural success/failure check. Use the success/anomaly constructors and the success?/failed? predicates; never inspect a result's shape."
+enforcement.message: "Hand-built result map or structural success/failure check. Use the success/anomaly constructors and the succeeded?/failed? predicates; never inspect a result's shape."
 ---
 
 # Result Handling (ALWAYS)
