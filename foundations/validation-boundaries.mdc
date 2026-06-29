@@ -2,6 +2,8 @@
 dewey: "004"
 description: Validation at boundaries — schemas and validation only at interface/external entry points
 alwaysApply: true
+enforcement.action: hard-halt
+enforcement.message: "Schema or input validation in the interior. Validate only at interface boundaries and external entry points; trust data inward by construction."
 ---
 
 # Validation at Boundaries (ALWAYS)

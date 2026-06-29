@@ -2,6 +2,8 @@
 dewey: "050"
 description: Localization — every emitted string flows through a catalog; user-facing strings into a user locale (en-US, etc.), developer-facing strings into the system locale
 alwaysApply: true
+enforcement.action: hard-halt
+enforcement.message: "Raw string literal in emitted output. Route every user- or developer-facing string through a localization catalog via (msg/t :key); add the key to the matching catalog file first."
 ---
 
 # Localization (ALWAYS)
