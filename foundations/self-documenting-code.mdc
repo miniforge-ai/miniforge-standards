@@ -2,6 +2,8 @@
 dewey: "009"
 description: Code is the artifact — comments explain WHY when non-obvious, never restate WHAT; self-document first; document the public boundary, keep the impl light
 alwaysApply: true
+enforcement.action: hard-halt
+enforcement.message: "Comment restates WHAT the code does instead of WHY. Remove narrating comments and make the code self-evident; reserve comments for non-obvious rationale, and document the public boundary's contract."
 ---
 
 # Self-Documenting Code (ALWAYS)

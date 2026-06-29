@@ -2,6 +2,8 @@
 dewey: "211"
 description: Clojure exception handling — prefer slingshot `try+` / `throw+`; plain `try` only in narrow exemptions (no-slingshot-dep leaf catch, leaf inside `try+`, REPL/`(comment …)`)
 alwaysApply: true
+enforcement.action: hard-halt
+enforcement.message: "Plain `try`/`throw` where slingshot `try+`/`throw+` is required. Catch by value with a key-value selector and throw structured payloads via throw+/throw-anomaly!; plain try/throw only in the documented narrow exemptions. (Whether to throw at all in normal flow is exceptions-as-data, not this rule.)"
 globs:
   - "components/**/src/**/*.clj"
   - "components/**/src/**/*.cljc"
@@ -90,6 +92,15 @@ comment if non-obvious, and reviewable.
 
 Throwing is reserved for absolute boundaries (per `foundations/exceptions-
 as-data`). When you throw at a boundary:
+
+**Scope (211 vs 005).** This rule governs the *macro choice* —
+`throw+` / `throw-anomaly!` vs plain `throw` — for a throw that is itself
+legitimate (at an absolute boundary). Whether to throw **at all** in
+normal control flow belongs to `foundations/exceptions-as-data` (005),
+not here. A `(throw (ex-info …))` guarded by a status check in ordinary
+flow is a 005 violation (it should return an anomaly as a value); do not
+*also* flag it as a 211 violation. 211 fires on a throw only once the
+throw is legitimate and the question is which macro carries the payload.
 
 - **Use `throw+` (or `response.anomaly/throw-anomaly!`) for structured
   payloads.** A map carries the anomaly category, the offending values,
