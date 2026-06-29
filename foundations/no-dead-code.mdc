@@ -2,6 +2,8 @@
 dewey: "008"
 description: No dead code, no legacy shims, no commented-out blocks — deleting unused code is part of the change, not a follow-up
 alwaysApply: true
+enforcement.action: hard-halt
+enforcement.message: "Dead, unreachable, or commented-out code left in place. Delete it in the change that obsoletes it — git history is the archive; removal is part of the work, not a follow-up."
 ---
 
 # No Dead Code (ALWAYS)
