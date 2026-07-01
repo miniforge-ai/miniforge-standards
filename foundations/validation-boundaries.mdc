@@ -37,12 +37,14 @@ If internal data is invalid, the bug is in the caller — not in the callee's mi
 ;; Public API — validate here, then forward
 
 (defn create-task
-  "Create a new task. Validates input at the component boundary."
+  "Create a new task. Returns an anomaly map when input is invalid;
+   callers check with anomaly/anomaly?. Does not throw — per rule 005,
+   throws are reserved for absolute process boundaries."
   [task-data]
-  (let [valid (m/validate TaskSchema task-data)]
-    (when-not valid
-      (throw (ex-info "Invalid task-data" {:data task-data
-                                           :errors (m/explain TaskSchema task-data)})))
+  (if-let [errors (m/explain TaskSchema task-data)]
+    (anomaly/anomaly :invalid-input
+                     "Invalid task-data"
+                     {:data task-data :errors (me/humanize errors)})
     (core/create-task-impl task-data)))  ; inside core: no re-validation
 ```
 
