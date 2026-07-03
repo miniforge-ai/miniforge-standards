@@ -23,7 +23,7 @@ as a git submodule at `.standards/` in each repo.
 | Structure functions / avoid duplication | `foundations/code-quality` |
 | Handle success/failure results | `foundations/result-handling` |
 | Know where to put validation | `foundations/validation-boundaries` |
-| Treat exceptions as data / anomaly flow | `foundations/exceptions-as-data` |
+| **Propagate errors as values; throw only at absolute boundaries** | **`foundations/exceptions-as-data`** (CRITICAL) |
 | Replace a magic number or string | `foundations/named-constants` |
 | Decide between code default and EDN config | `foundations/config-as-data` |
 | Remove or refactor old code | `foundations/no-dead-code` |
