@@ -189,6 +189,19 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 |-------|------|--------|-------------|
 | 900 | `rule-format` |  | Rule creation template & Dewey classification |
 
+## Supplementary Guidelines
+
+These files live in `design/` and are not Dewey-indexed rules — they are
+UX/design guidelines consumed by agents building product UI. They are not
+in the `.mdc` format and are not auto-injected into prompts; load them
+explicitly when designing or reviewing any user-facing surface.
+
+| File | Scope |
+|------|-------|
+| `design/ux-general.md` | Cross-product UX principles (typography, spacing, motion, accessibility) |
+| `design/ux-miniforge.md` | Miniforge-specific visual language and component conventions |
+| `design/ux-thesium.md` | Thesium product-line design identity and interaction patterns |
+
 ## Adding Rules
 
 1. Find the appropriate Dewey category above
