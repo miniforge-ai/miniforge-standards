@@ -161,7 +161,7 @@ Conversion methods follow the Rust API Guidelines naming pattern:
 ```rust
 impl WorkflowSpec {
     pub fn as_str(&self) -> &str { &self.id }            // borrowed view
-    pub fn to_json(&self) -> String { serde_json::to_string(self).unwrap() }  // allocates
+    pub fn to_json(&self) -> Result<String, serde_json::Error> { serde_json::to_string(self) }  // allocates
     pub fn into_compiled(self) -> CompiledSpec { /* consumes self */ }
 }
 ```
