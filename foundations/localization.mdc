@@ -147,12 +147,44 @@ Common suffixes: `-heading`, `-body`, `-hint`, `-label`, `-prefix`, `-suffix`, `
 | Test assertions | | Not emitted — raw |
 | EDN / config keys | `:auto-apply/tick-ms` | Not emitted — raw |
 | Source-code identifiers | function / variable names | Not emitted — raw |
+| Machine dispatch tags (code branches / tests match on the value) | `:error {:type "not_found"}` matched by callers | Not prose — see below |
+| Programmer-error / invariant messages | `(assert p "msg")`, `IllegalArgumentException` guard text | Not prose — see below |
+| Dynamic value rendered as its own text | `(name status-keyword)`, `(str some-id)` | Not prose — see below |
+
+## Not localizable — machine and developer surface (do NOT flag)
+
+Localization governs **authored prose a human reads**. Three categories look
+like emitted strings but are not prose, and forcing them through a catalog is
+wrong — exempt them:
+
+1. **Machine dispatch tags.** A string (or, preferably, keyword) VALUE that code
+   branches on or that tests assert on — e.g. an error result's
+   `:type "not_found"` that a caller matches with `(= "not_found" …)`. It is a
+   machine identifier, not display text. The right fix is to make it a
+   **keyword**, not to localize it. (A dispatch tag is not "a short user
+   message" — the test is whether code/tests key off the *value*.)
+2. **Programmer-error and invariant messages.** The text of an `(assert …)`,
+   or of the `IllegalArgumentException` / `throw+` a function raises to say *the
+   call site is wrong* (a programmer-error guard per
+   `foundations/exceptions-as-data`). These fire on bugs during development, not
+   on runtime data a user or operator sees. Leave them raw.
+3. **Dynamic values rendered as their own text.** `(name some-keyword)`,
+   `(str some-id)`, `(str n)` — there is no string *literal* here; the emitted
+   text is runtime data (an enum keyword, an id, a number). You localize the
+   surrounding label and any absent-value fallback, not the value itself.
+   Enumerating every possible domain value into a catalog is not the goal.
+
+The dividing line: is there an **authored prose string literal** aimed at a
+human? If yes, localize it. If the emitted text is a dispatch key, a
+developer-only assertion, or a rendered runtime value, it is out of scope.
 
 ## Agent behavior
 
 When writing or reviewing code:
-1. Every string literal in code that gets emitted is a violation —
-   replace with `(msg/t :key)`.
+1. Every **prose** string literal in code that gets emitted is a violation —
+   replace with `(msg/t :key)`. (Machine dispatch tags, programmer-error /
+   invariant assertion messages, and dynamically-rendered values are NOT prose;
+   see "Not localizable" above.)
 2. When adding a new emitted string, decide audience first:
    - Will any user (operator dashboard counts) see it? → user locale
    - Logs / metric descriptions / observability-bound anomaly text /
