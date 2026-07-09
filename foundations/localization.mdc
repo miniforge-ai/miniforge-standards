@@ -188,10 +188,7 @@ When writing or reviewing code:
    replace with `(msg/t :key)`. (Machine dispatch tags, programmer-error /
    invariant assertion messages, and dynamically-rendered values are NOT prose;
    see "Not localizable" above.)
-2. When adding a new emitted **prose** string, decide audience first:
-   - Will any user (operator dashboard counts) see it? → user locale
-   - Logs / metric descriptions / observability-bound anomaly text /
-     internal tags? → system locale
+2. When adding a new emitted **prose** string, decide locale by audience: any user (operator dashboard included) will see it → user locale; logs, metric descriptions, observability-bound anomaly text, and internal tags → system locale.
 3. Add the key to the matching catalog file FIRST, then reference it.
 4. When reviewing a PR, grep emit sites for raw prose string literals.
    Each one is a missing catalog key. Patterns to scan (skip matches that
