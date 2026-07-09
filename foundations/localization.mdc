@@ -8,9 +8,12 @@ enforcement.message: "Raw string literal in emitted output. Route every user- or
 
 # Localization (ALWAYS)
 
-**No raw string literals in emitted output.** Every string a process
-emits — to a UI, an HTTP response, a log line, a metric description,
-an exception payload — flows through a localization catalog.
+**No raw PROSE string literals in emitted output.** Every authored,
+human-read string a process emits — to a UI, an HTTP response, a log
+line, a metric description, an exception payload — flows through a
+localization catalog. Machine dispatch tags, programmer-error/invariant
+assertion messages, and dynamically-rendered values are NOT prose and
+are exempt (see "Not localizable" below).
 
 ## The rule
 
@@ -185,13 +188,15 @@ When writing or reviewing code:
    replace with `(msg/t :key)`. (Machine dispatch tags, programmer-error /
    invariant assertion messages, and dynamically-rendered values are NOT prose;
    see "Not localizable" above.)
-2. When adding a new emitted string, decide audience first:
+2. When adding a new emitted **prose** string, decide audience first:
    - Will any user (operator dashboard counts) see it? → user locale
    - Logs / metric descriptions / observability-bound anomaly text /
      internal tags? → system locale
 3. Add the key to the matching catalog file FIRST, then reference it.
-4. When reviewing a PR, grep emit sites for raw string literals.
-   Each one is a missing catalog key. Patterns to scan:
+4. When reviewing a PR, grep emit sites for raw prose string literals.
+   Each one is a missing catalog key. Patterns to scan (skip matches that
+   are dispatch tags, assertion messages, or dynamically-rendered values
+   per "Not localizable"):
    - `(log/(info|warn|error|debug|trace) "` — log calls
    - `(otel/counter "` / `(otel/histogram "` / `(otel/gauge "` —
      metric-instrument descriptions (third arg)
@@ -208,7 +213,7 @@ When writing or reviewing code:
 
 ## Anti-patterns to reject
 
-- Raw string literals in any emit site — Hiccup views, `log/` calls, metric descriptions, anomaly messages — are violations; replace with `(msg/t :key)`.
+- Raw PROSE string literals in any emit site — Hiccup views, `log/` calls, metric descriptions, anomaly messages — are violations; replace with `(msg/t :key)`. (Dispatch tags, assertion messages, and dynamically-rendered values are exempt — see "Not localizable".)
 - "Developer-facing strings don't need l10n" — that exemption is removed; they go to the system locale.
 - Format strings with embedded units: `(format "%.1fs" n)` — extract the `s` suffix to a key.
 - Duplicate strings across files — one key, referenced in multiple places.
