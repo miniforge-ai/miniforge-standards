@@ -1,6 +1,6 @@
 ---
 dewey: "725"
-description: "Enforce worktree isolation: AI agents always use dedicated worktrees; clean up old session worktrees before starting new ones"
+description: "Enforce worktree isolation: AI agents always use dedicated worktrees; clean up old ones before each new session"
 alwaysApply: true
 ---
 
