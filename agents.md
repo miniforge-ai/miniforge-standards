@@ -61,11 +61,11 @@ as a git submodule at `.standards/` in each repo.
 | Create a branch | `workflows/git-branch-management` |
 | **Commit code** | **`workflows/pre-commit-discipline`** (CRITICAL) |
 | **Review a PR before push** | **`workflows/code-review-rigor`** (CRITICAL — happy-path trace, bootstrap order, default-value scrutiny, compile-test claims, intent over symptoms, refactor-not-exempt) |
-| Add a build / launch / dev task | `workflows/bb-over-shell` (bb.edn, not scripts/*.sh) |
 | Use git worktrees | `workflows/git-worktrees` |
 | Plan a PR | `workflows/pr-layering` |
 | Document a PR | `workflows/pr-documentation` |
 | Version a release | `workflows/datever` |
+| Add a build / launch / dev task | `workflows/bb-over-shell` (bb.edn, not scripts/*.sh) |
 | Add copyright header (OSS repos only) | `project/header-copyright` — **skip in proprietary repos; use `.thesium-standards/project/header-proprietary` there** |
 | Create a new rule | `meta/rule-format` |
 
