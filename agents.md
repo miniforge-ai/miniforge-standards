@@ -107,6 +107,7 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 │   ├── rust-unsafe.mdc                  # dewey: "232"
 │   ├── rust-observability.mdc           # dewey: "233"
 │   ├── rust-wire-protocols.mdc          # dewey: "234"
+│   ├── rust-boundary-commands.mdc       # dewey: "235"
 │   ├── swift.mdc                        # dewey: "240"
 │   ├── javascript.mdc                   # dewey: "250"
 │   ├── css.mdc                          # dewey: "260"
