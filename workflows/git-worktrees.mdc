@@ -1,10 +1,7 @@
 ---
 dewey: "725"
-title: Git Worktrees for Parallel Workflows
-category: workflows
-tags: [git, worktrees, parallel, isolation, miniforge-architecture]
-confidence: high
-impact: high
+description: "Enforce worktree isolation: AI agents always use dedicated worktrees; clean up old ones before each new session"
+alwaysApply: true
 ---
 
 # Git Worktrees for Parallel Workflows
