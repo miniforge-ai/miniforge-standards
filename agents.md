@@ -44,6 +44,7 @@ as a git submodule at `.standards/` in each repo.
 | Touch `unsafe` in Rust | `languages/rust-unsafe` |
 | Add Rust logging/tracing | `languages/rust-observability` |
 | Design Rust wire formats / serialization | `languages/rust-wire-protocols` |
+| Use typed boundary commands / pipeline selection in Rust | `languages/rust-boundary-commands` |
 | Write Rust in a Miniforge product | `project/rust-miniforge-shape` |
 | Write Swift code | `languages/swift` |
 | Write browser JavaScript | `languages/javascript` |

@@ -47,6 +47,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Touch `unsafe` in Rust | `languages/rust-unsafe` |
 | Add Rust logging/tracing | `languages/rust-observability` |
 | Design Rust wire formats / serialization | `languages/rust-wire-protocols` |
+| Use typed boundary commands / pipeline selection in Rust | `languages/rust-boundary-commands` |
 | Write Rust in a Miniforge product | `project/rust-miniforge-shape` |
 | Write Swift code | `languages/swift` |
 | Write browser JavaScript | `languages/javascript` |
@@ -111,6 +112,7 @@ languages/
   rust-unsafe.mdc             dewey: "232"
   rust-observability.mdc      dewey: "233"
   rust-wire-protocols.mdc     dewey: "234"
+  rust-boundary-commands.mdc  dewey: "235"
   swift.mdc                   dewey: "240"
   javascript.mdc              dewey: "250"
   css.mdc                     dewey: "260"
@@ -179,6 +181,7 @@ meta/
   232      Rust unsafe discipline (deny by default, isolated behind safe APIs, SAFETY comments, profile-evidence required)
   233      Rust observability (tracing not println, correlation IDs via #[instrument], error source-chain preservation, system-catalog log strings)
   234      Rust wire protocols (wire/domain separation, versioned envelopes, validate-on-deserialize, append-only audit ratchet)
+  235      Rust boundary commands (typed command enums at boundary, exhaustive dispatch, pipeline selection by enum, bounded data-driven content, derived context at seams)
   240      Swift (stratified views, access control, optionals, closures)
   250      JavaScript (browser; sparse use, no globals, ES modules, safe DOM)
   260      CSS (design tokens, semantic class names, shallow selectors, focus)
