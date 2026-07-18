@@ -71,6 +71,9 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Add a build / launch / dev task | `workflows/bb-over-shell` (bb.edn, not scripts/*.sh) |
 | Add copyright header (OSS repos only) | `project/header-copyright` — **skip in proprietary repos; use `.thesium-standards/project/header-proprietary` there** |
 | Create a new rule | `meta/rule-format` |
+| Design or review a user-facing UI surface (cross-product) | `design/ux-general.md` |
+| Design or review Miniforge product UI | `design/ux-miniforge.md` |
+| Design or review Thesium product UI | `design/ux-thesium.md` |
 
 ## Rules Catalog
 
