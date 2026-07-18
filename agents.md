@@ -24,6 +24,7 @@ as a git submodule at `.standards/` in each repo.
 | Handle success/failure results | `foundations/result-handling` |
 | Know where to put validation | `foundations/validation-boundaries` |
 | **Propagate errors as values; throw only at absolute boundaries** | **`foundations/exceptions-as-data`** (CRITICAL) |
+| Add user-facing strings | `foundations/localization` |
 | Replace a magic number or string | `foundations/named-constants` |
 | Decide between code default and EDN config | `foundations/config-as-data` |
 | Remove or refactor old code | `foundations/no-dead-code` |
@@ -31,7 +32,6 @@ as a git submodule at `.standards/` in each repo.
 | Decide how much to document / where docs live (schemas, length, narrative) | `documentation/documentation-discipline` |
 | Write a normative specification | `foundations/specification-standards` |
 | Author a work spec or task brief | `foundations/work-spec-authoring` |
-| Add user-facing strings | `foundations/localization` |
 | Run tasks in OCI containers | `foundations/runtime-*` (dewey 030–033) |
 | Write tests | `testing/standards` |
 | Understand when a code change can omit test changes | `workflows/tests-with-code` |
