@@ -23,8 +23,8 @@ new rule:
 4. Add a `## Agent behavior` section yourself if the rule prescribes a
    distinct agent workflow; the loader uses it (or the first body
    paragraph) as the prompt-injected directive.
-5. Update the master index (`index.mdc`) and the consuming repo's
-   `CLAUDE.md` quick-reference table.
+5. Update the master index (`index.mdc`) and `agents.md` in this
+   repo, and the consuming repo's `CLAUDE.md` quick-reference table.
 
 ## Core Structure
 
