@@ -25,7 +25,7 @@ There is no functional reason to choose `try` over `try+` once slingshot
 is on the component's classpath. New code defaults to `try+`. Legacy `try`
 sites are not a defect on their own and don't need urgent rewrites, but
 should converge on `try+` opportunistically and during the post-dogfood
-audit (see `project/dogfood-readiness` follow-up notes).
+audit phase.
 
 This rule is the operational complement to:
 
@@ -171,8 +171,7 @@ When picking up legacy code:
    pulls slingshot in.
 3. Don't open standalone "convert try to try+" PRs while dogfood
    stabilization is in progress — the migration audit is scheduled for
-   the consistently-passing phase, prepping for the next major release
-   (see `project_try_plus_migration` memory).
+   the consistently-passing phase, prepping for the next major release.
 
 ## Agent behavior
 
