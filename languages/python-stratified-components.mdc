@@ -1,0 +1,181 @@
+---
+dewey: "221"
+description: Structure Python packages as stratified components when adding or refactoring Python modules to keep boundaries explicit
+globs:
+  - "**/*.py"
+---
+
+# Python Stratified Components
+
+Python mirror of the Clojure component model (`languages/clojure`,
+`frameworks/polylith`): a package is a component, `interface.py` is its only
+import surface, implementation is functions over explicit state, strata are
+labeled and monotonic. Applies `foundations/stratified-design` (001) at the
+package level and within each module.
+
+## Component anatomy
+
+```
+src/<app>/<component>/
+  __init__.py       # empty, or re-exports interface
+  interface.py      # ONLY sanctioned import surface
+  <component>.py    # single implementation module
+  model.py          # leaf: dataclasses / types
+  exceptions.py     # leaf: domain exceptions
+```
+
+- One implementation module plus **flat leaf modules** (types, exceptions,
+  constants). Leaves import nothing from each other.
+- **Extraction heuristic**: the moment the implementation wants to split into
+  two modules with an import edge between them, that edge is a component
+  boundary trying to exist — extract a new component. A DAG *among
+  implementation modules* inside a component is the smell; flat leaves are fine.
+- Do not name the types module `dataclasses.py` — it shadows the stdlib name
+  for every reader.
+
+## Interface
+
+- Functions taking explicit state are the canonical contract
+  (Polylith-consistent).
+- A class facade owning the state is an optional consumer convenience, not the
+  contract.
+- Consumers import `component.interface` only — never implementation modules.
+
+```python
+# interface.py
+from .filesystem import cat, find, ls, mkdir, rm
+from .model import FileSystemState
+
+class InMemoryFileSystem:
+    """Optional facade: owns state, delegates to the functional contract."""
+    def __init__(self) -> None:
+        self._state = FileSystemState()
+
+    def cat(self, path: str) -> str:
+        return cat(self._state, path)
+```
+
+## Explicit state
+
+- All component state lives in one dataclass; every implementation function
+  takes it as its first argument.
+- Mutable defaults use `field(default_factory=...)` with a **zero-argument
+  callable**; wrap composite defaults in a lambda. Annotate `defaultdict`
+  fields as `defaultdict[...]` so autovivification type-checks.
+
+```python
+@stratum(1)
+@dataclass
+class FileSystemState:
+    objects: dict[PurePosixPath, FileSystemObject] = field(
+        default_factory=lambda: {PurePosixPath("/"): Directory()})
+    index: defaultdict[PurePosixPath, set[PurePosixPath]] = field(
+        default_factory=lambda: defaultdict(set))
+```
+
+## Strata
+
+Mark every implementation function and type with `@stratum(n)`:
+
+```python
+def stratum(level: int):
+    def decorate(obj):
+        obj.__stratum__ = level
+        return obj
+    return decorate
+```
+
+- Stratum 0 is the component's vocabulary — pure helpers over primitive and
+  domain terms. Each higher stratum is a small language built on the ones
+  below (001: strata are levels of *meaning*, not a fixed layer stack).
+- A function at stratum *n* calls only strata ≤ *n*. No upward calls.
+- Order the file by stratum, ascending — monotonic, like the Clojure
+  `Layer 0/1/2` headings in `languages/clojure`.
+- **≤ 3 strata per implementation module.** Needing a 4th means split — and
+  the extraction heuristic above decides where the split lands.
+- Until the AST lint lands, the decorator is reviewable documentation: keep
+  ordering monotonic so violations are visible in diffs.
+
+## Absence and errors
+
+- One domain exception per component, defined in `exceptions.py`; raise it on
+  contract violations.
+- Accessors at the same stratum share miss semantics — if `file()` raises on a
+  missing path, so do `directory()` and `delete()`.
+- Return **empty collections**, not `None`, when absence means "nothing to
+  process" — callers keep one code path (`extend`, `len`, iteration all
+  degrade gracefully at zero).
+- When absence demands *different* caller behavior, the conditional is
+  domain-intrinsic: raise, or return an explicit result value
+  (`foundations/result-handling`) — don't hide the branch in an empty value.
+
+## Enforcement
+
+- Strict type checking per `languages/python` is non-optional here:
+  explicit-state style multiplies positional arguments, and the checker
+  catches every dropped `state` argument statically.
+- `import-linter` contracts in CI enforce both boundaries:
+
+  ```toml
+  [tool.importlinter]
+  root_package = "app"
+
+  [[tool.importlinter.contracts]]
+  name = "components expose interface only"
+  type = "forbidden"
+  source_modules = ["app.*"]
+  forbidden_modules = ["app.filesystem.filesystem", "app.filesystem.model"]
+  # the component itself may use its own internals
+  ignore_imports = ["app.filesystem.* -> app.filesystem.*"]
+
+  [[tool.importlinter.contracts]]
+  name = "component DAG"
+  type = "layers"
+  layers = ["app.cli", "app.filesystem", "app.paths"]
+  ```
+
+- Stratum monotonicity: AST check asserting `@stratum(n)` bodies call only
+  strata ≤ *n* (planned; the decorator stays truthful only while reviewed).
+
+## Examples
+
+<example>
+  Good — strata ascending, explicit state, typed accessors raising the domain exception:
+
+  ```python
+  # filesystem.py
+  @stratum(0)
+  def _normalize_path(path: str) -> PurePosixPath:
+      p = PurePosixPath(path)
+      return p if p.is_absolute() else PurePosixPath("/") / p
+
+  @stratum(1)
+  def file(fs: FileSystemState, path: PurePosixPath) -> File:
+      if path not in fs.objects:
+          raise FileSystemError(f"Missing path: {path}")
+      obj = fs.objects[path]
+      if not isinstance(obj, File):
+          raise FileSystemError(f"Path is not a file: {path}")
+      return obj
+
+  @stratum(2)
+  def cat(fs: FileSystemState, path: str) -> str:
+      return file(fs, _normalize_path(path)).data
+  ```
+</example>
+
+<example type="invalid">
+  ```python
+  # BAD — consumer bypasses the interface
+  from app.filesystem.filesystem import _normalize_path
+
+  # BAD — stratum-0 helper calling upward into stratum 2
+  @stratum(0)
+  def _default_config(fs: FileSystemState) -> str:
+      return cat(fs, "/etc/defaults")
+
+  # BAD — implementation DAG inside one component:
+  # filesystem/paths.py imported by filesystem/commands.py
+  # → extract `paths` as its own component instead
+  ```
+</example>

@@ -9,6 +9,8 @@ globs:
 
 ## Project structure
 
+- Structure packages as stratified components — `interface.py` surface,
+  explicit state, labeled strata (`languages/python-stratified-components`).
 - Use Poetry and `pyproject.toml`; add console scripts for CLIs under
   `[tool.poetry.scripts]`.
 - Source layout: `src/<package>/`; never implicit namespace packages.
