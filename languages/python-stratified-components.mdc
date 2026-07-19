@@ -75,14 +75,11 @@ class FileSystemState:
 
 ## Strata
 
-Mark every implementation function and type with `@stratum(n)`:
+Mark every implementation function and type with `@stratum(n)`. The decorator
+ships with the linter:
 
 ```python
-def stratum(level: int):
-    def decorate(obj):
-        obj.__stratum__ = level
-        return obj
-    return decorate
+from stratum_lint import stratum
 ```
 
 - Stratum 0 is the component's vocabulary — pure helpers over primitive and
@@ -93,8 +90,8 @@ def stratum(level: int):
   `Layer 0/1/2` headings in `languages/clojure`.
 - **≤ 3 strata per implementation module.** Needing a 4th means split — and
   the extraction heuristic above decides where the split lands.
-- Until the AST lint lands, the decorator is reviewable documentation: keep
-  ordering monotonic so violations are visible in diffs.
+- Modules with no `@stratum` markings (interface and pass-through modules)
+  are exempt from strata discipline.
 
 ## Absence and errors
 
@@ -134,8 +131,11 @@ def stratum(level: int):
   layers = ["app.cli", "app.filesystem", "app.paths"]
   ```
 
-- Stratum monotonicity: AST check asserting `@stratum(n)` bodies call only
-  strata ≤ *n* (planned; the decorator stays truthful only while reviewed).
+- Stratum discipline is checked by
+  [`stratum-lint`](https://github.com/miniforge-ai/stratum-lint) (also
+  provides the decorator; run `stratum-lint src` in CI): SL001 upward call,
+  SL002 non-monotonic order, SL003 strata budget, SL004 unmarked def in a
+  stratified module, SL005 non-literal level.
 
 ## Examples
 

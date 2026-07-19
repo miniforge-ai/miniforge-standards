@@ -39,7 +39,9 @@ filesystem exercise) before being codified here.
     domain-intrinsic.
   - Enforcement: strict type checking (explicit-state style makes dropped
     state arguments a static error), `import-linter` forbidden + layers
-    contracts, planned AST check for stratum monotonicity.
+    contracts, and stratum discipline via
+    [stratum-lint](https://github.com/miniforge-ai/stratum-lint) (SL001-SL005),
+    which also ships the `@stratum` decorator.
 - **`languages/python.mdc`**: pointer to the new rule under Project structure.
 - **`index.mdc`**: tree + languages table entries for 221.
 - **`CLAUDE.md`**: quick-reference row, rules catalog entry, Dewey range entry.
@@ -57,8 +59,9 @@ submodule bump.
 
 ## Related Issues/PRs
 
-- Follow-up (not this PR): AST lint enforcing `@stratum(n)` call direction,
-  referenced in the rule's Enforcement section.
+- [stratum-lint](https://github.com/miniforge-ai/stratum-lint) — the linter
+  and decorator referenced in the rule's Strata and Enforcement sections
+  (seeded 2026-07-19; private until OSS review completes).
 
 ## Checklist
 
