@@ -140,7 +140,7 @@ workflows/
   code-review-rigor.mdc       dewey: "720"  alwaysApply: true
   pr-documentation.mdc        dewey: "721"  alwaysApply: true
   pr-layering.mdc             dewey: "722"  alwaysApply: true
-  git-worktrees.mdc           dewey: "725"
+  git-worktrees.mdc           dewey: "725"  alwaysApply: true
   datever.mdc                 dewey: "730"
   bb-over-shell.mdc           dewey: "740"
 project/
