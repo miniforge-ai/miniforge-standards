@@ -64,6 +64,17 @@ structure is legible.
   wanting a fourth band is the signal to split the namespace (see splitting
   strategy above), never to flatten real strata into three.
 - Reserve the **very bottom** of the file for a `(comment …)` section (REPL testing). No `def/defn/defmacro` after it.
+- **Enforced by** [`stratum-lint`](https://github.com/miniforge-ai/stratum-lint)
+  (`clojure/`, bb-native — run `bb -m stratum-lint.interface src` in CI):
+  SL001 upward reference, SL002 non-monotonic headings, SL003 layer budget,
+  SL004 def before first heading, SL005 non-int `^{:stratum}` metadata,
+  SL006 `^{:stratum n}` metadata disagreeing with its heading. Optional
+  `^{:stratum n}` metadata on defs is data the tooling reads; headings remain
+  the source of truth. `--fix` infers strata from the same-file reference
+  graph, tags metadata, and regroups defs under regenerated headings. The
+  linter skips files without headings — a tooling limitation so pass-through
+  interface files need no annotations, not an exemption from this rule:
+  implementation namespaces must carry the headings above.
 
 ## Component layout conventions
 
