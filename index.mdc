@@ -58,6 +58,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   ├── rust-unsafe.mdc                  # dewey: "232"
 │   ├── rust-observability.mdc           # dewey: "233"
 │   ├── rust-wire-protocols.mdc          # dewey: "234"
+│   ├── rust-boundary-commands.mdc       # dewey: "235"
 │   ├── swift.mdc                        # dewey: "240"
 │   ├── javascript.mdc                   # dewey: "250"
 │   ├── css.mdc                          # dewey: "260"
@@ -131,6 +132,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 232 | `rust-unsafe` |  | `unsafe_code = "deny"` workspace-wide; isolated behind safe APIs; `// SAFETY:` comment on every site; performance alone insufficient |
 | 233 | `rust-observability` |  | `tracing` not `println!`, correlation IDs via `#[instrument]`, error source-chain preservation, log strings localized to system locale |
 | 234 | `rust-wire-protocols` |  | Wire structs separate from domain, versioned envelopes, validate-on-deserialize, append-only ratchet for audit-trail payloads |
+| 235 | `rust-boundary-commands` |  | Typed command enums at boundary, exhaustive dispatch, pipeline selection by enum, bounded data-driven content, derived context at seams |
 | 240 | `swift` |  | Swift conventions |
 | 250 | `javascript` |  | Browser JS — sparse use, no globals, ES modules, no inline handlers, safe DOM |
 | 260 | `css` |  | Design tokens, semantic class names, shallow selectors, accessible focus |
