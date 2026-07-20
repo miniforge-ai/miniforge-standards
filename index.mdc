@@ -53,6 +53,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   ├── clojure-exception-handling.mdc   # dewey: "211"  alwaysApply: true
 │   ├── clojure-no-requiring-resolve.mdc # dewey: "212"  globs: clj/cljc
 │   ├── python.mdc                       # dewey: "220"
+│   ├── python-stratified-components.mdc # dewey: "221"
 │   ├── rust.mdc                         # dewey: "230"
 │   ├── rust-async.mdc                   # dewey: "231"
 │   ├── rust-unsafe.mdc                  # dewey: "232"
@@ -127,6 +128,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 211 | `clojure-exception-handling` | ✓ | Prefer slingshot `try+` / `throw+` (strict superset of `try`); plain `try` allowed in three narrow cases (no-slingshot-dep leaf catch, leaf inside `try+`, REPL/`(comment …)`) |
 | 212 | `clojure-no-requiring-resolve` | clj/cljc | BLOCKING (`enforcement.action: hard-halt`): no `requiring-resolve` — use a direct `(:require …)`, fix load-order/design instead of lazy-resolving |
 | 220 | `python` |  | Poetry, functional Python |
+| 221 | `python-stratified-components` |  | Package = component: `interface.py` only surface, explicit-state functions, `@stratum(n)` monotonic ≤3 strata, flat leaves, DAG-among-impl-modules → extract component |
 | 230 | `rust` |  | Workspaces, typed boundary commands, pipeline selection, data-driven content, toolchain (Rust 2024 + workspace lints), domain newtypes, dependency policy |
 | 231 | `rust-async` |  | Don't block the runtime, no locks across `.await`, cancellation-aware `select!`, bounded channels, task lifecycle ownership, `Arc<Mutex<T>>` not as default architecture |
 | 232 | `rust-unsafe` |  | `unsafe_code = "deny"` workspace-wide; isolated behind safe APIs; `// SAFETY:` comment on every site; performance alone insufficient |
