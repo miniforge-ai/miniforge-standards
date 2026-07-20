@@ -16,7 +16,7 @@ the rule should say so.
 ## Changes in Detail
 
 - `languages/clojure.mdc`: one bullet in "Per-file stratified design" —
-  check codes (SL001-SL006), CI invocation, metadata semantics, `--fix`
+  check codes (SL001-SL006, all six enumerated), CI invocation, metadata semantics, `--fix`
   behavior, headingless-file exemption.
 
 ## Testing Plan
