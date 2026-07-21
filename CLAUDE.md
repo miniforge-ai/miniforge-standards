@@ -49,6 +49,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Add Rust logging/tracing | `languages/rust-observability` |
 | Design Rust wire formats / serialization | `languages/rust-wire-protocols` |
 | Use typed boundary commands / pipeline selection in Rust | `languages/rust-boundary-commands` |
+| Structure a Rust file with Layer headings (stratified) | `languages/rust-stratified-modules` |
 | Write Rust in a Miniforge product | `project/rust-miniforge-shape` |
 | Write Swift code | `languages/swift` |
 | Write browser JavaScript | `languages/javascript` |
@@ -115,6 +116,7 @@ languages/
   rust-observability.mdc      dewey: "233"
   rust-wire-protocols.mdc     dewey: "234"
   rust-boundary-commands.mdc  dewey: "235"
+  rust-stratified-modules.mdc dewey: "236"
   swift.mdc                   dewey: "240"
   javascript.mdc              dewey: "250"
   css.mdc                     dewey: "260"
@@ -185,6 +187,7 @@ meta/
   233      Rust observability (tracing not println, correlation IDs via #[instrument], error source-chain preservation, system-catalog log strings)
   234      Rust wire protocols (wire/domain separation, versioned envelopes, validate-on-deserialize, append-only audit ratchet)
   235      Rust boundary commands (typed command enums at boundary, exhaustive dispatch, pipeline selection by enum, bounded data-driven content, derived context at seams)
+  236      Rust Stratified Modules (// ---- Layer N headings; refs ≤ own layer; ≤3 layers/file; thin index over bounded-operation modules; stratum-lint-rs)
   240      Swift (stratified views, access control, optionals, closures)
   250      JavaScript (browser; sparse use, no globals, ES modules, safe DOM)
   260      CSS (design tokens, semantic class names, shallow selectors, focus)
