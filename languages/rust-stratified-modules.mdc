@@ -28,10 +28,19 @@ fn top() -> u32 { vocab() }
   proc-macro build-dependency into every consuming crate; a heading is
   data the linter reads with zero compiler impact.
 - Layer 0 is the file's vocabulary (types, consts, pure helpers); each
-  higher layer is a small language over the ones below. An item under
-  Layer *n* references only same-file items at layers ≤ *n*.
+  higher layer is a small language over the ones below.
+- **Calls are strict**: a reference whose target is a same-file `fn`
+  must come from a strictly higher layer — a caller is expressed in its
+  callee's language, so same-layer calls hide real strata (SL008).
+- **Vocabulary is lenient**: references to same-file types, consts, and
+  statics are legal at the referencer's own layer and below; only
+  upward references violate (SL001).
+- **Types sit at their minimal layer**: a type declared above the
+  maximum layer its references justify is over-placed (SL009).
 - Headings strictly ascend; **≤3 layers per file**. Wanting a fourth is
   the split signal — extract a module or crate, never flatten strata.
+  Long call chains at one abstraction level are the same signal: split
+  the chain into its own file, where it stratifies honestly.
 
 ## File anatomy
 
@@ -58,18 +67,22 @@ cargo run -q -- src            # or: cargo install --git <repo> stratum-lint-rs
 SL000 parse failure, SL001 upward reference (all first-segment path
 refs count — functions passed as values, type references, `Self::x`
 attributed to the impl's type), SL002 non-monotonic headings, SL003
-layer budget, SL004 item before the first heading. References inside
-macro invocation token streams are not analyzed (syn limitation) —
-review covers them.
+layer budget, SL004 item before the first heading, SL008 same-layer
+call, SL009 over-placed type. References inside macro invocation token
+streams are not analyzed (syn limitation) — review covers them; a local
+binding shadowing a same-file item name can false-positive — rename the
+local.
 
 ## Exemplar
 
 `minibench/crates/kernel` — a 2,454-line `lib.rs` split into a thin
-index over five Layer-headed modules (`snapshot` vocabulary +
-`summary` / `compare` / `regression` / `evidence`), public API
-unchanged, all behavior tests unmodified, linter clean. The split also
-surfaced two latent duplications (a copied helper and a thrice-repeated
-registry guard) — the expected effect of making strata explicit.
+index over nine Layer-headed modules (`snapshot`/`stats`/`provenance`/
+`violations` vocabulary + `checks`/`summary`/`compare`/`regression`/
+`evidence` operations), public API unchanged, all behavior tests
+unmodified, linter clean under strict semantics. The split surfaced two
+latent duplications (a copied helper, a thrice-repeated registry guard)
+and four hidden same-layer call chains — the expected effect of making
+strata explicit and checked.
 
 ## Examples
 

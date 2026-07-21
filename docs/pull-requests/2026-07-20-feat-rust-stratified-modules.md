@@ -41,6 +41,13 @@ Merges to `main`; consumers pick it up on their next `.standards` bump.
 - miniforge-ai/stratum-lint#3 (linter), miniforge-ai/minibench#20 (exemplar)
 - Companions: #82 (Python 221), #83 (Clojure 210 enforcement ref)
 
+## Round 2 — strict semantics
+
+Linter review hardened the semantics (user finding: lenient same-layer
+references let headings be decorative). Rule updated to match: strict
+fn-call direction (SL008), types at minimal layer (SL009), vocabulary
+references lenient; exemplar count updated (nine modules).
+
 ## Checklist
 
 - [x] Rule follows `meta/rule-format` structure
