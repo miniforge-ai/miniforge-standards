@@ -11,7 +11,7 @@ detection:
   mode: positive
   pattern: "^#!.*\\b(bash|sh|zsh|python[0-9.]*)\\b"
 enforcement:
-  action: require-approval
+  action: hard-halt
   message: "Standard 740: automation belongs in a bb task, not a shell/Python script. Justify against the two permitted cases (thin bb-invoking shim, or bb-less bootstrap) or migrate to bb.edn."
 ---
 
@@ -23,6 +23,7 @@ enforcement:
 
 - Applies to **automation**: build, launch, package, sign, notarize, embed, lint, test, deploy, and dev-loop tasks.
 - Does **not** apply to application code. A Python component governed by [python](../languages/python.mdc) is product code, not automation. The distinction is *purpose*, not extension.
+- Does **not** apply to **fixtures, examples, or test data**. A demo polyglot repo that contains `.sh` and `.py` is the *subject* of analysis, not automation — e.g. `miniforge/examples/demo-polyglot-repo/`. Scripts there exist to be analysed and MUST NOT be migrated. This carve-out is by path intent, not extension: if a file under `examples/` actually builds or deploys the product, it is automation and in scope.
 
 ## Requirements
 
