@@ -9,10 +9,10 @@ globs:
   - "tools/**"
 detection:
   mode: positive
-  pattern: "^#!.*(bash|sh|zsh|python[0-9.]*)\\b"
+  pattern: "^#!.*\\b(bash|sh|zsh|python[0-9.]*)\\b"
 enforcement:
   action: require-approval
-  message: "Standard 740: automation belongs in a bb task, not a shell/Python script. Justify against the shim exception or migrate to bb.edn."
+  message: "Standard 740: automation belongs in a bb task, not a shell/Python script. Justify against the two permitted cases (thin bb-invoking shim, or bb-less bootstrap) or migrate to bb.edn."
 ---
 
 <version>2.0.0</version>
@@ -28,7 +28,7 @@ enforcement:
 
 Automation tasks **MUST** be Babashka tasks declared in `bb.edn`.
 
-Authors **MUST NOT** add a `.sh` or `.py` script to carry automation logic. This holds even when the script is short, even when it is "temporary", and even when an equivalent script already exists nearby — an existing violation is not a licence for another.
+Authors **MUST NOT** add a `.sh` or `.py` script to carry automation logic. This holds even when the script is short, even when it is "temporary", and even when an equivalent script already exists nearby — an existing violation is not a license for another.
 
 When a task body grows past a few lines, the logic **MUST** move into a namespace (a `tasks/` namespace, or a Polylith component for shared packaging logic) with `bb.edn` holding only the thin verb. Long inline EDN bodies are unreviewable and untestable.
 
