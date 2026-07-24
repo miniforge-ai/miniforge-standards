@@ -61,6 +61,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   ├── rust-wire-protocols.mdc          # dewey: "234"
 │   ├── rust-boundary-commands.mdc       # dewey: "235"
 │   ├── swift.mdc                        # dewey: "240"
+│   ├── swift-stratified-files.mdc       # dewey: "241"
 │   ├── javascript.mdc                   # dewey: "250"
 │   ├── css.mdc                          # dewey: "260"
 │   └── html.mdc                         # dewey: "270"
@@ -136,6 +137,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 234 | `rust-wire-protocols` |  | Wire structs separate from domain, versioned envelopes, validate-on-deserialize, append-only ratchet for audit-trail payloads |
 | 235 | `rust-boundary-commands` |  | Typed command enums at boundary, exhaustive dispatch, pipeline selection by enum, bounded data-driven content, derived context at seams |
 | 240 | `swift` |  | Swift conventions |
+| 241 | `swift-stratified-files` |  | `// ---- Layer N` headings per file; func calls strictly upward-from-caller (SL008), vocabulary refs ≤ own layer, types at minimal layer (SL009); pure logic in top-level funcs, stateful shells delegate; stratum-lint-swift |
 | 250 | `javascript` |  | Browser JS — sparse use, no globals, ES modules, no inline handlers, safe DOM |
 | 260 | `css` |  | Design tokens, semantic class names, shallow selectors, accessible focus |
 | 270 | `html` |  | Semantic elements, buttons-vs-links, labelled forms |
