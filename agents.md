@@ -146,6 +146,8 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
     └── rule-format.mdc                  # dewey: "900"
 ```
 
+_`design/` is intentionally excluded from the catalog above — those files are non-Dewey UX guidelines; see [Supplementary Guidelines](#supplementary-guidelines) below._
+
 ## Supplementary Guidelines
 
 These files live in `design/` and are not Dewey-indexed rules — they are
