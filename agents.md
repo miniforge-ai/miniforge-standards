@@ -69,6 +69,9 @@ as a git submodule at `.standards/` in each repo.
 | Add a build / launch / package / deploy task | `workflows/bb-over-shell` — a bb task in `bb.edn`; **never** a new `.sh` or `.py` |
 | Add copyright header (OSS repos only) | `project/header-copyright` — **skip in proprietary repos; use `.thesium-standards/project/header-proprietary` there** |
 | Create a new rule | `meta/rule-format` |
+| Design or review a user-facing UI surface (cross-product) | `design/ux-general.md` |
+| Design or review Miniforge product UI | `design/ux-miniforge.md` |
+| Design or review Thesium product UI | `design/ux-thesium.md` |
 
 ## Rules Catalog
 
@@ -142,6 +145,19 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 └── meta/
     └── rule-format.mdc                  # dewey: "900"
 ```
+
+## Supplementary Guidelines
+
+These files live in `design/` and are not Dewey-indexed rules — they are
+UX/design guidelines consumed by agents building product UI. They are not
+in `.mdc` format and are not auto-injected into prompts; **load them
+explicitly when designing or reviewing any user-facing surface.**
+
+| File | Scope |
+|------|-------|
+| `design/ux-general.md` | Cross-product UX principles (typography, spacing, motion, accessibility) |
+| `design/ux-miniforge.md` | Miniforge-specific visual language and component conventions |
+| `design/ux-thesium.md` | Thesium product-line design identity and interaction patterns |
 
 ## Dewey Classification
 
