@@ -178,7 +178,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 722 | `pr-layering` | ✓ | Stratified PR DAG; <400 lines; independently mergeable |
 | 725 | `git-worktrees` |  | Parallel workflows with worktrees, operator multi-loop |
 | 730 | `datever` |  | Date-based versioning strategy |
-| 740 | `bb-over-shell` |  | Build / launch / dev tasks live in bb.edn, not scripts/*.sh |
+| 740 | `bb-over-shell` |  | Automation MUST be bb tasks; no .sh or .py scripts beyond a thin bb-invoking shim |
 
 ### project/
 
