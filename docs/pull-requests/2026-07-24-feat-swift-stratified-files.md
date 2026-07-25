@@ -3,7 +3,7 @@
 ## Overview
 
 Adds `languages/swift-stratified-files.mdc` (241) — the Swift member of
-the per-file Layer-heading family (Clojure 210, Python 221, Rust 236),
+the per-file Layer-heading family (Clojure 210, Python 221, Rust 236 — the latter lands with standards#85, which must merge first),
 with the strict semantics (SL008 same-layer calls, SL009 over-placed
 types) from the start.
 
@@ -40,7 +40,8 @@ Merges to main; consumers pick it up on their next `.standards` bump.
 
 - miniforge-ai/stratum-lint#4 (Swift linter, merged CI-green)
 - miniforge-ai/thesium#414 (exemplar)
-- Companions: #82 (221), #83 (210 ref), #85 (236)
+- **Depends on #85** (rule 236) merging first — 241 cross-references it.
+- Companions: #82 (221), #83 (210 ref)
 
 ## Checklist
 

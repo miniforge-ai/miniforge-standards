@@ -7,8 +7,8 @@ globs:
 
 # Swift Stratified Files
 
-Swift mirror of the Rust Layer-heading discipline (236) and its strict
-semantics. Complements swift.mdc (240)'s cross-file L0-L3 view
+Swift mirror of the Rust Layer-heading discipline (`languages/rust-stratified-modules`,
+236 — lands with miniforge-standards#85) and its strict semantics. Complements swift.mdc (240)'s cross-file L0-L3 view
 decomposition: 240 governs which FILE a declaration belongs in; this
 rule governs the strata WITHIN a file. Applies
 `foundations/stratified-design` (001) at file granularity.
@@ -22,8 +22,9 @@ func vocab() -> Int { 1 }
 func top() -> Int { vocab() }
 ```
 
-- Comment heading: `//` + ≥4 dashes + `Layer N` — identical to the
-  Clojure/Rust convention.
+- Comment heading: `//`, optional whitespace, ≥4 dashes, then `Layer N`
+  — identical to the Clojure/Rust convention. Minimal canonical form:
+  `// ---- Layer 0`; longer dash runs are purely visual.
 - **Calls are strict**: a reference whose target is a same-file `func`
   must come from a strictly higher layer (SL008).
 - **Vocabulary is lenient**: references to same-file types and top-level
@@ -56,7 +57,7 @@ The honest structure, and exactly what 240 already prescribes:
 implementation (`swift/`, SwiftPM, SwiftSyntax):
 
 ```bash
-cd swift && swift run stratum-lint-swift-cli <paths>
+cd swift && swift run stratum-lint-swift <paths>
 ```
 
 SL000 parse failure, SL001 upward reference, SL002 non-monotonic
