@@ -23,7 +23,10 @@ fn vocab() -> u32 { 1 }
 fn top() -> u32 { vocab() }
 ```
 
-- Comment heading: `//` + ≥4 dashes + `Layer N`. Chosen over a
+- Comment heading: `//`, optional whitespace, ≥4 dashes, then
+  `Layer N`. Minimal canonical form: `// ---- Layer 0`; the examples
+  above use a longer dash run purely for visual width — any run of
+  four or more dashes is valid. Chosen over a
   `#[stratum(n)]` attribute deliberately — an attribute would force a
   proc-macro build-dependency into every consuming crate; a heading is
   data the linter reads with zero compiler impact.
@@ -44,8 +47,8 @@ fn top() -> u32 { vocab() }
 
 ## File anatomy
 
-- A god-module splits into a **thin index** (rust.mdc's
-  thin-orchestration-index: docs, `mod` decls, `pub use` re-exports —
+- A god-module splits into a **thin index** (rust.mdc's "Thin
+  orchestration index modules": docs, `mod` decls, `pub use` re-exports —
   no logic, no headings) over one module per bounded operation, plus a
   shared-vocabulary leaf module for names two or more siblings need.
 - Index files, test modules, and pure re-export files carry no headings

@@ -4,6 +4,7 @@
 
 Adds `languages/rust-stratified-modules.mdc` (236) — the Rust member of
 the stratified-design family (Clojure 210, Python 221): `// ---- Layer N`
+(≥4 dashes)
 comment headings per file, references only at or below the item's own
 layer, ≤3 layers per file, thin index over bounded-operation modules.
 

@@ -18,7 +18,7 @@ Sister rules in this set:
 - `languages/rust-observability` (233) — `tracing` over `println!`, correlation IDs, error source-chain preservation.
 - `languages/rust-wire-protocols` (234) — wire/domain separation, versioned envelopes, validate-on-deserialize.
 - `languages/rust-boundary-commands` (235) — typed command enums at boundary, pipeline selection by enum, bounded data-driven content, derived context at seams.
-- `languages/rust-stratified-modules` (236) — per-file `// ---- Layer N` headings, refs only at or below own layer, ≤3 layers per file, thin index over bounded-operation modules; enforced by `stratum-lint-rs`.
+- `languages/rust-stratified-modules` (236) — per-file `// ---- Layer N` headings (≥4 dashes), refs only at or below own layer, ≤3 layers per file, thin index over bounded-operation modules; enforced by `stratum-lint-rs`.
 - `project/rust-miniforge-shape` (835) — Miniforge architectural Rust constraints.
 
 ## Toolchain and edition

@@ -187,7 +187,7 @@ meta/
   233      Rust observability (tracing not println, correlation IDs via #[instrument], error source-chain preservation, system-catalog log strings)
   234      Rust wire protocols (wire/domain separation, versioned envelopes, validate-on-deserialize, append-only audit ratchet)
   235      Rust boundary commands (typed command enums at boundary, exhaustive dispatch, pipeline selection by enum, bounded data-driven content, derived context at seams)
-  236      Rust Stratified Modules (// ---- Layer N headings; fn calls strictly upward-from-caller, vocabulary refs ≤ own layer, types at minimal layer; ≤3 layers/file; thin index; stratum-lint-rs)
+  236      Rust Stratified Modules (// ---- Layer N headings, ≥4 dashes; fn calls strictly upward-from-caller, vocabulary refs ≤ own layer, types at minimal layer; ≤3 layers/file; thin index; stratum-lint-rs)
   240      Swift (stratified views, access control, optionals, closures)
   250      JavaScript (browser; sparse use, no globals, ES modules, safe DOM)
   260      CSS (design tokens, semantic class names, shallow selectors, focus)
