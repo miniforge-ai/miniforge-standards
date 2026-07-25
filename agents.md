@@ -39,6 +39,7 @@ as a git submodule at `.standards/` in each repo.
 | Catch exceptions in Clojure (`try` vs `try+`) | `languages/clojure-exception-handling` |
 | Resolve a dependency (never `requiring-resolve`) | `languages/clojure-no-requiring-resolve` |
 | Write Python code | `languages/python` |
+| Structure a Python package as a stratified component | `languages/python-stratified-components` |
 | Write Rust code | `languages/rust` |
 | Write async/concurrent Rust | `languages/rust-async` |
 | Touch `unsafe` in Rust | `languages/rust-unsafe` |
@@ -69,6 +70,9 @@ as a git submodule at `.standards/` in each repo.
 | Add a build / launch / package / deploy task | `workflows/bb-over-shell` — a bb task in `bb.edn`; **never** a new `.sh` or `.py` |
 | Add copyright header (OSS repos only) | `project/header-copyright` — **skip in proprietary repos; use `.thesium-standards/project/header-proprietary` there** |
 | Create a new rule | `meta/rule-format` |
+| Design or review a user-facing UI surface (cross-product) | `design/ux-general.md` |
+| Design or review Miniforge product UI | `design/ux-miniforge.md` |
+| Design or review Thesium product UI | `design/ux-thesium.md` |
 
 ## Rules Catalog
 
@@ -102,6 +106,7 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 │   ├── clojure-exception-handling.mdc   # dewey: "211"  alwaysApply: true
 │   ├── clojure-no-requiring-resolve.mdc # dewey: "212"  globs: clj/cljc
 │   ├── python.mdc                       # dewey: "220"
+│   ├── python-stratified-components.mdc # dewey: "221"
 │   ├── rust.mdc                         # dewey: "230"
 │   ├── rust-async.mdc                   # dewey: "231"
 │   ├── rust-unsafe.mdc                  # dewey: "232"
@@ -142,6 +147,22 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 └── meta/
     └── rule-format.mdc                  # dewey: "900"
 ```
+
+_`design/` is intentionally excluded from the catalog above — those files are non-Dewey UX guidelines; see [Supplementary Guidelines](#supplementary-guidelines) below._
+
+## Supplementary Guidelines
+
+These files live in `design/` and are not Dewey-indexed rules — they are
+UX/design guidelines consumed by agents building product UI. (They are not
+listed in the Rules Catalog tree above.) They are not in `.mdc` format and are
+not auto-injected into prompts; **load them
+explicitly when designing or reviewing any user-facing surface.**
+
+| File | Scope |
+|------|-------|
+| `design/ux-general.md` | Cross-product UX principles (typography, spacing, motion, accessibility) |
+| `design/ux-miniforge.md` | Miniforge-specific visual language and component conventions |
+| `design/ux-thesium.md` | Thesium product-line design identity and interaction patterns |
 
 ## Dewey Classification
 

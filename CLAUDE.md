@@ -49,6 +49,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Add Rust logging/tracing | `languages/rust-observability` |
 | Design Rust wire formats / serialization | `languages/rust-wire-protocols` |
 | Use typed boundary commands / pipeline selection in Rust | `languages/rust-boundary-commands` |
+| Structure a Rust file with Layer headings (stratified) | `languages/rust-stratified-modules` |
 | Write Rust in a Miniforge product | `project/rust-miniforge-shape` |
 | Write Swift code | `languages/swift` |
 | Structure a Swift file with Layer headings (stratified) | `languages/swift-stratified-files` |
@@ -116,6 +117,7 @@ languages/
   rust-observability.mdc      dewey: "233"
   rust-wire-protocols.mdc     dewey: "234"
   rust-boundary-commands.mdc  dewey: "235"
+  rust-stratified-modules.mdc dewey: "236"
   swift.mdc                   dewey: "240"
   swift-stratified-files.mdc  dewey: "241"
   javascript.mdc              dewey: "250"
@@ -142,7 +144,7 @@ workflows/
   code-review-rigor.mdc       dewey: "720"  alwaysApply: true
   pr-documentation.mdc        dewey: "721"  alwaysApply: true
   pr-layering.mdc             dewey: "722"  alwaysApply: true
-  git-worktrees.mdc           dewey: "725"
+  git-worktrees.mdc           dewey: "725"  alwaysApply: true
   datever.mdc                 dewey: "730"
   bb-over-shell.mdc           dewey: "740"
 project/
@@ -187,6 +189,7 @@ meta/
   233      Rust observability (tracing not println, correlation IDs via #[instrument], error source-chain preservation, system-catalog log strings)
   234      Rust wire protocols (wire/domain separation, versioned envelopes, validate-on-deserialize, append-only audit ratchet)
   235      Rust boundary commands (typed command enums at boundary, exhaustive dispatch, pipeline selection by enum, bounded data-driven content, derived context at seams)
+  236      Rust Stratified Modules (// ---- Layer N headings, ≥4 dashes; fn calls strictly upward-from-caller, vocabulary refs ≤ own layer, types at minimal layer; ≤3 layers/file; thin index; stratum-lint-rs)
   240      Swift (stratified views, access control, optionals, closures)
   241      Swift Stratified Files (// ---- Layer N headings; func calls strictly upward-from-caller, vocabulary refs ≤ own layer, types at minimal layer; pure logic in top-level funcs, shells delegate; stratum-lint-swift)
   250      JavaScript (browser; sparse use, no globals, ES modules, safe DOM)
