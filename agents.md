@@ -46,8 +46,10 @@ as a git submodule at `.standards/` in each repo.
 | Add Rust logging/tracing | `languages/rust-observability` |
 | Design Rust wire formats / serialization | `languages/rust-wire-protocols` |
 | Use typed boundary commands / pipeline selection in Rust | `languages/rust-boundary-commands` |
+| Structure a Rust file with Layer headings (stratified) | `languages/rust-stratified-modules` |
 | Write Rust in a Miniforge product | `project/rust-miniforge-shape` |
 | Write Swift code | `languages/swift` |
+| Structure a Swift file with Layer headings (stratified) | `languages/swift-stratified-files` |
 | Write browser JavaScript | `languages/javascript` |
 | Write CSS | `languages/css` |
 | Write HTML | `languages/html` |
@@ -113,7 +115,9 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 │   ├── rust-observability.mdc           # dewey: "233"
 │   ├── rust-wire-protocols.mdc          # dewey: "234"
 │   ├── rust-boundary-commands.mdc       # dewey: "235"
+│   ├── rust-stratified-modules.mdc      # dewey: "236"
 │   ├── swift.mdc                        # dewey: "240"
+│   ├── swift-stratified-files.mdc       # dewey: "241"
 │   ├── javascript.mdc                   # dewey: "250"
 │   ├── css.mdc                          # dewey: "260"
 │   └── html.mdc                         # dewey: "270"
