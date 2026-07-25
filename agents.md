@@ -151,8 +151,9 @@ _`design/` is intentionally excluded from the catalog above — those files are 
 ## Supplementary Guidelines
 
 These files live in `design/` and are not Dewey-indexed rules — they are
-UX/design guidelines consumed by agents building product UI. They are not
-in `.mdc` format and are not auto-injected into prompts; **load them
+UX/design guidelines consumed by agents building product UI. (They are not
+listed in the Rules Catalog tree above.) They are not in `.mdc` format and are
+not auto-injected into prompts; **load them
 explicitly when designing or reviewing any user-facing surface.**
 
 | File | Scope |
