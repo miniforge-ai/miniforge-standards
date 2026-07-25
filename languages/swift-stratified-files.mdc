@@ -1,0 +1,104 @@
+---
+dewey: "241"
+description: Structure Swift files with Layer headings when adding or refactoring Swift to keep per-file strata explicit and lintable
+globs:
+  - "**/*.swift"
+---
+
+# Swift Stratified Files
+
+Swift mirror of the Rust Layer-heading discipline
+(`languages/rust-stratified-modules`, 236) and its strict semantics. Complements swift.mdc (240)'s cross-file L0-L3 view
+decomposition: 240 governs which FILE a declaration belongs in; this
+rule governs the strata WITHIN a file. Applies
+`foundations/stratified-design` (001) at file granularity.
+
+## Marker
+
+```swift
+// ------------------------------------------------------------------ Layer 0
+func vocab() -> Int { 1 }
+// ------------------------------------------------------------------ Layer 1
+func top() -> Int { vocab() }
+```
+
+- Comment heading: `//`, optional whitespace, ≥4 dashes, then `Layer N`
+  — identical to the Clojure/Rust convention. Minimal canonical form:
+  `// ---- Layer 0`; longer dash runs are purely visual.
+- **Calls are strict**: a reference whose target is a same-file `func`
+  must come from a strictly higher layer (SL008).
+- **Vocabulary is lenient**: references to same-file types and top-level
+  bindings are legal at the referencer's own layer; only upward
+  references violate (SL001).
+- **Types sit at their minimal layer** (SL009).
+- Headings strictly ascend; **≤3 layers per file**; a fourth band or a
+  long same-abstraction call chain is the split signal.
+
+## What layering governs in Swift
+
+Per-file lint covers **top-level declarations**. Member access is not a
+reference edge, so methods inside a type or extension are invisible —
+which means a god-class with headings is decoration, not discipline.
+The honest structure, and exactly what 240 already prescribes:
+
+- **Pure logic lives in top-level functions** in stratified files
+  (240's L0 display mappers / L1 domain logic), where the linter has
+  jurisdiction.
+- **Stateful shells** (`ObservableObject` view models, coordinators)
+  keep state and orchestration, delegate computation to those
+  functions, and carry a single Layer heading for their one
+  declaration.
+- `extension` blocks attribute to their extended type — the Rust `impl`
+  analog: non-referenceable, SL009-exempt, outgoing call edges checked.
+
+## Enforcement
+
+[`stratum-lint`](https://github.com/miniforge-ai/stratum-lint)'s Swift
+implementation (`swift/`, SwiftPM, SwiftSyntax):
+
+```bash
+cd swift && swift run stratum-lint-swift <paths>
+```
+
+SL000 parse failure, SL001 upward reference, SL002 non-monotonic
+headings, SL003 layer budget, SL004 declaration before the first
+heading, SL008 same-layer call, SL009 over-placed type. Files without
+headings are skipped (adoption affordance, not an exemption).
+Limitations mirroring the other linters: same-file method calls and
+local shadowing of a top-level name are not resolved — review covers
+them.
+
+## Exemplar
+
+`thesium-app/Sources/RiskAppleApp/DashboardViewModel.swift` — a
+1,008-line file (seven top-level types + a 930-line view model) split
+into a 791-line stateful shell over five Layer-headed files
+(`PortfolioDisplayModes`, `PortfolioGrouping`, `PortfolioSummaries`,
+`PortfolioImportPayload`, `SnapshotOrdering`), behavior-exact, all 197
+package tests unmodified and green, strict-lint clean.
+
+## Examples
+
+<example>
+  Good — vocabulary below, pure domain function above, shell delegates:
+
+  ```swift
+  // ------------------------------------------------------------------ Layer 0
+  struct AccountGroup: Identifiable { /* ... */ }
+  // ------------------------------------------------------------------ Layer 1
+  func groupedByAccount(_ holdings: [PortfolioHolding]) -> [AccountGroup] { /* ... */ }
+  ```
+</example>
+
+<example type="invalid">
+  ```swift
+  // BAD — same-layer func call: caller must sit strictly above  // SL008
+  // ------------------------------------------------------------------ Layer 0
+  func headingLayer(_ line: Substring) -> Int? { /* ... */ }
+  func headings(_ source: String) -> [Heading] { source.split(...).compactMap(headingLayer) }
+
+  // BAD — god-class with headings but no extracted functions:
+  // methods are invisible to per-file lint; extract pure logic
+  // into top-level functions per swift.mdc 240.
+  ```
+</example>
