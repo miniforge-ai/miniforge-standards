@@ -7,8 +7,8 @@ globs:
 
 # Swift Stratified Files
 
-Swift mirror of the Rust Layer-heading discipline (`languages/rust-stratified-modules`,
-236 — lands with miniforge-standards#85) and its strict semantics. Complements swift.mdc (240)'s cross-file L0-L3 view
+Swift mirror of the Rust Layer-heading discipline
+(`languages/rust-stratified-modules`, 236) and its strict semantics. Complements swift.mdc (240)'s cross-file L0-L3 view
 decomposition: 240 governs which FILE a declaration belongs in; this
 rule governs the strata WITHIN a file. Applies
 `foundations/stratified-design` (001) at file granularity.

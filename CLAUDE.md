@@ -191,7 +191,7 @@ meta/
   235      Rust boundary commands (typed command enums at boundary, exhaustive dispatch, pipeline selection by enum, bounded data-driven content, derived context at seams)
   236      Rust Stratified Modules (// ---- Layer N headings, ≥4 dashes; fn calls strictly upward-from-caller, vocabulary refs ≤ own layer, types at minimal layer; ≤3 layers/file; thin index; stratum-lint-rs)
   240      Swift (stratified views, access control, optionals, closures)
-  241      Swift Stratified Files (// ---- Layer N headings; func calls strictly upward-from-caller, vocabulary refs ≤ own layer, types at minimal layer; pure logic in top-level funcs, shells delegate; stratum-lint-swift)
+  241      Swift Stratified Files (// ---- Layer N headings, ≥4 dashes; func calls strictly upward-from-caller, vocabulary refs ≤ own layer, types at minimal layer; pure logic in top-level funcs, shells delegate; stratum-lint-swift)
   250      JavaScript (browser; sparse use, no globals, ES modules, safe DOM)
   260      CSS (design tokens, semantic class names, shallow selectors, focus)
   270      HTML (semantic elements, buttons-vs-links, labelled forms)
