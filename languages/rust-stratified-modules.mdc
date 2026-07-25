@@ -1,0 +1,118 @@
+---
+dewey: "236"
+description: Structure Rust files with Layer headings when adding or refactoring modules to keep per-file strata explicit and lintable
+globs:
+  - "**/*.rs"
+---
+
+# Rust Stratified Modules
+
+Rust mirror of the Clojure Layer-heading discipline (`languages/clojure`
+210) and the Python component rule (221): inside one file, the item
+graph is a one-way DAG of abstraction, marked with comment headings the
+linter reads. Applies `foundations/stratified-design` (001) at file
+granularity; crate-level layering stays with `foundations/layered-architecture`
+(011) and rust.mdc's crate-structure rules.
+
+## Marker
+
+```rust
+// ------------------------------------------------------------------ Layer 0
+fn vocab() -> u32 { 1 }
+// ------------------------------------------------------------------ Layer 1
+fn top() -> u32 { vocab() }
+```
+
+- Comment heading: `//`, optional whitespace, ≥4 dashes, then
+  `Layer N`. Minimal canonical form: `// ---- Layer 0`; the examples
+  above use a longer dash run purely for visual width — any run of
+  four or more dashes is valid. Chosen over a
+  `#[stratum(n)]` attribute deliberately — an attribute would force a
+  proc-macro build-dependency into every consuming crate; a heading is
+  data the linter reads with zero compiler impact.
+- Layer 0 is the file's vocabulary (types, consts, pure helpers); each
+  higher layer is a small language over the ones below.
+- **Calls are strict**: a reference whose target is a same-file `fn`
+  must come from a strictly higher layer — a caller is expressed in its
+  callee's language, so same-layer calls hide real strata (SL008).
+- **Vocabulary is lenient**: references to same-file types, consts, and
+  statics are legal at the referencer's own layer and below; only
+  upward references violate (SL001).
+- **Types sit at their minimal layer**: a type declared above the
+  maximum layer its references justify is over-placed (SL009).
+- Headings strictly ascend; **≤3 layers per file**. Wanting a fourth is
+  the split signal — extract a module or crate, never flatten strata.
+  Long call chains at one abstraction level are the same signal: split
+  the chain into its own file, where it stratifies honestly.
+
+## File anatomy
+
+- A god-module splits into a **thin index** (rust.mdc's "Thin
+  orchestration index modules": docs, `mod` decls, `pub use` re-exports —
+  no logic, no headings) over one module per bounded operation, plus a
+  shared-vocabulary leaf module for names two or more siblings need.
+- Index files, test modules, and pure re-export files carry no headings
+  and are skipped by the linter — a tooling adoption affordance, not an
+  exemption: implementation modules MUST carry headings.
+- Cross-module references are invisible to the per-file linter by
+  design; the module DAG is enforced by rust.mdc crate structure and
+  review, mirroring import-linter's role in Python rule 221.
+
+## Enforcement
+
+[`stratum-lint`](https://github.com/miniforge-ai/stratum-lint)'s Rust
+implementation (`rust/`, cargo crate `stratum-lint-rs`):
+
+```bash
+cargo run -q -- src            # or: cargo install --git <repo> stratum-lint-rs
+```
+
+SL000 parse failure, SL001 upward reference (all first-segment path
+refs count — functions passed as values, type references, `Self::x`
+attributed to the impl's type), SL002 non-monotonic headings, SL003
+layer budget, SL004 item before the first heading, SL008 same-layer
+call, SL009 over-placed type. References inside macro invocation token
+streams are not analyzed (syn limitation) — review covers them; a local
+binding shadowing a same-file item name can false-positive — rename the
+local.
+
+## Exemplar
+
+`minibench/crates/kernel` — a 2,454-line `lib.rs` split into a thin
+index over nine Layer-headed modules (`snapshot`/`stats`/`provenance`/
+`violations` vocabulary + `checks`/`summary`/`compare`/`regression`/
+`evidence` operations), public API unchanged, all behavior tests
+unmodified, linter clean under strict semantics. The split surfaced two
+latent duplications (a copied helper, a thrice-repeated registry guard)
+and four hidden same-layer call chains — the expected effect of making
+strata explicit and checked.
+
+## Examples
+
+<example>
+  Good — vocabulary below, orchestration above, guard mapped at the boundary:
+
+  ```rust
+  // ------------------------------------------------------------------ Layer 0
+  pub(crate) fn registry_key(r: &StateVarRegistry) -> String {
+      format!("{}@{}", r.registry_id, r.version)
+  }
+  // ------------------------------------------------------------------ Layer 1
+  pub fn validate(snapshot: &Snapshot, registry: &StateVarRegistry) -> Result<Report, ValidateError> {
+      check_registry(snapshot, registry).map_err(into_validate_error)?;
+      // ...
+  }
+  ```
+</example>
+
+<example type="invalid">
+  ```rust
+  // BAD — Layer 0 helper reaching up into Layer 1
+  // ------------------------------------------------------------------ Layer 0
+  fn default_report() -> Report { assemble(&[]) }   // SL001
+  // ------------------------------------------------------------------ Layer 1
+  fn assemble(items: &[Item]) -> Report { /* ... */ }
+
+  // BAD — four layers in one file: split the module instead   // SL003
+  ```
+</example>
