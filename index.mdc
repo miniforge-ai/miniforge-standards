@@ -105,7 +105,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 |-------|------|--------|-------------|
 | 001 | `stratified-design` | ✓ | Each layer a small language built on the one below; a one-way **DAG of abstraction** (SICP §2.2.4) — discovered per problem, not a fixed layer stack |
 | 002 | `code-quality` | ✓ | Composable pipelines, no nested conditionals, DRY |
-| 003 | `result-handling` | ✓ | success?/failed? predicates; schema constructors; factory functions for any repeated map shape (event envelopes, task records, etc.) |
+| 003 | `result-handling` | ✓ | succeeded?/failed? predicates; schema constructors; factory functions for any repeated map shape (event envelopes, task records, etc.) |
 | 004 | `validation-boundaries` | ✓ | Schemas at interface/external boundaries only |
 | 005 | `exceptions-as-data` | ✓ | Anomalies as data in flows; throw only at absolute boundaries |
 | 006 | `named-constants` | ✓ | No magic numbers / magic strings; every meaningful literal extracted to a `def` with an intent-bearing docstring |
