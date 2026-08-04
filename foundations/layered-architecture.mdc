@@ -80,6 +80,10 @@ stratified design (001).
   instantiates.
 - `frameworks/polylith` (310) / `frameworks/polylith-composition` (311) — brick /
   interface boundaries that enforce this in Clojure.
-- `languages/clojure` (210) — the per-file `Layer N` instance.
+- `languages/clojure` (210) — the per-file `Layer N` instance for Clojure.
+- `languages/rust-stratified-modules` (236) — the per-file `// ---- Layer N`
+  instance for Rust, enforced by `stratum-lint-rs`.
+- `languages/swift-stratified-files` (241) — the per-file `// ---- Layer N`
+  instance for Swift, enforced by `stratum-lint-swift`.
 - `foundations/validation-boundaries` (004) — validate at the inbound edge, trust
   the core.
