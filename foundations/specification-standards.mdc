@@ -1,17 +1,19 @@
 ---
 dewey: "020"
-description: Follow normative specs (N1-N6) for all implementation and maintain spec governance
+description: Follow core and applicable extension specs when implementing or changing normative contracts
 globs: specs/**/*.md
 ---
 
 # Specification Standards
 
-<version>0.1.0</version>
+<version>0.2.0</version>
 
 ## Context
 
-miniforge uses 6 normative specifications (N1-N6) that define ALL contractual requirements. All
-implementation MUST conform to these specs. Specs extracted from strategic vision, NOT from code.
+N1-N6 are the universal core contracts. Indexed N7+ specifications extend
+those contracts for named products or capabilities. Implementations conform to
+the core plus every extension that the specification index makes applicable.
+Specs are extracted from strategic vision, NOT from code.
 
 **Entry point:** `specs/SPEC_INDEX.md`
 
@@ -21,7 +23,7 @@ implementation MUST conform to these specs. Specs extracted from strategic visio
 specs/
 ├── SPEC_INDEX.md          # START HERE - authoritative entry point
 ├── README.md              # Implementation guide
-├── normative/             # N1-N6 (MUST/SHALL only)
+├── normative/             # Core N1-N6 + indexed extensions (MUST/SHALL only)
 ├── informative/           # Guidance (no MUST/SHALL)
 ├── examples/              # Reference implementations
 └── deprecated/            # Superseded (ignore)
@@ -32,46 +34,48 @@ specs/
 ### When Reading Specs
 
 <required>
-- ALWAYS start with `specs/SPEC_INDEX.md` for overview
-- Read normative specs (N1-N6) for MUST/SHALL requirements
-- NEVER use deprecated/ directory content
-- Cross-reference: specs link to each other
-- Use examples/ for concrete patterns
+  - ALWAYS start with `specs/SPEC_INDEX.md`; it defines the live catalog and extension scope
+  - Read core specs N1-N6 and every extension applicable to the product or capability
+  - NEVER use deprecated/ directory content
+  - Cross-reference: specs link to each other
+  - Use examples/ for concrete patterns
 </required>
 
 ### When Implementing
 
 <required>
-- Implementation MUST conform to all 6 normative specs
-- Event emission MUST follow N3 (Event Stream)
-- Evidence bundles MUST follow N6 (Evidence & Provenance)
-- Workflow execution MUST follow N2 (Workflows)
-- Policy packs MUST follow N4 (Policy Packs)
-- CLI/TUI/API MUST follow N5 (Interface Standard)
-- Architecture MUST follow N1 (Core Architecture)
+  - Implementation MUST conform to N1-N6 and all applicable extensions
+  - Event emission MUST follow N3 (Event Stream)
+  - Evidence bundles MUST follow N6 (Evidence & Provenance)
+  - Workflow execution MUST follow N2 (Workflows)
+  - Policy packs MUST follow N4 (Policy Packs)
+  - CLI/TUI/API MUST follow N5 (Interface Standard)
+  - Architecture MUST follow N1 (Core Architecture)
 </required>
 
 ### When Amending Specs
 
 <required>
-- NO new normative spec files (only amend N1-N6)
-- New concepts MUST land in N1 or they're not real
-- New runtime data MUST land in N3 or N6 or it's unobservable
-- New UX features MUST point to contract in N3/N5/N6
-- Normative specs MUST use RFC 2119 keywords (MUST/SHALL/SHOULD/MAY)
-- Informative docs MUST NOT use RFC 2119 keywords
+  - Amend an existing spec when it already owns the capability; do not duplicate contracts
+  - A new extension MUST be approved as a distinct product/capability contract and indexed in `SPEC_INDEX.md`
+  - Each extension MUST declare its scope and relationships to N1-N6
+  - New concepts MUST land in N1 or they're not real
+  - New runtime data MUST land in N3 or N6 or it's unobservable
+  - New UX features MUST point to a contract in N3/N5/N6
+  - Normative specs MUST use RFC 2119 keywords (MUST/SHALL/SHOULD/MAY)
+  - Informative docs MUST NOT use RFC 2119 keywords
 </required>
 
 ### Spec Extraction Source
 
 <critical>
-- Extract specs from strategic documents (software-factory-vision.md, oss-paid-roadmap.md)
-- NEVER extract specs from implementation code
-- Specs define what MUST be built, not what happens to exist
-- Code conforms to specs, not the reverse
+  - Extract specs from strategic documents (software-factory-vision.md, oss-paid-roadmap.md)
+  - NEVER extract specs from implementation code
+  - Specs define what MUST be built, not what happens to exist
+  - Code conforms to specs, not the reverse
 </critical>
 
-## Six Normative Specs
+## Core Normative Specs
 
 | Spec | File | Purpose | Key Contracts |
 |------|------|---------|---------------|
@@ -83,6 +87,13 @@ specs/
 | N6 | `N6-evidence-provenance.md` | Evidence & provenance | Evidence bundles, artifact provenance, semantic validation |
 
 **Most leverageful:** N3 (Event Stream) and N6 (Evidence & Provenance) - everything builds on these.
+
+## Extension Specs
+
+N7+ specs are normative only where `SPEC_INDEX.md` assigns them. They may add
+product-specific workflows, events, evidence, policy, or interfaces, but they
+do not replace or silently contradict the N1-N6 core. The index is authoritative
+when repositories use different extension sets.
 
 ## Examples
 
@@ -137,13 +148,14 @@ NEVER extract specs from code. Extract from strategic documents (software-factor
 </example>
 
 <example type="invalid">
-❌ BAD: Creating new normative spec
+❌ BAD: Creating an unindexed duplicate extension
 
 ```zsh
-specs/normative/N7-new-feature.md  # WRONG!
+specs/normative/N12-deployments.md  # duplicates an existing deployment contract
 ```
 
-NO new normative specs. Amend existing N1-N6 only.
+Do not create an extension to avoid amending the contract that already owns the
+capability. Every approved extension must have explicit scope and an index entry.
 </example>
 
 ## Related Rules

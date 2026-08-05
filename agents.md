@@ -247,6 +247,7 @@ The following are the highest-priority, always-on principles:
 
 ### Specification-Driven Development
 - Normative specs (N-series) are implementation contracts
+- Implementations conform to N1-N6 plus extensions assigned by `SPEC_INDEX.md`
 - Specs are extracted from strategy, not reverse-engineered from code
 - Code conforms to specs; specs do not describe code
 
