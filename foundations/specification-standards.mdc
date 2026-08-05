@@ -83,9 +83,9 @@ specs/
 
 | Spec | File | Purpose | Key Contracts |
 |------|------|---------|---------------|
-| N1 | `N1-architecture.md` | Core concepts, layering | 12 nouns, 3-layer architecture, Polylith boundaries |
+| N1 | `N1-architecture.md` | Core concepts, layering | Concept model, layered architecture, component boundaries |
 | N2 | `N2-workflows.md` | Workflow execution | Phase graph, inner/outer loops, gate contract |
-| N3 | `N3-event-stream.md` | Event stream & observability | 9 event types, SSE/WebSocket, ordering guarantees |
+| N3 | `N3-event-stream.md` | Event stream & observability | Event envelope, event families, ordering guarantees |
 | N4 | `N4-policy-packs.md` | Policy packs & gates | Semantic intent validation, check/repair contract |
 | N5 | `N5-cli-tui-api.md` | CLI/TUI/API interface | Command taxonomy, TUI views, streaming endpoints |
 | N6 | `N6-evidence-provenance.md` | Evidence & provenance | Evidence bundles, artifact provenance, semantic validation |
