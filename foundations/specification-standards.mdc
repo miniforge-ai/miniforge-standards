@@ -59,9 +59,10 @@ specs/
   - Amend an existing spec when it already owns the capability; do not duplicate contracts
   - A new extension MUST be approved as a distinct product/capability contract and indexed in `specs/SPEC_INDEX.md`
   - Each extension MUST declare its scope and relationships to N1-N6
-  - New concepts MUST land in N1 or they're not real
-  - New runtime data MUST land in N3 or N6 or it's unobservable
-  - New UX features MUST point to a contract in N3/N5/N6
+  - Universal concepts MUST land in N1
+  - Extension-local concepts MUST specialize an N1 concept and be defined by the indexed extension
+  - Extension event and evidence wire contracts MUST be added to N3 or N6
+  - Extension UX contracts MUST be added to or reference N3, N5, or N6
   - Normative specs MUST use RFC 2119 keywords (MUST/SHALL/SHOULD/MAY)
   - Informative docs MUST NOT use RFC 2119 keywords
 </required>
