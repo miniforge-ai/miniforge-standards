@@ -96,8 +96,10 @@ specs/
 
 Indexed delta specs amend their named base spec and inherit its applicability
 unless the index narrows their scope. N7+ specs are normative only where
-`specs/SPEC_INDEX.md` assigns them. They may add product-specific workflows,
-events, evidence, policy, or interfaces, but they do not replace or silently
+`specs/SPEC_INDEX.md` assigns them. They may define product-specific workflows
+and policy. Event, evidence, and UX wire contracts remain centralized in N3,
+N5, and N6 through indexed amendments; extension specs reference rather than
+duplicate them. Neither amendments nor extensions replace or silently
 contradict the N1-N6 core. The index is authoritative when repositories use
 different amendment or extension sets.
 
