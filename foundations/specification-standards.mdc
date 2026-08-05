@@ -1,17 +1,20 @@
 ---
 dewey: "020"
-description: Follow normative specs (N1-N6) for all implementation and maintain spec governance
+description: Apply core and applicable amendment/extension specs when reading, implementing, or changing contracts
 globs: specs/**/*.md
 ---
 
 # Specification Standards
 
-<version>0.1.0</version>
+<version>0.2.0</version>
 
 ## Context
 
-miniforge uses 6 normative specifications (N1-N6) that define ALL contractual requirements. All
-implementation MUST conform to these specs. Specs extracted from strategic vision, NOT from code.
+N1-N6 are the universal core contracts. Indexed delta specs amend a numbered
+contract; indexed N7+ specs extend the core for named products or capabilities.
+Implementations conform to the core plus every amendment and extension that the
+specification index makes applicable. Specs are extracted from strategic
+vision, NOT from code.
 
 **Entry point:** `specs/SPEC_INDEX.md`
 
@@ -21,7 +24,7 @@ implementation MUST conform to these specs. Specs extracted from strategic visio
 specs/
 ├── SPEC_INDEX.md          # START HERE - authoritative entry point
 ├── README.md              # Implementation guide
-├── normative/             # N1-N6 (MUST/SHALL only)
+├── normative/             # Core + indexed amendments/extensions (MUST/SHALL only)
 ├── informative/           # Guidance (no MUST/SHALL)
 ├── examples/              # Reference implementations
 └── deprecated/            # Superseded (ignore)
@@ -32,118 +35,135 @@ specs/
 ### When Reading Specs
 
 <required>
-- ALWAYS start with `specs/SPEC_INDEX.md` for overview
-- Read normative specs (N1-N6) for MUST/SHALL requirements
-- NEVER use deprecated/ directory content
-- Cross-reference: specs link to each other
-- Use examples/ for concrete patterns
+  - ALWAYS start with `specs/SPEC_INDEX.md`; it defines the live catalog and extension scope
+  - Read core specs N1-N6 and every indexed amendment or extension that is applicable
+  - NEVER use deprecated/ directory content
+  - Cross-reference: specs link to each other
+  - Use examples/ for concrete patterns
 </required>
 
 ### When Implementing
 
 <required>
-- Implementation MUST conform to all 6 normative specs
-- Event emission MUST follow N3 (Event Stream)
-- Evidence bundles MUST follow N6 (Evidence & Provenance)
-- Workflow execution MUST follow N2 (Workflows)
-- Policy packs MUST follow N4 (Policy Packs)
-- CLI/TUI/API MUST follow N5 (Interface Standard)
-- Architecture MUST follow N1 (Core Architecture)
+  - Implementation MUST conform to N1-N6 and all applicable amendments and extensions
+  - Event emission MUST follow N3 (Event Stream)
+  - Evidence bundles MUST follow N6 (Evidence & Provenance)
+  - Workflow execution MUST follow N2 (Workflows)
+  - Policy packs MUST follow N4 (Policy Packs)
+  - CLI/TUI/API MUST follow N5 (Interface Standard)
+  - Architecture MUST follow N1 (Core Architecture)
 </required>
 
 ### When Amending Specs
 
 <required>
-- NO new normative spec files (only amend N1-N6)
-- New concepts MUST land in N1 or they're not real
-- New runtime data MUST land in N3 or N6 or it's unobservable
-- New UX features MUST point to contract in N3/N5/N6
-- Normative specs MUST use RFC 2119 keywords (MUST/SHALL/SHOULD/MAY)
-- Informative docs MUST NOT use RFC 2119 keywords
+  - Amend an existing spec when it already owns the capability; do not duplicate contracts
+  - A separate delta MUST name its base spec and scope and be indexed as an amendment
+  - A new extension MUST be approved as a distinct product/capability contract and indexed in `specs/SPEC_INDEX.md`
+  - Each extension MUST declare its scope and relationships to N1-N6
+  - Universal concepts MUST land in N1
+  - Amendment/extension-local concepts MUST specialize an N1 concept and be defined by the indexed spec
+  - Amendment/extension event and evidence wire contracts MUST be added to N3 or N6
+  - Amendment/extension UX contracts MUST be added to or reference N3, N5, or N6
+  - Normative specs MUST use RFC 2119 keywords (MUST/SHALL/SHOULD/MAY)
+  - Informative docs MUST NOT use RFC 2119 keywords
 </required>
 
 ### Spec Extraction Source
 
 <critical>
-- Extract specs from strategic documents (software-factory-vision.md, oss-paid-roadmap.md)
-- NEVER extract specs from implementation code
-- Specs define what MUST be built, not what happens to exist
-- Code conforms to specs, not the reverse
+  - Extract specs from approved strategy or product-decision sources identified by the consuming repository
+  - Record the authoritative source in the spec or its index entry
+  - NEVER extract specs from implementation code
+  - Specs define what MUST be built, not what happens to exist
+  - Code conforms to specs, not the reverse
 </critical>
 
-## Six Normative Specs
+## Core Normative Specs
 
 | Spec | File | Purpose | Key Contracts |
 |------|------|---------|---------------|
-| N1 | `N1-architecture.md` | Core concepts, layering | 12 nouns, 3-layer architecture, Polylith boundaries |
+| N1 | `N1-architecture.md` | Core concepts, layering | Concept model, layered architecture, component boundaries |
 | N2 | `N2-workflows.md` | Workflow execution | Phase graph, inner/outer loops, gate contract |
-| N3 | `N3-event-stream.md` | Event stream & observability | 9 event types, SSE/WebSocket, ordering guarantees |
+| N3 | `N3-event-stream.md` | Event stream & observability | Event envelope, event families, ordering guarantees |
 | N4 | `N4-policy-packs.md` | Policy packs & gates | Semantic intent validation, check/repair contract |
 | N5 | `N5-cli-tui-api.md` | CLI/TUI/API interface | Command taxonomy, TUI views, streaming endpoints |
 | N6 | `N6-evidence-provenance.md` | Evidence & provenance | Evidence bundles, artifact provenance, semantic validation |
 
 **Most leverageful:** N3 (Event Stream) and N6 (Evidence & Provenance) - everything builds on these.
 
+## Amendments and Extension Specs
+
+Indexed delta specs amend their named base spec and inherit its applicability
+unless the index narrows their scope. N7+ specs are normative only where
+`specs/SPEC_INDEX.md` assigns them. They may define product-specific workflows
+and policy. Event, evidence, and UX wire contracts remain centralized in N3,
+N5, and N6 through indexed amendments; extension specs reference rather than
+duplicate them. Neither amendments nor extensions replace or silently
+contradict the N1-N6 core. The index is authoritative when repositories use
+different amendment or extension sets.
+
 ## Examples
 
 <example>
-✅ GOOD: Implementing event emission
+  ✅ GOOD: Implementing event emission
 
-```clojure
-;; Following N3 event schema
-(emit-event {:event/type :agent/status
-             :event/id (uuid)
-             :event/timestamp (Instant/now)
-             :event/version "1.0.0"
-             :workflow/id workflow-id
-             :event/sequence-number (next-seq)
-             :agent/id :implementer
-             :status/type :generating
-             :message "Generating Terraform code..."})
-```
+  ```clojure
+  ;; Following N3 event schema
+  (emit-event {:event/type :agent/status
+               :event/id (uuid)
+               :event/timestamp (Instant/now)
+               :event/version "1.0.0"
+               :workflow/id workflow-id
+               :event/sequence-number (next-seq)
+               :agent/id :implementer
+               :status/type :generating
+               :message "Generating Terraform code..."})
+  ```
 
-Agent emits events following N3 schema exactly.
+  Agent emits events following N3 schema exactly.
 </example>
 
 <example type="valid">
-✅ GOOD: Semantic intent validation
+  ✅ GOOD: Semantic intent validation
 
-Semantic validation catches intent violations before any resource change is committed.
+  Semantic validation catches intent violations before any resource change is committed.
 
-```clojure
-;; Following N6 semantic validation
-(validate-intent {:declared :import
-                  :actual-creates 0
-                  :actual-destroys 0})
-;; => {:passed? true}
+  ```clojure
+  ;; Following N6 semantic validation
+  (validate-intent {:declared :import
+                    :actual-creates 0
+                    :actual-destroys 0})
+  ;; => {:passed? true}
 
-(validate-intent {:declared :import
-                  :actual-creates 3   ; VIOLATION
-                  :actual-destroys 0})
-;; => {:passed? false :violation "Declared IMPORT but creates 3 resources"}
-```
+  (validate-intent {:declared :import
+                    :actual-creates 3   ; VIOLATION
+                    :actual-destroys 0})
+  ;; => {:passed? false :violation "Declared IMPORT but creates 3 resources"}
+  ```
 </example>
 
 <example type="invalid">
-❌ BAD: Extracting spec from code
+  ❌ BAD: Extracting spec from code
 
-```clojure
-;; Reading implementation to write spec
-(read-file "miniforge/components/agent/core.clj")
-;; Then writing spec based on what code does
-```
+  ```clojure
+  ;; Reading implementation to write spec
+  (read-file "miniforge/components/agent/core.clj")
+  ;; Then writing spec based on what code does
+  ```
 
-NEVER extract specs from code. Extract from strategic documents (software-factory-vision.md, oss-paid-roadmap.md).
+  NEVER extract specs from code. Use approved strategy or product-decision sources named by the consuming repository.
 </example>
 
 <example type="invalid">
-❌ BAD: Creating new normative spec
+  ❌ BAD: Creating an unindexed duplicate extension
 
-```zsh
-specs/normative/N7-new-feature.md  # WRONG!
-```
+  ```zsh
+  specs/normative/N12-deployments.md  # duplicates an existing deployment contract
+  ```
 
-NO new normative specs. Amend existing N1-N6 only.
+  Do not create an extension to avoid amending the contract that already owns the
+  capability. Every approved extension must have explicit scope and an index entry.
 </example>
 
 ## Related Rules

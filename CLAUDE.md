@@ -251,6 +251,7 @@ meta/
 
 ### Specification-Driven
 - Normative specs (N-series) are implementation contracts
+- Implementations conform to N1-N6 plus amendments/extensions assigned by `specs/SPEC_INDEX.md`
 - Specs are extracted from strategic documents, not from code
 - Code conforms to specs; specs do not describe code
 
