@@ -2,7 +2,7 @@
 
 ## Overview
 
-Updates the specification-governance rule to match the repository's
+Updates the `specification-standards` rule to match the repository's
 established core-plus-extension model: N1-N6 are the universal core, while
 N7+ specifications govern only the products and capabilities named by the
 authoritative specification index.

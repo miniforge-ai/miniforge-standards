@@ -98,64 +98,64 @@ when repositories use different extension sets.
 ## Examples
 
 <example>
-✅ GOOD: Implementing event emission
+  ✅ GOOD: Implementing event emission
 
-```clojure
-;; Following N3 event schema
-(emit-event {:event/type :agent/status
-             :event/id (uuid)
-             :event/timestamp (Instant/now)
-             :event/version "1.0.0"
-             :workflow/id workflow-id
-             :event/sequence-number (next-seq)
-             :agent/id :implementer
-             :status/type :generating
-             :message "Generating Terraform code..."})
-```
+  ```clojure
+  ;; Following N3 event schema
+  (emit-event {:event/type :agent/status
+               :event/id (uuid)
+               :event/timestamp (Instant/now)
+               :event/version "1.0.0"
+               :workflow/id workflow-id
+               :event/sequence-number (next-seq)
+               :agent/id :implementer
+               :status/type :generating
+               :message "Generating Terraform code..."})
+  ```
 
-Agent emits events following N3 schema exactly.
+  Agent emits events following N3 schema exactly.
 </example>
 
 <example type="valid">
-✅ GOOD: Semantic intent validation
+  ✅ GOOD: Semantic intent validation
 
-Semantic validation catches intent violations before any resource change is committed.
+  Semantic validation catches intent violations before any resource change is committed.
 
-```clojure
-;; Following N6 semantic validation
-(validate-intent {:declared :import
-                  :actual-creates 0
-                  :actual-destroys 0})
-;; => {:passed? true}
+  ```clojure
+  ;; Following N6 semantic validation
+  (validate-intent {:declared :import
+                    :actual-creates 0
+                    :actual-destroys 0})
+  ;; => {:passed? true}
 
-(validate-intent {:declared :import
-                  :actual-creates 3   ; VIOLATION
-                  :actual-destroys 0})
-;; => {:passed? false :violation "Declared IMPORT but creates 3 resources"}
-```
+  (validate-intent {:declared :import
+                    :actual-creates 3   ; VIOLATION
+                    :actual-destroys 0})
+  ;; => {:passed? false :violation "Declared IMPORT but creates 3 resources"}
+  ```
 </example>
 
 <example type="invalid">
-❌ BAD: Extracting spec from code
+  ❌ BAD: Extracting spec from code
 
-```clojure
-;; Reading implementation to write spec
-(read-file "miniforge/components/agent/core.clj")
-;; Then writing spec based on what code does
-```
+  ```clojure
+  ;; Reading implementation to write spec
+  (read-file "miniforge/components/agent/core.clj")
+  ;; Then writing spec based on what code does
+  ```
 
-NEVER extract specs from code. Extract from strategic documents (software-factory-vision.md, oss-paid-roadmap.md).
+  NEVER extract specs from code. Extract from strategic documents (software-factory-vision.md, oss-paid-roadmap.md).
 </example>
 
 <example type="invalid">
-❌ BAD: Creating an unindexed duplicate extension
+  ❌ BAD: Creating an unindexed duplicate extension
 
-```zsh
-specs/normative/N12-deployments.md  # duplicates an existing deployment contract
-```
+  ```zsh
+  specs/normative/N12-deployments.md  # duplicates an existing deployment contract
+  ```
 
-Do not create an extension to avoid amending the contract that already owns the
-capability. Every approved extension must have explicit scope and an index entry.
+  Do not create an extension to avoid amending the contract that already owns the
+  capability. Every approved extension must have explicit scope and an index entry.
 </example>
 
 ## Related Rules
