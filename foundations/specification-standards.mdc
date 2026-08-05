@@ -57,7 +57,7 @@ specs/
 
 <required>
   - Amend an existing spec when it already owns the capability; do not duplicate contracts
-  - A new extension MUST be approved as a distinct product/capability contract and indexed in `SPEC_INDEX.md`
+  - A new extension MUST be approved as a distinct product/capability contract and indexed in `specs/SPEC_INDEX.md`
   - Each extension MUST declare its scope and relationships to N1-N6
   - New concepts MUST land in N1 or they're not real
   - New runtime data MUST land in N3 or N6 or it's unobservable
@@ -90,7 +90,7 @@ specs/
 
 ## Extension Specs
 
-N7+ specs are normative only where `SPEC_INDEX.md` assigns them. They may add
+N7+ specs are normative only where `specs/SPEC_INDEX.md` assigns them. They may add
 product-specific workflows, events, evidence, policy, or interfaces, but they
 do not replace or silently contradict the N1-N6 core. The index is authoritative
 when repositories use different extension sets.
