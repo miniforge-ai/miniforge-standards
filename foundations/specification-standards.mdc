@@ -1,6 +1,6 @@
 ---
 dewey: "020"
-description: Follow core and applicable extension specs when implementing or changing normative contracts
+description: Follow core and applicable amendment or extension specs when changing normative contracts
 globs: specs/**/*.md
 ---
 
@@ -10,10 +10,11 @@ globs: specs/**/*.md
 
 ## Context
 
-N1-N6 are the universal core contracts. Indexed N7+ specifications extend
-those contracts for named products or capabilities. Implementations conform to
-the core plus every extension that the specification index makes applicable.
-Specs are extracted from strategic vision, NOT from code.
+N1-N6 are the universal core contracts. Indexed delta specs amend a numbered
+contract; indexed N7+ specs extend the core for named products or capabilities.
+Implementations conform to the core plus every amendment and extension that the
+specification index makes applicable. Specs are extracted from strategic
+vision, NOT from code.
 
 **Entry point:** `specs/SPEC_INDEX.md`
 
@@ -23,7 +24,7 @@ Specs are extracted from strategic vision, NOT from code.
 specs/
 ├── SPEC_INDEX.md          # START HERE - authoritative entry point
 ├── README.md              # Implementation guide
-├── normative/             # Core N1-N6 + indexed extensions (MUST/SHALL only)
+├── normative/             # Core + indexed amendments/extensions (MUST/SHALL only)
 ├── informative/           # Guidance (no MUST/SHALL)
 ├── examples/              # Reference implementations
 └── deprecated/            # Superseded (ignore)
@@ -35,7 +36,7 @@ specs/
 
 <required>
   - ALWAYS start with `specs/SPEC_INDEX.md`; it defines the live catalog and extension scope
-  - Read core specs N1-N6 and every extension applicable to the product or capability
+  - Read core specs N1-N6 and every indexed amendment or extension that is applicable
   - NEVER use deprecated/ directory content
   - Cross-reference: specs link to each other
   - Use examples/ for concrete patterns
@@ -44,7 +45,7 @@ specs/
 ### When Implementing
 
 <required>
-  - Implementation MUST conform to N1-N6 and all applicable extensions
+  - Implementation MUST conform to N1-N6 and all applicable amendments and extensions
   - Event emission MUST follow N3 (Event Stream)
   - Evidence bundles MUST follow N6 (Evidence & Provenance)
   - Workflow execution MUST follow N2 (Workflows)
@@ -57,12 +58,13 @@ specs/
 
 <required>
   - Amend an existing spec when it already owns the capability; do not duplicate contracts
+  - A separate delta MUST name its base spec and scope and be indexed as an amendment
   - A new extension MUST be approved as a distinct product/capability contract and indexed in `specs/SPEC_INDEX.md`
   - Each extension MUST declare its scope and relationships to N1-N6
   - Universal concepts MUST land in N1
-  - Extension-local concepts MUST specialize an N1 concept and be defined by the indexed extension
-  - Extension event and evidence wire contracts MUST be added to N3 or N6
-  - Extension UX contracts MUST be added to or reference N3, N5, or N6
+  - Amendment/extension-local concepts MUST specialize an N1 concept and be defined by the indexed spec
+  - Amendment/extension event and evidence wire contracts MUST be added to N3 or N6
+  - Amendment/extension UX contracts MUST be added to or reference N3, N5, or N6
   - Normative specs MUST use RFC 2119 keywords (MUST/SHALL/SHOULD/MAY)
   - Informative docs MUST NOT use RFC 2119 keywords
 </required>
@@ -89,12 +91,14 @@ specs/
 
 **Most leverageful:** N3 (Event Stream) and N6 (Evidence & Provenance) - everything builds on these.
 
-## Extension Specs
+## Amendments and Extension Specs
 
-N7+ specs are normative only where `specs/SPEC_INDEX.md` assigns them. They may add
-product-specific workflows, events, evidence, policy, or interfaces, but they
-do not replace or silently contradict the N1-N6 core. The index is authoritative
-when repositories use different extension sets.
+Indexed delta specs amend their named base spec and inherit its applicability
+unless the index narrows their scope. N7+ specs are normative only where
+`specs/SPEC_INDEX.md` assigns them. They may add product-specific workflows,
+events, evidence, policy, or interfaces, but they do not replace or silently
+contradict the N1-N6 core. The index is authoritative when repositories use
+different amendment or extension sets.
 
 ## Examples
 
