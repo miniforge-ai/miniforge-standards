@@ -72,7 +72,8 @@ specs/
 ### Spec Extraction Source
 
 <critical>
-  - Extract specs from strategic documents (software-factory-vision.md, oss-paid-roadmap.md)
+  - Extract specs from approved strategy or product-decision sources identified by the consuming repository
+  - Record the authoritative source in the spec or its index entry
   - NEVER extract specs from implementation code
   - Specs define what MUST be built, not what happens to exist
   - Code conforms to specs, not the reverse
@@ -149,7 +150,7 @@ different amendment or extension sets.
   ;; Then writing spec based on what code does
   ```
 
-  NEVER extract specs from code. Extract from strategic documents (software-factory-vision.md, oss-paid-roadmap.md).
+  NEVER extract specs from code. Use approved strategy or product-decision sources named by the consuming repository.
 </example>
 
 <example type="invalid">
