@@ -1,6 +1,6 @@
 ---
 dewey: "020"
-description: Follow core and applicable amendment or extension specs when changing normative contracts
+description: Apply core and applicable amendment/extension specs when reading, implementing, or changing contracts
 globs: specs/**/*.md
 ---
 
