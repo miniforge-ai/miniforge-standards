@@ -54,7 +54,7 @@ as a git submodule at `.standards/` in each repo.
 | Write CSS | `languages/css` |
 | Write HTML | `languages/html` |
 | Work with Polylith | `frameworks/polylith` |
-| Compose Polylith bricks / validate workspace | `frameworks/polylith-composition` |
+| Compose Polylith bricks / validate shapes | `frameworks/polylith-composition` |
 | Use the Polylith CLI tool | `frameworks/polylith-tool` |
 | Work with Kubernetes | `frameworks/kubernetes` |
 | Pick a web architecture mode | `frameworks/web-architecture-mode` |
@@ -202,7 +202,7 @@ The following are the highest-priority, always-on principles:
 - See: `foundations/code-quality`
 
 ### Result Handling
-- **Use predicates** — `succeeded?`/`failed?`, never `(:success? result)`
+- **Use predicates** — `schema/succeeded?`/`schema/failed?`, never `(:success? result)`
 - **Use constructors** — `(schema/success ...)`, never `{:success? true ...}`
 - See: `foundations/result-handling`
 
