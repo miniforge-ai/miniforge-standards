@@ -160,7 +160,7 @@ meta/
 000-099  Foundations     Architecture, design philosophy, code quality
   001      Stratified Design (each layer a language on the one below; a one-way DAG of abstraction — SICP §2.2.4; not a fixed layer stack)
   002      Code Quality (composable fns, pipelines, DRY)
-  003      Result Handling (success?/failed? predicates, factory fns over hand-built maps)
+  003      Result Handling (succeeded?/failed? predicates, factory fns over hand-built maps)
   004      Validation Boundaries (schemas at interfaces/external only)
   005      Exceptions as data (anomalies in flow; throw only at absolute boundaries)
   006      Named Constants (no magic numbers/strings; intent-bearing `def` + docstring)
