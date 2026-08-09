@@ -7,12 +7,10 @@ globs:
   - "scripts/**"
   - "**/Scripts/**"
   - "tools/**"
-detection:
-  mode: positive
-  pattern: "^#!.*\\b(bash|sh|zsh|python[0-9.]*)\\b"
-enforcement:
-  action: hard-halt
-  message: "Standard 740: automation belongs in a bb task, not a shell/Python script. Justify against the two permitted cases (thin bb-invoking shim, or bb-less bootstrap) or migrate to bb.edn."
+detection.mode: positive
+detection.pattern: '^#!.*\b(bash|sh|zsh|python[0-9.]*)\b'
+enforcement.action: hard-halt
+enforcement.message: "Standard 740: automation belongs in a bb task, not a shell/Python script. Justify against the two permitted cases (thin bb-invoking shim, or bb-less bootstrap) or migrate to bb.edn."
 ---
 
 <version>2.0.0</version>
