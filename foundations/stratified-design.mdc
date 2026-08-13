@@ -66,8 +66,10 @@ chain.
    no cycles. Branching is expected; a single chain usually signals
    under-abstraction.
 4. **Apply the instances** — per Clojure file, the `Layer N` headings in
-   `languages/clojure` (210); per module dependency direction, the Dependency
-   Rule in `foundations/layered-architecture` (011).
+   `languages/clojure` (210); per Rust file, `languages/rust-stratified-modules`
+   (236); per Swift file, `languages/swift-stratified-files` (241); per module
+   dependency direction, the Dependency Rule in
+   `foundations/layered-architecture` (011).
 
 ## Anti-patterns to reject
 
@@ -87,5 +89,9 @@ chain.
   coarse, module-level instance of one-way dependencies.
 - `languages/clojure` (210) — the per-file instance (`Layer N` headings,
   reverse-DAG within a namespace).
+- `languages/rust-stratified-modules` (236) — the same discipline applied to
+  Rust files (`// ---- Layer N` headings, enforced by stratum-lint-rs).
+- `languages/swift-stratified-files` (241) — the same discipline applied to
+  Swift files (`// ---- Layer N` headings, enforced by stratum-lint-swift).
 - `foundations/simple-made-easy` (010) — strata keep each level unbraided.
 - `workflows/pr-layering` (722) — the same DAG discipline applied to PRs.
