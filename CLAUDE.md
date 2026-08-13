@@ -160,7 +160,7 @@ meta/
 000-099  Foundations     Architecture, design philosophy, code quality
   001      Stratified Design (each layer a language on the one below; a one-way DAG of abstraction — SICP §2.2.4; not a fixed layer stack)
   002      Code Quality (composable fns, pipelines, DRY)
-  003      Result Handling (success?/failed? predicates, factory fns over hand-built maps)
+  003      Result Handling (succeeded?/failed? predicates, factory fns over hand-built maps)
   004      Validation Boundaries (schemas at interfaces/external only)
   005      Exceptions as data (anomalies in flow; throw only at absolute boundaries)
   006      Named Constants (no magic numbers/strings; intent-bearing `def` + docstring)
@@ -219,7 +219,7 @@ meta/
   722      PR Layering (DAG, stratified PRs)
   725      Git Worktrees
   730      Datever
-  740      Bb Over Shell (all automation — build, launch, package, test, deploy, lint, sign — in bb.edn; never .sh or .py)
+  740      Bb Over Shell (all automation — build, launch, package, test, deploy, lint, sign — MUST be bb tasks in bb.edn; no .sh or .py beyond a thin bb-invoking shim)
 800-899  Project         Reserved for project-specific overrides
   810      Copyright Header
   835      Rust Miniforge Shape (typed workflow state, PolicyDecision as value, structured findings, adapters-behind-traits, append-only evidence)

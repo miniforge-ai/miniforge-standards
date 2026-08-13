@@ -142,7 +142,7 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 │   ├── code-review-rigor.mdc            # dewey: "720"  alwaysApply: true
 │   ├── pr-documentation.mdc             # dewey: "721"  alwaysApply: true
 │   ├── pr-layering.mdc                  # dewey: "722"  alwaysApply: true
-│   ├── git-worktrees.mdc                # dewey: "725"
+│   ├── git-worktrees.mdc                # dewey: "725"  alwaysApply: true
 │   ├── datever.mdc                      # dewey: "730"
 │   └── bb-over-shell.mdc                # dewey: "740"
 ├── project/
@@ -202,7 +202,7 @@ The following are the highest-priority, always-on principles:
 - See: `foundations/code-quality`
 
 ### Result Handling
-- **Use predicates** — `success?`/`failed?`, never `(:success? result)`
+- **Use predicates** — `succeeded?`/`failed?`, never `(:success? result)`
 - **Use constructors** — `(schema/success ...)`, never `{:success? true ...}`
 - See: `foundations/result-handling`
 
