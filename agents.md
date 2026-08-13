@@ -54,7 +54,7 @@ as a git submodule at `.standards/` in each repo.
 | Write CSS | `languages/css` |
 | Write HTML | `languages/html` |
 | Work with Polylith | `frameworks/polylith` |
-| Compose Polylith bricks / validate shapes | `frameworks/polylith-composition` |
+| Compose Polylith bricks / validate workspace | `frameworks/polylith-composition` |
 | Use the Polylith CLI tool | `frameworks/polylith-tool` |
 | Work with Kubernetes | `frameworks/kubernetes` |
 | Pick a web architecture mode | `frameworks/web-architecture-mode` |
