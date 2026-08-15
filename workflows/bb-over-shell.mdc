@@ -54,7 +54,7 @@ Exactly two cases:
 
 ## Agent behavior
 
-When asked to add or modify build / launch / package / deploy / dev automation:
+When asked to add or modify build / launch / package / sign / notarize / embed / lint / test / deploy / dev-loop automation:
 
 1. **Look for `bb.edn` at the repo root.** If present, the task goes there. Do not create a script.
 2. If absent, check `which bb`. If bb is available, create `bb.edn` — do not start with a script.
