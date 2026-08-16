@@ -202,7 +202,7 @@ The following are the highest-priority, always-on principles:
 - See: `foundations/code-quality`
 
 ### Result Handling
-- **Use predicates** — `succeeded?`/`failed?`, never `(:success? result)`
+- **Use predicates** — `schema/succeeded?`/`schema/failed?`, never `(:success? result)`
 - **Use constructors** — `(schema/success ...)`, never `{:success? true ...}`
 - See: `foundations/result-handling`
 
