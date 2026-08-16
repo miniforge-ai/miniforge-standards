@@ -156,9 +156,9 @@ has a mechanical fix that can be applied programmatically.
 
 ### Discouraged / non-standard fields
 
-`title`, `category`, `tags`, `confidence`, `impact` — occasionally appear in
-older rules (e.g. `workflows/git-worktrees.mdc`). These are not processed by
-any loader; avoid adding them to new rules.
+`title`, `category`, `tags`, `confidence`, `impact` — appeared in older rules
+and have since been removed across the rule set. These fields are not processed
+by any loader; do not re-introduce them in new rules.
 
 ### Body
 

@@ -142,7 +142,7 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 │   ├── code-review-rigor.mdc            # dewey: "720"  alwaysApply: true
 │   ├── pr-documentation.mdc             # dewey: "721"  alwaysApply: true
 │   ├── pr-layering.mdc                  # dewey: "722"  alwaysApply: true
-│   ├── git-worktrees.mdc                # dewey: "725"
+│   ├── git-worktrees.mdc                # dewey: "725"  alwaysApply: true
 │   ├── datever.mdc                      # dewey: "730"
 │   └── bb-over-shell.mdc                # dewey: "740"
 ├── project/
@@ -174,7 +174,7 @@ explicitly when designing or reviewing any user-facing surface.**
 |-------|----------|
 | 000-099 | Foundations — architecture, design philosophy, code quality |
 | 100-199 | Tools — linters, formatters, build tools |
-| 200-299 | Languages — Clojure, Python, JS/TS, Go, Rust |
+| 200-299 | Languages — Clojure, Python, JS/TS, Rust, Swift |
 | 300-399 | Frameworks — Polylith, K8s, web, databases |
 | 400-499 | Testing — unit, integration, E2E, code review |
 | 500-599 | Operations — CI/CD, monitoring, security |
@@ -202,7 +202,7 @@ The following are the highest-priority, always-on principles:
 - See: `foundations/code-quality`
 
 ### Result Handling
-- **Use predicates** — `success?`/`failed?`, never `(:success? result)`
+- **Use predicates** — `schema/succeeded?`/`schema/failed?`, never `(:success? result)`
 - **Use constructors** — `(schema/success ...)`, never `{:success? true ...}`
 - See: `foundations/result-handling`
 
@@ -247,6 +247,7 @@ The following are the highest-priority, always-on principles:
 
 ### Specification-Driven Development
 - Normative specs (N-series) are implementation contracts
+- Implementations conform to N1-N6 plus amendments/extensions assigned by `specs/SPEC_INDEX.md`
 - Specs are extracted from strategy, not reverse-engineered from code
 - Code conforms to specs; specs do not describe code
 
