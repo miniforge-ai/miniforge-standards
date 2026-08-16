@@ -6,14 +6,13 @@ globs:
   - "docs/**/*.md"
   - "specs/*.md"
   - "specs/**/*.md"
-  - "*.md"
 detection.mode: negative
 detection.pattern: 'Christopher Lester'
 detection.emailPattern: 'christopher@miniforge\.ai'
 remediation.strategy: mechanical
 remediation.type: prepend
 remediation.template: '<!--\n  Title: Miniforge.ai\n  Author: Christopher Lester (christopher@miniforge.ai)\n  Copyright 2025-2026 Christopher Lester. Licensed under Apache 2.0.\n-->'
-remediation.autoFixable: true
+remediation.autoFixable: false
 ---
 
 # Miniforge.ai Header & Copyright
@@ -25,6 +24,10 @@ remediation.autoFixable: true
 **This rule applies exclusively to Apache-2.0 licensed (open source) repositories.**
 
 Detection: the repository root must contain a `LICENSE` file whose content includes the string `"Apache"`. If no such file exists, or the file contains `"Proprietary"` / `"All Rights Reserved"`, **do not apply this rule**.
+
+> **Why `remediation.autoFixable: false`:** The Apache-license gate above is a human-judgement check that cannot be encoded in the frontmatter's `detection.*` fields. An automated runner must not silently prepend a copyright block without confirming the target is an OSS repo. Apply this rule manually after verifying the `LICENSE` file.
+>
+> **Why `*.md` is not in the globs:** Root-level markdown files such as `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `SECURITY.md` are structural files, not published content. The `docs/` and `specs/` globs cover the content directories where published articles live.
 
 Proprietary Thesium products use `.thesium-standards/project/header-proprietary` instead. Never apply an Apache 2.0 copyright header to a proprietary file.
 
