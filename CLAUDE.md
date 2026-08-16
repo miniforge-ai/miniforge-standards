@@ -72,7 +72,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Plan a PR | `workflows/pr-layering` |
 | Document a PR | `workflows/pr-documentation` |
 | Version a release | `workflows/datever` |
-| Add a build / launch / dev task | `workflows/bb-over-shell` (bb.edn; never a new `.sh` or `.py`) |
+| Add any automation task (build, launch, package, test, deploy, lint, sign…) | `workflows/bb-over-shell` — a bb task in `bb.edn`; **never** a new `.sh` or `.py` |
 | Add copyright header (OSS repos only) | `project/header-copyright` — **skip in proprietary repos; use `.thesium-standards/project/header-proprietary` there** |
 | Create a new rule | `meta/rule-format` |
 | Design or review a user-facing UI surface (cross-product) | `design/ux-general.md` |
@@ -219,7 +219,7 @@ meta/
   722      PR Layering (DAG, stratified PRs)
   725      Git Worktrees
   730      Datever
-  740      Bb Over Shell (automation MUST be bb tasks; no .sh or .py scripts beyond a thin bb-invoking shim)
+  740      Bb Over Shell (all automation — build, launch, package, test, deploy, lint, sign — MUST be bb tasks in bb.edn; no .sh or .py beyond a thin bb-invoking shim)
 800-899  Project         Reserved for project-specific overrides
   810      Copyright Header
   835      Rust Miniforge Shape (typed workflow state, PolicyDecision as value, structured findings, adapters-behind-traits, append-only evidence)
