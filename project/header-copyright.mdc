@@ -27,7 +27,7 @@ Detection: the repository root must contain a `LICENSE` file whose content inclu
 
 > **Why `remediation.autoFixable: false`:** The Apache-license gate above is a human-judgement check that cannot be encoded in the frontmatter's `detection.*` fields. An automated runner must not silently prepend a copyright block without confirming the target is an OSS repo. Apply this rule manually after verifying the `LICENSE` file.
 >
-> **Why `*.md` is not in the globs:** Root-level markdown files such as `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `SECURITY.md` are structural files, not published content. The `docs/` and `specs/` globs cover the content directories where published articles live.
+> **Why `*.md` is not in the globs:** Root-level markdown files such as `CLAUDE.md`, `agents.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `SECURITY.md` are structural files, not published content. The `docs/` and `specs/` globs cover the content directories where published articles live.
 
 Proprietary Thesium products use `.thesium-standards/project/header-proprietary` instead. Never apply an Apache 2.0 copyright header to a proprietary file.
 
