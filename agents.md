@@ -174,7 +174,7 @@ explicitly when designing or reviewing any user-facing surface.**
 |-------|----------|
 | 000-099 | Foundations — architecture, design philosophy, code quality |
 | 100-199 | Tools — linters, formatters, build tools |
-| 200-299 | Languages — Clojure, Python, JS/TS, Go, Rust |
+| 200-299 | Languages — Clojure, Python, JS/TS, Rust, Swift |
 | 300-399 | Frameworks — Polylith, K8s, web, databases |
 | 400-499 | Testing — unit, integration, E2E, code review |
 | 500-599 | Operations — CI/CD, monitoring, security |
