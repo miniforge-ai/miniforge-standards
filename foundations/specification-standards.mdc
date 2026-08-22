@@ -16,7 +16,9 @@ Implementations conform to the core plus every amendment and extension that the
 specification index makes applicable. Specs are extracted from strategic
 vision, NOT from code.
 
-**Entry point:** `specs/SPEC_INDEX.md`
+**Entry point:** `specs/SPEC_INDEX.md` (relative to each consuming repo's root — this
+directory does not exist in the standards library itself; it is created by the teams
+that adopt these standards)
 
 ## Hierarchy
 
