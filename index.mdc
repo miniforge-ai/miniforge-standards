@@ -78,6 +78,9 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   └── fulcro-rad.mdc                   # dewey: "341"
 ├── testing/
 │   └── standards.mdc                    # dewey: "400"  alwaysApply: true
+├── operations/                          # dewey: 500-599 — reserved, not yet populated
+│                                        #   Runtime-security rules today: foundations/runtime-*.mdc (030–033)
+│                                        #   Browser-security rule today:  frameworks/browser-security.mdc (331)
 ├── documentation/
 │   └── documentation-discipline.mdc     # dewey: "600"  alwaysApply: true
 ├── workflows/
@@ -163,6 +166,12 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | Dewey | File | Always | Description |
 |-------|------|--------|-------------|
 | 400 | `standards` | ✓ | Factory functions, same standards as production code |
+
+### operations/
+
+_Range 500–599 is reserved for CI/CD, monitoring, and security rules. No rule files exist yet.
+For security guidance today, consult `foundations/runtime-*.mdc` (dewey 030–033) and
+`frameworks/browser-security.mdc` (dewey 331) until dedicated `operations/` rules are added._
 
 ### documentation/
 
