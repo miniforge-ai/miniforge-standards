@@ -19,7 +19,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 ## Quick Reference
 
 | Need to... | Consult |
-|------------|---------|
+|------------|--------|
 | Understand architecture (stratified design) | `foundations/stratified-design` |
 | Enforce module dependency direction (the Dependency Rule) | `foundations/layered-architecture` |
 | Apply design philosophy | `foundations/simple-made-easy` |
@@ -72,7 +72,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Plan a PR | `workflows/pr-layering` |
 | Document a PR | `workflows/pr-documentation` |
 | Version a release | `workflows/datever` |
-| Add a build / launch / package / sign / notarize / embed / lint / test / deploy / dev-loop task | `workflows/bb-over-shell` — a bb task in `bb.edn`; **never** a new `.sh` or `.py` |
+| Add a build / launch / package / sign / notarize / embed / lint / test / deploy / dev-loop task | `workflows/bb-over-shell` — a bb task in `bb.edn`; **never** a new `.sh` or `.py` beyond a thin bb-invoking shim |
 | Add copyright header (OSS repos only) | `project/header-copyright` — **skip in proprietary repos; use `standards/thesium/project/header-proprietary` there** |
 | Create a new rule | `meta/rule-format` |
 | Design or review a user-facing UI surface (cross-product) | `design/ux-general.md` |
@@ -251,7 +251,7 @@ meta/
 
 ### Specification-Driven
 - Normative specs (N-series) are implementation contracts
-- Implementations conform to N1-N6 plus amendments/extensions assigned by `specs/SPEC_INDEX.md`
+- In consuming repos, implementations conform to N1-N6 plus amendments/extensions assigned by each repo's `specs/SPEC_INDEX.md`
 - Specs are extracted from strategic documents, not from code
 - Code conforms to specs; specs do not describe code
 
