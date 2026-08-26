@@ -35,9 +35,9 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Decide how much to document / where docs live (schemas, length, narrative) | `documentation/documentation-discipline` |
 | Write a normative specification | `foundations/specification-standards` |
 | Author a work spec or task brief | `foundations/work-spec-authoring` |
-| Understand when a code change can omit test changes | `workflows/tests-with-code` |
 | Run tasks in OCI containers | `foundations/runtime-*` (dewey 030–033) |
 | Write tests | `testing/standards` |
+| Understand when a code change can omit test changes | `workflows/tests-with-code` |
 | Write Clojure code | `languages/clojure` |
 | Catch exceptions in Clojure (`try` vs `try+`) | `languages/clojure-exception-handling` |
 | Resolve a dependency (never `requiring-resolve`) | `languages/clojure-no-requiring-resolve` |
