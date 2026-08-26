@@ -164,6 +164,12 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 |-------|------|--------|-------------|
 | 400 | `standards` | ✓ | Factory functions, same standards as production code |
 
+### operations/
+
+_Range 500–599 is reserved for CI/CD, monitoring, and security rules. No rule files exist yet.
+For security guidance today, consult `foundations/runtime-*.mdc` (dewey 030–033) and
+`frameworks/browser-security.mdc` (dewey 331) until dedicated `operations/` rules are added._
+
 ### documentation/
 
 | Dewey | File | Always | Description |
