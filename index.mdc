@@ -78,9 +78,6 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   └── fulcro-rad.mdc                   # dewey: "341"
 ├── testing/
 │   └── standards.mdc                    # dewey: "400"  alwaysApply: true
-├── operations/                          # dewey: 500-599 — reserved, not yet populated
-│                                        #   Runtime-security rules today: foundations/runtime-*.mdc (030–033)
-│                                        #   Browser-security rule today:  frameworks/browser-security.mdc (331)
 ├── documentation/
 │   └── documentation-discipline.mdc     # dewey: "600"  alwaysApply: true
 ├── workflows/
