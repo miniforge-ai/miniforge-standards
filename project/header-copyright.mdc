@@ -29,7 +29,7 @@ Detection: the repository root must contain a `LICENSE` file whose content inclu
 >
 > **Why `*.md` is not in the globs:** Root-level markdown files such as `CLAUDE.md`, `agents.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `SECURITY.md` are structural files, not published content. The `docs/` and `specs/` globs cover the content directories where published articles live.
 
-Proprietary Thesium products use `.thesium-standards/project/header-proprietary` instead. Never apply an Apache 2.0 copyright header to a proprietary file.
+Proprietary Thesium products use `standards/thesium/project/header-proprietary` instead. Never apply an Apache 2.0 copyright header to a proprietary file.
 
 ## Context
 - Use when authoring or editing site, docs, blog, or README content in an Apache-licensed repo.

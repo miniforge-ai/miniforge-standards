@@ -52,7 +52,7 @@ let _l = ledger.lock();
 
 ## Comments that are NOT noise — keep these
 
-- **File / license headers.** Governed by `project/header-copyright` (810) for OSS and `.thesium-standards/project/header-proprietary` for proprietary repos. **Never strip or compress these.** They are required, not commentary.
+- **File / license headers.** Governed by `project/header-copyright` (810) for OSS and `standards/thesium/project/header-proprietary` for proprietary repos. **Never strip or compress these.** They are required, not commentary.
 - **Docstrings on public namespaces, fns, and vars.** State the contract (purpose, args, return, failure mode) and the why — do not restate the body. A docstring that only echoes the name carries no contract; rewrite it to express the why, or remove it if there is no why to express (a self-evident one-liner like `(defn cargo-target-dir [config] ...)` does not need a docstring just to have one).
 - **Genuine "why" notes:** non-obvious invariants, rationale for a surprising choice, performance tradeoffs, security constraints, workarounds with a linked cause (issue/ADR/spec).
 - **Rust `SAFETY:` comments** on `unsafe` blocks — required by `languages/rust-unsafe` (232).

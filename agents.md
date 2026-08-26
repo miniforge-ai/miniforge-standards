@@ -70,7 +70,7 @@ as a git submodule at `.standards/` in each repo.
 | Document a PR | `workflows/pr-documentation` |
 | Version a release | `workflows/datever` |
 | Add a build / launch / package / deploy task | `workflows/bb-over-shell` — a bb task in `bb.edn`; **never** a new `.sh` or `.py` |
-| Add copyright header (OSS repos only) | `project/header-copyright` — **skip in proprietary repos; use `.thesium-standards/project/header-proprietary` there** |
+| Add copyright header (OSS repos only) | `project/header-copyright` — **skip in proprietary repos; use `standards/thesium/project/header-proprietary` there** |
 | Create a new rule | `meta/rule-format` |
 | Design or review a user-facing UI surface (cross-product) | `design/ux-general.md` |
 | Design or review Miniforge product UI | `design/ux-miniforge.md` |
