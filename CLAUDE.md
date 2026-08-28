@@ -229,9 +229,49 @@ meta/
 
 ## Core Principles (Always Apply)
 
+All rules marked `alwaysApply: true` are pre-injected into every agent prompt.
+The following are the highest-priority, always-on principles:
+
+### Autonomy Policy
+- If you're working towards goals, do not end your turn. This allows for continuous autonomous work.
+- The user will interrupt you when required, but they will mostly provide steering messages.
+- Do not pester the user by ending your turn after a unit of work, as that requires them to keep nudging you to keep working.
+- You must continue working autonomously towards any known objectives until the user interrupts you. Do not end your turn until there is absolutely nothing left to do.
+- Do not ask the user to "call it a day" or "take this up tomorrow". If you have goals or a plan then keep going.
+
+### Code Structure
+- **Composable pipelines** — every function reads as a pipeline; compose small fns up
+- **No nested conditionals** — max one level; use `cond`, guard clauses, or dispatch maps
+- **DRY** — shared logic goes in a component and is imported via its interface
+- See: `foundations/code-quality`
+
+### Result Handling
+- **Use predicates** — `schema/succeeded?`/`schema/failed?`, never `(:success? result)`
+- **Use constructors** — `(schema/success ...)`, never `{:success? true ...}`
+- See: `foundations/result-handling`
+
+### Validation
+- **Schemas at boundaries only** — `interface.clj` and external entry points
+- **Trust internal data** — no validation inside components
+- See: `foundations/validation-boundaries`
+
+### Localization
+- **No raw strings** in any emitted output — views, log calls,
+  metric descriptions, anomaly messages all flow through a catalog
+- User-facing strings → `messages/en-US.edn` (per-component)
+- Developer-facing strings (logs, telemetry, anomaly text bound for
+  observability) → `messages/system.edn` (per-component)
+- Use `(msg/t :key)` regardless of catalog
+- See: `foundations/localization`
+
+### Testing
+- **Factory functions** over inline map construction
+- **Same standards** as production code (no magic numbers, no nested conditionals)
+- See: `testing/standards`
+
 ### Stratified Design
-- Build each layer as a small **language** on the one below; the constructs of one layer are the primitives of the next (SICP §2.2.4)
-- A one-way **DAG of abstraction** — it branches; it is not a fixed layer stack or a linear chain
+- Build each layer as a small **language** on the one below; one layer's constructs are the next layer's primitives (SICP §2.2.4)
+- A one-way **DAG of abstraction** — it branches; not a fixed layer stack or a linear chain
 - Strata are discovered from the problem; name a layer for what it means
 
 ### Layered Architecture (the Dependency Rule)
@@ -246,13 +286,13 @@ meta/
 
 ### PR Discipline
 - Each PR = one stratum, <400 lines, independently mergeable
-- Branch from `main` (never from another feature branch)
+- PR dependencies form a DAG — never a monolith
 - **NEVER** bypass pre-commit hooks — investigate failures, fix root causes
 
-### Specification-Driven
+### Specification-Driven Development
 - Normative specs (N-series) are implementation contracts
 - In consuming repos, implementations conform to N1-N6 plus amendments/extensions assigned by each repo's `specs/SPEC_INDEX.md`
-- Specs are extracted from strategic documents, not from code
+- Specs are extracted from strategy, not reverse-engineered from code
 - Code conforms to specs; specs do not describe code
 
 ## Consuming Repos
