@@ -1,7 +1,7 @@
 ---
 dewey: "210"
 description: Clojure Polylith + per-file stratified design
-alwaysApply: true
+alwaysApply: false
 globs:
   - "components/**/src/**/*.clj"
   - "components/**/src/**/*.cljc"
