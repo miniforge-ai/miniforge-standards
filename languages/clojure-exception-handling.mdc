@@ -1,7 +1,7 @@
 ---
 dewey: "211"
 description: Clojure exception handling — prefer slingshot `try+` / `throw+`; plain `try` only in narrow exemptions (no-slingshot-dep leaf catch, leaf inside `try+`, REPL/`(comment …)`)
-alwaysApply: true
+alwaysApply: false
 enforcement.action: hard-halt
 enforcement.message: "Plain `try`/`throw` where slingshot `try+`/`throw+` is required. Catch by value with a key-value selector and throw structured payloads via throw+/throw-anomaly!; plain try/throw only in the documented narrow exemptions. (Whether to throw at all in normal flow is exceptions-as-data, not this rule.)"
 globs:
