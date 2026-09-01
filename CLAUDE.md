@@ -177,7 +177,7 @@ meta/
   033      Runtime: Require Image Digest Pin
   050      Localization (i18n, en-US.edn)
 100-199  Tools           Linters, formatters, build tools
-200-299  Languages       Clojure, Python, JS/TS, Go, Rust, Swift
+200-299  Languages       Clojure, Python, JS/TS, Rust, Swift
   210      Clojure (Polylith, stratified files, map access patterns)
   211      Clojure exception handling (prefer `try+` / `throw+`; plain `try` allowed in three narrow cases — no-dep leaf catch, leaf inside try+, REPL)
   212      Clojure: no requiring-resolve (BLOCKING; use a direct require, fix load-order/design instead of lazy-resolving)
