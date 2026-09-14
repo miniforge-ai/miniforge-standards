@@ -214,7 +214,7 @@ explicitly when designing or reviewing any user-facing surface.
 |------|-------|
 | `design/ux-general.md` | Cross-product UX principles (typography, spacing, motion, accessibility) |
 | `design/ux-miniforge.md` | Miniforge-specific visual language and component conventions |
-| `design/ux-thesium.md` | Thesium product-line design identity and interaction patterns |
+| `design/ux-thesium.md` | Stub pointer — Thesium-specific patterns live in private `miniforge-ai/thesium-standards`; public platform rules in `ux-general.md` and `ux-miniforge.md` apply |
 
 ## Adding Rules
 
