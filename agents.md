@@ -70,7 +70,7 @@ as a git submodule at `.standards/` in each repo.
 | Document a PR | `workflows/pr-documentation` |
 | Version a release | `workflows/datever` |
 | Add a build / launch / package / sign / notarize / embed / lint / test / deploy / dev-loop task | `workflows/bb-over-shell` — a bb task in `bb.edn`; **never** a new `.sh` or `.py` beyond a thin bb-invoking shim |
-| Add copyright header (OSS repos only) | `project/header-copyright` — **skip in proprietary repos; use `standards/thesium/project/header-proprietary` there** |
+| Add copyright header (OSS repos only) | `project/header-copyright` — **skip in proprietary repos; use `project/header-proprietary` (820) there** |
 | Create a new rule | `meta/rule-format` |
 | Design or review a user-facing UI surface (cross-product) | `design/ux-general.md` |
 | Design or review Miniforge product UI | `design/ux-miniforge.md` |
@@ -147,6 +147,7 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 │   └── bb-over-shell.mdc                # dewey: "740"
 ├── project/
 │   ├── header-copyright.mdc             # dewey: "810"
+│   ├── header-proprietary.mdc           # dewey: "820"
 │   └── rust-miniforge-shape.mdc         # dewey: "835"
 └── meta/
     └── rule-format.mdc                  # dewey: "900"

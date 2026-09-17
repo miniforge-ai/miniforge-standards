@@ -92,6 +92,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   └── bb-over-shell.mdc                # dewey: "740"
 ├── project/
 │   ├── header-copyright.mdc             # dewey: "810"
+│   ├── header-proprietary.mdc           # dewey: "820"
 │   └── rust-miniforge-shape.mdc         # dewey: "835"
 └── meta/
     └── rule-format.mdc                  # dewey: "900"
@@ -194,7 +195,8 @@ For security guidance today, consult `foundations/runtime-*.mdc` (dewey 030–03
 
 | Dewey | File | Always | Description |
 |-------|------|--------|-------------|
-| 810 | `header-copyright` |  | Miniforge.ai header + copyright ownership |
+| 810 | `header-copyright` |  | Miniforge.ai header + copyright ownership (OSS repos only) |
+| 820 | `header-proprietary` |  | Proprietary Thesium file header — required fields, format, Apache-2.0 prohibition |
 | 835 | `rust-miniforge-shape` |  | Miniforge architectural Rust constraints: typed workflow state, `PolicyDecision` as value, structured `Finding`, adapter traits vs concrete domain, append-only evidence, UI never imported by core |
 
 ### meta/

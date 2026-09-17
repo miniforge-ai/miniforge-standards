@@ -1,0 +1,78 @@
+---
+dewey: "820"
+description: Use when adding or editing a file header in a proprietary Thesium repo — never apply Apache-2.0 there
+alwaysApply: false
+globs:
+  - "**/*.clj"
+  - "**/*.cljc"
+  - "**/*.cljs"
+  - "**/*.swift"
+  - "**/*.rs"
+  - "**/*.py"
+---
+
+# Proprietary File Headers (Thesium)
+
+Applies to **proprietary Thesium repositories** (`thesium-workflows`,
+`thesium-career`, `risk-dashboard`, and any repo whose `LICENSE` file
+contains `"Proprietary"` or `"All Rights Reserved"`).
+
+<danger>
+  Never stamp an Apache-2.0 copyright block on a proprietary file.
+  `project/header-copyright` (810) is for OSS repos only.
+</danger>
+
+## Required fields
+
+Every source file opens with a header comment block in the language's
+native comment style. All six fields are required:
+
+| Field | Content |
+|-------|---------|
+| `Title` | Product or repo name (e.g. `Thesium Warning Flags`) |
+| `Subtitle` | One-line description of this specific file |
+| `Author` | `Christopher Lester` |
+| `Line` | `Founder, Miniforge AI` |
+| `Copyright` | `2025-2026 Christopher Lester (christopher@miniforge.ai)` |
+| Proprietary notice | `All rights reserved. Proprietary and confidential. See LICENSE.` |
+
+## Format
+
+Adapt the comment delimiter to the language; the field order and wording
+are fixed.
+
+<example>
+Clojure / ClojureScript:
+
+;; Title: Thesium Warning Flags
+;; Subtitle: detection-rule registry (data) + per-issuer evaluator
+;; Author: Christopher Lester
+;; Line: Founder, Miniforge AI
+;; Copyright 2025-2026 Christopher Lester (christopher@miniforge.ai).
+;; All rights reserved. Proprietary and confidential. See LICENSE.
+</example>
+
+<example>
+Swift / Rust / Python (line-comment style):
+
+// Title: Thesium Career
+// Subtitle: State-machine tests for DashboardViewModel
+// Author: Christopher Lester
+// Line: Founder, Miniforge AI
+// Copyright 2025-2026 Christopher Lester (christopher@miniforge.ai). All rights reserved.
+// Proprietary and confidential. See LICENSE.
+</example>
+
+<example type="invalid">
+;; Copyright 2025 Miniforge AI
+;; Licensed under the Apache License, Version 2.0
+
+Reason: wrong owner name, wrong license — Apache-2.0 must never appear
+in a proprietary file.
+</example>
+
+## Context
+
+- Apply when creating or editing any source file in a proprietary Thesium repo.
+- Do not strip or reformat existing headers — they are required notices, not commentary (see `foundations/self-documenting-code` dewey 009).
+- Update the year range when the file is substantially revised in a new calendar year.
