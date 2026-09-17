@@ -22,6 +22,13 @@ contains `"Proprietary"` or `"All Rights Reserved"`).
   `project/header-copyright` (810) is for OSS repos only.
 </danger>
 
+<guard>
+  This rule applies **only in proprietary Thesium repositories** — those
+  whose `LICENSE` file contains `"Proprietary"` or `"All Rights Reserved"`.
+  If you are working in an Apache-2.0 or other OSS repo, **ignore this rule
+  entirely** and consult `project/header-copyright` (810) instead.
+</guard>
+
 ## Required fields
 
 Every source file opens with a header comment block in the language's
@@ -48,19 +55,30 @@ Clojure / ClojureScript:
 ;; Subtitle: detection-rule registry (data) + per-issuer evaluator
 ;; Author: Christopher Lester
 ;; Line: Founder, Miniforge AI
-;; Copyright 2025-2026 Christopher Lester (christopher@miniforge.ai).
+;; Copyright 2025-2026 Christopher Lester (christopher@miniforge.ai)
 ;; All rights reserved. Proprietary and confidential. See LICENSE.
 </example>
 
 <example>
-Swift / Rust / Python (line-comment style):
+Swift / Rust:
 
 // Title: Thesium Career
 // Subtitle: State-machine tests for DashboardViewModel
 // Author: Christopher Lester
 // Line: Founder, Miniforge AI
-// Copyright 2025-2026 Christopher Lester (christopher@miniforge.ai). All rights reserved.
-// Proprietary and confidential. See LICENSE.
+// Copyright 2025-2026 Christopher Lester (christopher@miniforge.ai)
+// All rights reserved. Proprietary and confidential. See LICENSE.
+</example>
+
+<example>
+Python:
+
+# Title: Thesium Career
+# Subtitle: State-machine tests for DashboardViewModel
+# Author: Christopher Lester
+# Line: Founder, Miniforge AI
+# Copyright 2025-2026 Christopher Lester (christopher@miniforge.ai)
+# All rights reserved. Proprietary and confidential. See LICENSE.
 </example>
 
 <example type="invalid">
