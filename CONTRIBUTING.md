@@ -61,7 +61,7 @@ In summary:
 - Keep PRs under ~400 lines of diff where possible.
 - Pre-commit hooks must pass. If a hook fails, fix the cause; don't
   `--no-verify`. See [`workflows/pre-commit-discipline`](./workflows/pre-commit-discipline.mdc).
-- Update both [`index.mdc`](./index.mdc) and [`CLAUDE.md`](./CLAUDE.md) when
+- Update [`index.mdc`](./index.mdc), [`agents.md`](./agents.md), and [`CLAUDE.md`](./CLAUDE.md) when
   adding, renaming, or removing a rule.
 
 A PR description should answer:
