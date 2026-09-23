@@ -2,7 +2,7 @@
 
 Shared engineering standards, conventions, and agent-facing rules used across
 the Miniforge.ai ecosystem. Designed to be consumed as a git submodule at
-`.standards/` in any repo that wants to inherit the same architectural
+`standards/miniforge/` in any repo that wants to inherit the same architectural
 discipline, PR workflow, and language conventions.
 
 This repository is open source so that anyone forking [Miniforge][miniforge]
@@ -36,10 +36,10 @@ The full catalog with file paths and `alwaysApply` flags lives in
 
 ## Using this in your repo
 
-Add it as a submodule at `.standards/`:
+Add it as a submodule at `standards/miniforge/`:
 
 ```bash
-git submodule add https://github.com/miniforge-ai/miniforge-standards.git .standards
+git submodule add https://github.com/miniforge-ai/miniforge-standards.git standards/miniforge
 git submodule update --init --recursive
 ```
 
@@ -49,7 +49,7 @@ rules:
 ```markdown
 # My Repo
 
-See [`.standards/CLAUDE.md`](./.standards/CLAUDE.md) for shared engineering
+See [`standards/miniforge/CLAUDE.md`](./standards/miniforge/CLAUDE.md) for shared engineering
 standards. Repo-specific overrides live in `./project/`.
 ```
 
@@ -60,9 +60,9 @@ project's quirks.
 To pull updates later:
 
 ```bash
-git submodule update --remote .standards
-git add .standards
-git commit -m "chore: bump .standards"
+git submodule update --remote standards/miniforge
+git add standards/miniforge
+git commit -m "chore: bump standards/miniforge"
 ```
 
 ## How rules are organized

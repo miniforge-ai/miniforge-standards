@@ -2,7 +2,7 @@
 
 This repository is the single source of truth for engineering rules, conventions,
 and agent knowledge shared across all Miniforge.ai repositories. It is consumed
-as a git submodule at `.standards/` in each repo.
+as a git submodule at `standards/miniforge/` in each repo.
 
 ## How to Use These Standards
 
@@ -82,7 +82,7 @@ Rules live at the root of this repo with slug-based filenames. Dewey codes are
 in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 
 ```
-.standards/                              # submodule root in consuming repos
+standards/miniforge/                     # submodule root in consuming repos
 ├── index.mdc                            # Master catalog (dewey: "000")
 ├── foundations/
 │   ├── stratified-design.mdc            # dewey: "001"  alwaysApply: true
@@ -253,12 +253,12 @@ The following are the highest-priority, always-on principles:
 
 ## Consuming Repos
 
-Add this repo as a submodule at `.standards/`:
+Add this repo as a submodule at `standards/miniforge/`:
 
 ```bash
-git submodule add git@github.com:miniforge-ai/miniforge-standards.git .standards
+git submodule add git@github.com:miniforge-ai/miniforge-standards.git standards/miniforge
 ```
 
-Each repo's `CLAUDE.md` should reference `.standards/agents.md` and
-`.standards/CLAUDE.md`. Project-specific additions layer on top via each
+Each repo's `CLAUDE.md` should reference `standards/miniforge/agents.md` and
+`standards/miniforge/CLAUDE.md`. Project-specific additions layer on top via each
 repo's own policy-pack mechanism — never by modifying this shared repo.
