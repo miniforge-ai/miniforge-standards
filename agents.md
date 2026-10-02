@@ -74,7 +74,7 @@ as a git submodule at `.standards/` in each repo.
 | Create a new rule | `meta/rule-format` |
 | Design or review a user-facing UI surface (cross-product) | `design/ux-general.md` |
 | Design or review Miniforge product UI | `design/ux-miniforge.md` |
-| Design or review Thesium product UI | `design/ux-thesium.md` |
+| Design or review Thesium product UI | `design/ux-thesium.md` (redirect stub — full rules in `standards/thesium/design/ux-thesium.md` in consuming repos) |
 
 ## Rules Catalog
 
@@ -166,7 +166,7 @@ explicitly when designing or reviewing any user-facing surface.**
 |------|---------|
 | `design/ux-general.md` | Cross-product UX principles (typography, spacing, motion, accessibility) |
 | `design/ux-miniforge.md` | Miniforge-specific visual language and component conventions |
-| `design/ux-thesium.md` | Thesium product-line design identity and interaction patterns |
+| `design/ux-thesium.md` | Redirect stub — full rules in `standards/thesium/design/ux-thesium.md` in consuming repos |
 
 ## Dewey Classification
 
