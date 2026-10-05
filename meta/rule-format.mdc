@@ -131,8 +131,8 @@ actually needs.
 | `alwaysApply` | boolean | `true` — inject rule into every agent prompt regardless of file context. Use for universal principles (stratified design, result handling, etc.). `false` — explicit opt-out (rare; most rules without `alwaysApply` simply omit it). |
 | `globs` | string or list | Path patterns scoping the rule to matching files. Use when the rule is language- or file-type-specific. A rule with neither `alwaysApply: true` nor `globs` is effectively never injected. |
 
-Rules may carry both `alwaysApply: true` and `globs` (e.g. `languages/clojure.mdc`
-combines universal injection with a glob that helps IDE tooling narrow context).
+Language-specific rules (e.g. `languages/clojure.mdc`) use `globs` without `alwaysApply: true`
+so they are only injected when matching files are in context.
 
 ### Automated-fix fields (optional)
 

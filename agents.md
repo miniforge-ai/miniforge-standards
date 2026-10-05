@@ -104,8 +104,8 @@ in frontmatter (`dewey: "NNN"`), not in filenames or paths.
 │   ├── runtime-require-image-digest-pin.mdc # dewey: "033"  alwaysApply: true
 │   └── localization.mdc                 # dewey: "050"  alwaysApply: true
 ├── languages/
-│   ├── clojure.mdc                      # dewey: "210"  alwaysApply: true
-│   ├── clojure-exception-handling.mdc   # dewey: "211"  alwaysApply: true
+│   ├── clojure.mdc                      # dewey: "210"  globs: clj/cljc
+│   ├── clojure-exception-handling.mdc   # dewey: "211"  globs: clj/cljc
 │   ├── clojure-no-requiring-resolve.mdc # dewey: "212"  globs: clj/cljc
 │   ├── python.mdc                       # dewey: "220"
 │   ├── python-stratified-components.mdc # dewey: "221"
