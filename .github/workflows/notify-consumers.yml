@@ -36,7 +36,7 @@ jobs:
           - repo: miniforge-ai/thesium
             submodule_path: standards/miniforge
           - repo: miniforge-ai/thesium-workflows
-            submodule_path: .standards
+            submodule_path: standards/miniforge
           - repo: miniforge-ai/thesium-app-foundation
             submodule_path: .standards
           - repo: miniforge-ai/miniforge-control
