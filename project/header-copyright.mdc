@@ -11,7 +11,7 @@ detection.pattern: 'Christopher Lester'
 detection.emailPattern: 'christopher@miniforge\.ai'
 remediation.strategy: mechanical
 remediation.type: prepend
-remediation.template: '<!--\n  Title: Miniforge.ai\n  Author: Christopher Lester (christopher@miniforge.ai)\n  Copyright 2025-2026 Christopher Lester. Licensed under Apache 2.0.\n-->'
+remediation.template: '  Title: Miniforge.ai\n  Subtitle: An agentic SDLC / fleet-control platform\n  Author: Christopher Lester\n  Line: Founder, Miniforge.ai (project)\n  Copyright 2025-2026 Christopher Lester (christopher@miniforge.ai)'
 remediation.autoFixable: false
 ---
 
