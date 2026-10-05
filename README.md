@@ -27,7 +27,7 @@ that declares its category (`dewey`), description, and applicability.
 | 500-599 | Operations | CI/CD, monitoring, security |
 | 600-699 | Documentation | API docs, architecture docs |
 | 700-799 | Workflows | Git, PRs, releases |
-| 800-899 | Project | Reserved for project-specific rules |
+| 800-899 | Project | Miniforge-wide project rules |
 | 900-999 | Meta | Templates, indexes, the rule format itself |
 
 The full catalog with file paths and `alwaysApply` flags lives in

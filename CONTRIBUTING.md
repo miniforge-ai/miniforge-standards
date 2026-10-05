@@ -30,11 +30,22 @@ and the bar for changes is real.
    | 500-599 | Operations |
    | 600-699 | Documentation |
    | 700-799 | Workflows |
-   | 800-899 | Project (reserved — do not add here) |
+   | 800-899 | Project (Miniforge-wide project rules) |
    | 900-999 | Meta |
 
-   The 800-899 range is reserved for *consuming repos* to override or extend,
-   not for shared standards.
+   The 800-899 range hosts **Miniforge-wide project rules** — shared cross-product
+   policies maintained centrally here rather than duplicated per-repo (for example,
+   the OSS file header format at 810 and the Rust architectural shape for Miniforge
+   products at 835). A rule belongs here when it is a shared concern across the
+   Miniforge product family; each rule's own specification (frontmatter and body)
+   governs its actual applicability to specific files or repos.
+
+   Rules that apply to only *one* consuming repo (repo-local overrides or
+   extensions) belong in that repo's own policy-pack, not here. Add them to a
+   `project/` directory alongside the `standards/miniforge/` submodule in the
+   consuming repo and reference them via
+   `:policy-packs {:extra-search-paths [...]}`.
+   Do not add single-repo rules to this shared repo.
 
 ## What makes a good rule
 
