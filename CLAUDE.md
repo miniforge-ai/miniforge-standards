@@ -77,7 +77,7 @@ Project-specific rules go in a local `project/` directory alongside `.standards/
 | Create a new rule | `meta/rule-format` |
 | Design or review a user-facing UI surface (cross-product) | `design/ux-general.md` |
 | Design or review Miniforge product UI | `design/ux-miniforge.md` |
-| Design or review Thesium product UI | `design/ux-thesium.md` |
+| Design or review Thesium product UI | `design/ux-thesium.md` (redirect stub — full rules in `standards/thesium/design/ux-thesium.md` in consuming repos) |
 
 ## Rules Catalog
 
