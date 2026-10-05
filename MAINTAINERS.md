@@ -30,7 +30,7 @@ week, or to explicitly hand off when they can't.
   the rule format in [`meta/rule-format.mdc`](./meta/rule-format.mdc).
 - Triage issues — label, assign Dewey codes to rule proposals, close
   stale/out-of-scope issues with a note.
-- Keep [`index.mdc`](./index.mdc) and [`CLAUDE.md`](./CLAUDE.md) in sync with
+- Keep [`index.mdc`](./index.mdc), [`agents.md`](./agents.md), and [`CLAUDE.md`](./CLAUDE.md) in sync with
   the actual rule files.
 - Cut releases using [DateVer](./workflows/datever.mdc). Tag releases as
   `v{YYYY.MM.DD.N}` and call out breaking-for-consumers changes in the PR

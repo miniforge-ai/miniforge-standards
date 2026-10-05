@@ -58,13 +58,13 @@ and [`workflows/pr-documentation`](./workflows/pr-documentation.mdc) rules.
 In summary:
 
 - Branch from `main`. Never branch from another in-flight branch.
-- One stratum per PR. Adding a new rule, updating the index, and updating
-  `CLAUDE.md` to reference it can be a single PR — but bundling unrelated
-  rule changes is not OK.
+- One stratum per PR. Adding a new rule, updating the index, updating
+  `agents.md`, and updating `CLAUDE.md` to reference it can be a single PR
+  — but bundling unrelated rule changes is not OK.
 - Keep PRs under ~400 lines of diff where possible.
 - Pre-commit hooks must pass. If a hook fails, fix the cause; don't
   `--no-verify`. See [`workflows/pre-commit-discipline`](./workflows/pre-commit-discipline.mdc).
-- Update both [`index.mdc`](./index.mdc) and [`CLAUDE.md`](./CLAUDE.md) when
+- Update [`index.mdc`](./index.mdc), [`agents.md`](./agents.md), and [`CLAUDE.md`](./CLAUDE.md) when
   adding, renaming, or removing a rule.
 
 A PR description should answer:

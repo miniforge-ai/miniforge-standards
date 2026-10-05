@@ -5,7 +5,7 @@ Before opening the PR, please confirm:
 - A companion issue exists and the Dewey code was agreed on (unless this is
   a typo or clarifying edit).
 - Only one stratum of change is bundled here (see workflows/pr-layering).
-- index.mdc and CLAUDE.md are updated if a rule was added, renamed, or removed.
+- index.mdc, agents.md, and CLAUDE.md are updated if a rule was added, renamed, or removed.
 -->
 
 ## What is this change?
@@ -30,6 +30,7 @@ Before opening the PR, please confirm:
 
 - [ ] Frontmatter follows `meta/rule-format.mdc`
 - [ ] `index.mdc` updated (if rule added/renamed/removed)
+- [ ] `agents.md` updated (if rule added/renamed/removed)
 - [ ] `CLAUDE.md` quick-reference updated (if rule added/renamed/removed)
 - [ ] Both positive and negative examples included in the rule body
 - [ ] PR is under ~400 lines of diff

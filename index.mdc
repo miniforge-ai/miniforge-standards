@@ -221,4 +221,4 @@ explicitly when designing or reviewing any user-facing surface.
 1. Find the appropriate Dewey category above
 2. Create `<category>/<slug>.mdc` with `dewey: "NNN"` in frontmatter
 3. Set `alwaysApply: true` if the rule should be pre-injected into every agent prompt
-4. Update this index and `CLAUDE.md`
+4. Update this index, `agents.md`, and `CLAUDE.md`
