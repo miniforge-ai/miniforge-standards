@@ -2,8 +2,8 @@
 dewey: "211"
 description: Clojure exception handling — prefer slingshot `try+` / `throw+`; plain `try` only in narrow exemptions (no-slingshot-dep leaf catch, leaf inside `try+`, REPL/`(comment …)`)
 alwaysApply: true
-enforcement.action: hard-halt
-enforcement.message: "Plain `try`/`throw` where slingshot `try+`/`throw+` is required. Catch by value with a key-value selector and throw structured payloads via throw+/throw-anomaly!; plain try/throw only in the documented narrow exemptions. (Whether to throw at all in normal flow is exceptions-as-data, not this rule.)"
+enforcement.action: warn
+enforcement.message: "New catch/throw site where try+/throw+ is required. For catches: warn when new code AND (a) the component already has slingshot, OR (b) the catch is non-trivial — multi-catch, value-shape predicate, or intercepting a throw+/throw-anomaly! payload via ex-data; do not warn for leaf try nested inside try+, REPL/(comment …), or a class-only catch when slingshot is not yet present. For throws: 211 applies only to otherwise-legitimate absolute-boundary throws — once a throw is valid per rule 005, warn if it carries a structured map payload via plain throw instead of throw+/throw-anomaly!; ordinary-flow throws (e.g. (throw (ex-info ...)) guarding a status check) belong exclusively to rule 005, not here; plain throw of a Java/JVM exception is always exempt. Pre-rule legacy sites are not defects."
 globs:
   - "components/**/src/**/*.clj"
   - "components/**/src/**/*.cljc"
