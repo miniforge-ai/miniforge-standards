@@ -91,7 +91,7 @@ Invalid concise example with explanation
 500-599  Operations & Infrastructure
 600-699  Documentation
 700-799  Workflows & Processes
-800-899  Project-Specific
+800-899  Project (Miniforge-wide)
 900-999  Meta & Templates
 ```
 

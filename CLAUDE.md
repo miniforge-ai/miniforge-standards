@@ -220,7 +220,7 @@ meta/
   725      Git Worktrees
   730      Datever
   740      Bb Over Shell (all automation — build, launch, package, test, deploy, lint, sign — MUST be bb tasks in bb.edn; no .sh or .py beyond a thin bb-invoking shim)
-800-899  Project         Reserved for project-specific overrides
+800-899  Project         Miniforge-wide project rules
   810      Copyright Header
   835      Rust Miniforge Shape (typed workflow state, PolicyDecision as value, structured findings, adapters-behind-traits, append-only evidence)
 900-999  Meta            Templates, indexes

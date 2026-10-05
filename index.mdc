@@ -21,7 +21,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 500-599 | Operations | CI/CD, monitoring, security |
 | 600-699 | Documentation | Docs standards |
 | 700-799 | Workflows | Git, PR, release processes |
-| 800-899 | Project | Reserved for project-specific |
+| 800-899 | Project | Miniforge-wide project rules |
 | 900-999 | Meta | Templates, indexes, deprecated |
 
 ## Directory Structure
