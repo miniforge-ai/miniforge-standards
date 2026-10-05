@@ -34,7 +34,7 @@ and the bar for changes is real.
    policies maintained centrally here rather than duplicated per-repo (for example,
    the OSS file header format at 810 and the Rust architectural shape for Miniforge
    products at 835). A rule belongs here when it is a shared concern across the
-   Miniforge product family; each rule's own frontmatter (`globs`, `alwaysApply`)
+   Miniforge product family; each rule's own specification (frontmatter and body)
    governs its actual applicability to specific files or repos.
 
    Rules that apply to only *one* consuming repo (repo-local overrides or
