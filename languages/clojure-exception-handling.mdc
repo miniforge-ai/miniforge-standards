@@ -3,7 +3,7 @@ dewey: "211"
 description: Clojure exception handling — prefer slingshot `try+` / `throw+`; plain `try` only in narrow exemptions (no-slingshot-dep leaf catch, leaf inside `try+`, REPL/`(comment …)`)
 alwaysApply: true
 enforcement.action: warn
-enforcement.message: "New catch site uses plain `try`/`throw` where `try+`/`throw+` is preferred. Flag only when: (a) the component already has slingshot on its classpath, OR (b) the catch site is consuming a `throw+`/`throw-anomaly!` payload via `ex-data` instead of a key-value selector. Legacy `try` sites that pre-date this rule are NOT a defect — do not flag them standalone. (Whether to throw at all belongs to exceptions-as-data rule 005, not here.)"
+enforcement.message: "New catch or throw site that should use `try+`/`throw+`. Warn only when (1) the site is new code (not a pre-rule legacy site), AND (2) the component has slingshot on its classpath, AND (3) the site is not an exempt case: a leaf `try` nested inside an outer `try+` body, a REPL/`(comment …)` block, or a plain `throw` of a genuine Java/JVM exception. The clearest trigger: a catch that digs into `ex-data` to read a `throw+`/`throw-anomaly!` payload — that must become a `try+` key-value selector. (Whether to throw at all belongs to exceptions-as-data rule 005, not here.)"
 globs:
   - "components/**/src/**/*.clj"
   - "components/**/src/**/*.cljc"
