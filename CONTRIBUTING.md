@@ -13,8 +13,11 @@ and the bar for changes is real.
    Dewey code should be, and whether it's `alwaysApply: true`.
 2. **Read the rule format spec**: [`meta/rule-format.mdc`](./meta/rule-format.mdc).
    Frontmatter discipline matters — the `description` field follows the
-   `ACTION when TRIGGER to OUTCOME` pattern, and only `description`, `globs`,
-   `dewey`, and `alwaysApply` belong in frontmatter.
+   `ACTION when TRIGGER to OUTCOME` pattern. Required fields are `dewey`,
+   `description`, and at least one of `alwaysApply: true` or `globs`. Rules
+   with automated-fix support may also carry `detection.*`, `enforcement.*`,
+   and `remediation.*` fields (see `meta/rule-format.mdc` for the full schema).
+   Do not invent fields outside that schema.
 3. **Pick the right Dewey range**:
 
    | Range | Category |
