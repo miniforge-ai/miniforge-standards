@@ -16,3 +16,20 @@ Platform-layer rules that apply to all macOS-native Miniforge products, includin
 
 - [`ux-general.md`](ux-general.md) — Universal UX best practices, response-time thresholds, Nielsen heuristics
 - [`ux-miniforge.md`](ux-miniforge.md) — macOS native app rules (8pt grid, SF Pro, Apple HIG, animation timing), TUI cross-platform rules
+
+## Agent fallback
+
+If `miniforge-ai/thesium-standards` is not accessible in your execution context
+(e.g. you are running in the public `miniforge-standards` repo without the
+private submodule checked out), **do not proceed without a rule set**.
+Use the two public files above as your working rules for Thesium UI work:
+
+1. Load `ux-general.md` — applies universally and is never skipped.
+2. Load `ux-miniforge.md` for its **macOS platform guidance only** (8pt grid,
+   SF Pro, Apple HIG, animation timing). Skip its Miniforge-product-specific
+   sections (TUI cross-platform rules and any content scoped to the Miniforge
+   product audience rather than macOS platform conventions).
+3. Note in your PR description that **all product-specific rules listed under
+   "What lives there" above** were not validated against the private standard,
+   and flag for review by someone who has access to
+   `miniforge-ai/thesium-standards`.
