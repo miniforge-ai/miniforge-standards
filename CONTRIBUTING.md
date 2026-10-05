@@ -30,11 +30,12 @@ and the bar for changes is real.
    | 800-899 | Project (Miniforge-wide project rules) |
    | 900-999 | Meta |
 
-   The 800-899 range hosts **Miniforge-wide project rules** — rules that apply
-   uniformly across all Miniforge product repos (for example, the OSS file
-   header format at 810 and the Rust architectural shape for Miniforge products
-   at 835). A rule belongs here when every Miniforge repo consuming this
-   submodule should follow it.
+   The 800-899 range hosts **Miniforge-wide project rules** — shared cross-product
+   policies maintained centrally here rather than duplicated per-repo (for example,
+   the OSS file header format at 810 and the Rust architectural shape for Miniforge
+   products at 835). A rule belongs here when it is a shared concern across the
+   Miniforge product family; each rule's own frontmatter (`globs`, `alwaysApply`)
+   governs its actual applicability to specific files or repos.
 
    Rules that apply to only *one* consuming repo (repo-local overrides or
    extensions) belong in that repo's own policy-pack, not here. Add them to a
