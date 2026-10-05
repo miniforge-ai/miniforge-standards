@@ -27,7 +27,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 ## Directory Structure
 
 ```
-<repo-root>/                             # consumed as .standards/ submodule
+<repo-root>/                             # consumed as standards/miniforge/ submodule
 ├── index.mdc                            # This catalog (dewey: "000")
 ├── foundations/
 │   ├── stratified-design.mdc                 # dewey: "001"  alwaysApply: true

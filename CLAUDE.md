@@ -2,19 +2,20 @@
 
 This repository is the single source of truth for engineering rules, conventions,
 and agent knowledge across all Miniforge.ai repositories. It is consumed as a
-git submodule at `.standards/` in each repo.
+git submodule at `standards/miniforge/` in each repo.
 
 ## How Consuming Repos Use This
 
 ```
 my-repo/
-  .standards/   # git submodule (this repo)
-  CLAUDE.md     # repo-specific, references .standards/CLAUDE.md and agents.md
-  agents.md     # repo-specific, references .standards/agents.md
+  standards/miniforge/   # git submodule (this repo)
+  standards/thesium/     # optional: Thesium product-standards submodule
+  CLAUDE.md              # repo-specific, references standards/miniforge/CLAUDE.md
+  agents.md              # repo-specific, references standards/miniforge/agents.md
 ```
 
-The knowledge loader reads rules from `.standards/` by default.
-Project-specific rules go in a local `project/` directory alongside `.standards/`.
+The knowledge loader reads rules from `standards/miniforge/` by default.
+Project-specific rules go in a local `project/` directory alongside `standards/miniforge/`.
 
 ## Quick Reference
 
@@ -298,10 +299,10 @@ The following are the highest-priority, always-on principles:
 ## Consuming Repos
 
 Any repository that wants this rule set consumes it as a git submodule at
-`.standards/`:
+`standards/miniforge/`:
 
 ```bash
-git submodule add git@github.com:miniforge-ai/miniforge-standards.git .standards
+git submodule add git@github.com:miniforge-ai/miniforge-standards.git standards/miniforge
 ```
 
 Project-specific additions layer on top via each repo's own policy-pack
