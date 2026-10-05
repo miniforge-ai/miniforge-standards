@@ -105,7 +105,7 @@ This repo uses [DateVer](./workflows/datever.mdc): `YYYY.MM.DD.N`. Tags are
 `v{version}` (e.g. `v2026.04.17.1`). Versions sort chronologically, which
 matters more for a continuously-updated standards corpus than semantic
 "breaking change" signaling. Material changes are called out in
-[`CHANGELOG.md`](./CHANGELOG.md) when present, and in pull request descriptions
+`CHANGELOG.md` when present, and in pull request descriptions
 otherwise.
 
 ## Contributing
