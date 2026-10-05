@@ -214,7 +214,7 @@ explicitly when designing or reviewing any user-facing surface.
 |------|-------|
 | `design/ux-general.md` | Cross-product UX principles (typography, spacing, motion, accessibility) |
 | `design/ux-miniforge.md` | Miniforge-specific visual language and component conventions |
-| `design/ux-thesium.md` | Redirect stub — Thesium-specific rules live in `design/ux-thesium.md` inside the private `thesium-standards` submodule (`standards/thesium/` in consuming repos) |
+| `design/ux-thesium.md` | Redirect stub — full rules in `standards/thesium/design/ux-thesium.md` in consuming repos |
 
 ## Adding Rules
 
