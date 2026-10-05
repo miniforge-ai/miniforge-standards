@@ -25,8 +25,11 @@ private submodule checked out), **do not proceed without a rule set**.
 Use the two public files above as your working rules for Thesium UI work:
 
 1. Load `ux-general.md` — applies universally and is never skipped.
-2. Load `ux-miniforge.md` — applies to all macOS-native Thesium surfaces.
-3. Note in your PR description that Thesium-specific visual identity rules
-   (confidence indicators, delta colour system, data-source attribution)
-   were not validated against the private standard, and flag for review by
-   someone who has access to `miniforge-ai/thesium-standards`.
+2. Load `ux-miniforge.md` for its **macOS platform guidance only** (8pt grid,
+   SF Pro, Apple HIG, animation timing). Skip its Miniforge-product-specific
+   sections (TUI cross-platform rules and any content scoped to the Miniforge
+   product audience rather than macOS platform conventions).
+3. Note in your PR description that **all product-specific rules listed under
+   "What lives there" above** were not validated against the private standard,
+   and flag for review by someone who has access to
+   `miniforge-ai/thesium-standards`.
