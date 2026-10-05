@@ -39,8 +39,9 @@ and the bar for changes is real.
 
    Rules that apply to only *one* consuming repo (repo-local overrides or
    extensions) belong in that repo's own policy-pack, not here. Add them to a
-   `project/` directory alongside the `.standards/` submodule in the consuming
-   repo and reference them via `:policy-packs {:extra-search-paths [...]}`.
+   `project/` directory alongside the `standards/miniforge/` submodule in the
+   consuming repo and reference them via
+   `:policy-packs {:extra-search-paths [...]}`.
    Do not add single-repo rules to this shared repo.
 
 ## What makes a good rule
