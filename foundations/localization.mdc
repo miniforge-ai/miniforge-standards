@@ -80,7 +80,7 @@ Developer-facing — metric descriptions, observability-bound text (same pattern
 
 ## Anomaly → user-locale mapping
 
-`:anomaly/type` is a coarse category vocabulary (`:not-found`, `:conflict`, `:invalid-input`, …)
+`:anomaly/category` is a coarse category vocabulary (`:not-found`, `:conflict`, `:invalid-input`, …)
 (see `foundations/exceptions-as-data` for the full vocabulary).
 It can't uniquely identify a specific user-facing message; mapping requires a finer key.
 
@@ -99,8 +99,8 @@ It can't uniquely identify a specific user-facing message; mapping requires a fi
 (if-let [k (get-in anomaly [:anomaly/data :user/error-key])]
   (msg/t k)
   ;; No key → anomaly wasn't meant for a UI, or producer has a gap.
-  ;; Render a generic fallback by :anomaly/type, never the raw system text.
-  (msg/t (default-error-key (:anomaly/type anomaly))))
+  ;; Render a generic fallback by :anomaly/category, never the raw system text.
+  (msg/t (default-error-key (:anomaly/category anomaly))))
 ```
 
 The `<feature>-<condition>` naming convention makes the pairing mechanical:
