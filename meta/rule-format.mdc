@@ -102,6 +102,29 @@ Invalid concise example with explanation
 
 Private rules: `_name.mdc` (underscore prefix)
 
+### Glob Syntax
+
+Both `globs` and `excludeGlobs` use this syntax:
+
+| Pattern | Matches |
+|---------|---------|
+| `*` | any run of characters **within one path segment** |
+| `?` | exactly one character within one path segment |
+| `**` | any run of characters, crossing segment boundaries |
+| `**/` | **zero** or more leading segments |
+| `{a,b}` | either alternative; does not nest |
+| `[abc]` | one of the listed characters; `[!abc]` negates |
+
+`**/` standing for *zero* or more segments is the point worth stating,
+because `java.nio.file.PathMatcher` reads it as one or more. Under that
+reading `**/*.clj` skips a root-level `build.clj`, and
+`components/**/src/**/*.clj` skips a component whose `src` sits directly
+under it — silently, in both cases. Rules here are matched with the
+zero-segment reading, so `**/x` covers a root-level `x`.
+
+A pattern is anchored at both ends: `bb.edn` matches the file at the repo
+root and not `sub/bb.edn`. Write `**/bb.edn` for either.
+
 ### Glob Pattern Examples
 
 Common glob patterns for different rule types:

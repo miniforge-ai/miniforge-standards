@@ -80,6 +80,18 @@ remediation block at all.
   at least one` line would otherwise appear to cover three fields.
 - A short authoring note: a carve-out stated only in prose is not enforced, and
   one exclusion is preferable to an enumeration of inclusions.
+- A new **Glob Syntax** section stating what `globs` and `excludeGlobs` accept:
+  `*`, `?`, `**`, `**/`, `{a,b}`, `[abc]`/`[!abc]`, and that patterns are
+  anchored at both ends. The section exists because the file already advertised
+  brace globs in three examples while the consumer's matcher implemented none of
+  them — a pattern an author copied from this very document would have matched
+  nothing, silently. Fixed on the consumer side in
+  miniforge-ai/miniforge#2025; stated here so the contract and the
+  implementation say the same thing.
+- It also pins the one reading that differs from `java.nio.file.PathMatcher`:
+  `**/` is **zero** or more segments. Under PathMatcher's one-or-more reading,
+  `**/*.clj` skips a root-level `build.clj` and `components/**/src/**/*.clj`
+  skips a component whose `src` sits directly under it. Both silently.
 
 ### `workflows/bb-over-shell.mdc`
 
