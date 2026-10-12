@@ -7,13 +7,15 @@ globs:
   - "scripts/**"
   - "**/Scripts/**"
   - "tools/**"
+excludeGlobs:
+  - "examples/**"
 detection.mode: positive
 detection.pattern: '^#!.*\b(bash|sh|zsh|python[0-9.]*)\b'
 enforcement.action: hard-halt
 enforcement.message: "Standard 740: automation belongs in a bb task, not a shell/Python script. Justify against the two permitted cases (thin bb-invoking shim, or bb-less bootstrap) or migrate to bb.edn."
 ---
 
-<version>2.0.0</version>
+<version>2.1.0</version>
 
 # Babashka Tasks Over Shell and Python Scripts
 
@@ -21,7 +23,8 @@ enforcement.message: "Standard 740: automation belongs in a bb task, not a shell
 
 - Applies to **automation**: build, launch, package, sign, notarize, embed, lint, test, deploy, and dev-loop tasks.
 - Does **not** apply to application code. A Python component governed by [python](../languages/python.mdc) is product code, not automation. The distinction is *purpose*, not extension.
-- Does **not** apply to **fixtures, examples, or test data**. A demo polyglot repo that contains `.sh` and `.py` is the *subject* of analysis, not automation — e.g. `miniforge/examples/demo-polyglot-repo/`. Scripts there exist to be analysed and MUST NOT be migrated. This carve-out is by path intent, not extension: if a file under `examples/` actually builds or deploys the product, it is automation and in scope.
+- Does **not** apply to **fixtures, examples, or test data**. A demo polyglot repo that contains `.sh` and `.py` is the *subject* of analysis, not automation — e.g. `miniforge/examples/demo-polyglot-repo/`. Scripts there exist to be analysed and MUST NOT be migrated. `excludeGlobs: examples/**` in the frontmatter above carries this carve-out; the prose alone would not, because the runner reads frontmatter. The carve-out is by path intent, not extension: if a file under `examples/` actually builds or deploys the product, it is automation — move it out of `examples/` rather than widening the rule, since an exclusion cannot be overridden per file.
+- A fixture tree outside `examples/` is covered by the same reasoning but not yet by the frontmatter. Add its root to `excludeGlobs` when one appears; do not pre-enumerate directories that do not exist, and do not weaken `globs` instead.
 
 ## Requirements
 
