@@ -62,17 +62,22 @@ remediation block at all.
 
 ### `meta/rule-format.mdc`
 
-- `excludeGlobs` added to the **Activation** field table. Scope exclusion is an
-  activation concern, not a remediation one — it decides whether the rule
-  applies at all, which is why it sits beside `globs` rather than in the
-  automated-fix table.
+- `excludeGlobs` documented in its own **Scope exclusion** subsection, placed
+  directly after **Activation**. Scope exclusion belongs beside `globs` rather
+  than in the automated-fix table — it decides whether the rule applies at all
+  — but it is not itself an activation source, and putting it inside a table
+  headed "include at least one" would read as though it were. The subsection
+  opens by saying so: a rule carrying only `excludeGlobs` is still never
+  injected.
 - Semantics stated: wherever a path is tested — scan, gate, per-file rule
   selection — a match puts the file out of scope and beats any `globs` match,
   including for an `alwaysApply: true` rule. Whole-prompt injection has no path
   to test, so it is explicitly out of the field's reach rather than left
-  ambiguous.
+  ambiguous; stopping injection is `alwaysApply`'s job.
 - The `## Core Structure` template gains the field as a commented option, so
-  authors copying the template see it.
+  authors copying the template see it — under its own comment separating it
+  from the two activation fields, since the template's `# Activation: include
+  at least one` line would otherwise appear to cover three fields.
 - A short authoring note: a carve-out stated only in prose is not enforced, and
   one exclusion is preferable to an enumeration of inclusions.
 

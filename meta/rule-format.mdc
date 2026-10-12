@@ -32,12 +32,15 @@ new rule:
 ---
 dewey: "NNN"
 description: ACTION when TRIGGER to OUTCOME
-# Activation: include at least one; both are allowed together.
+# Activation: include at least one of the two below; both are allowed together.
 alwaysApply: true           # inject into every prompt regardless of file context
 # globs:
 #   - "src/**/*.clj"        # scope to matching files (combine with alwaysApply if needed)
+# Scope exclusion: NOT an activation source. A rule with only this is never
+# injected. It narrows wherever a path is tested, and leaves whole-prompt
+# injection from alwaysApply untouched.
 # excludeGlobs:
-#   - "examples/**"         # remove a subtree from scope; beats any globs match
+#   - "examples/**"         # drop this subtree; beats any globs match
 ---
 
 # Rule Title
@@ -132,10 +135,26 @@ actually needs.
 |-------|------|-------------|
 | `alwaysApply` | boolean | `true` — inject rule into every agent prompt regardless of file context. Use for universal principles (stratified design, result handling, etc.). `false` — explicit opt-out (rare; most rules without `alwaysApply` simply omit it). |
 | `globs` | string or list | Path patterns scoping the rule to matching files. Use when the rule is language- or file-type-specific. A rule with neither `alwaysApply: true` nor `globs` is effectively never injected. |
-| `excludeGlobs` | list | Path patterns **removed** from the rule's scope. Wherever a path is tested — scan, gate, per-file rule selection — a match here puts the file out of scope, and beats any `globs` match. It narrows an `alwaysApply: true` rule in those same path-tested places; whole-prompt injection has no path to test and is unaffected. Use it when the scope is correctly broad but one subtree is, by intent, not the rule's subject: fixtures, examples, generated output. |
 
 Rules may carry both `alwaysApply: true` and `globs` (e.g. `languages/clojure.mdc`
 combines universal injection with a glob that helps IDE tooling narrow context).
+
+### Scope exclusion (optional)
+
+Not an activation source — a rule carrying only `excludeGlobs` is still never
+injected. It subtracts from whatever scope the activation fields above give the
+rule.
+
+| Field | Type | When to use |
+|-------|------|-------------|
+| `excludeGlobs` | list | Path patterns **removed** from the rule's scope. Use it when the scope is correctly broad but one subtree is, by intent, not the rule's subject: fixtures, examples, generated output. |
+
+Where it applies: wherever a path is tested — a scan, a pack-derived gate,
+per-file rule selection — a match here puts the file out of scope and beats any
+`globs` match. It narrows an `alwaysApply: true` rule in those same path-tested
+places, and it does **not** touch whole-prompt injection: that has no path to
+test, so an `alwaysApply` rule keeps being injected into every prompt. If a rule
+must stop being injected, that is `alwaysApply`, not this field.
 
 A scope carve-out stated only in a rule's prose is not enforced: the compiler
 reads frontmatter, so a runner will flag the files the body says to leave alone.
