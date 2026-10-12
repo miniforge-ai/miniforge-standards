@@ -121,10 +121,12 @@ on `:rule/applies-to` and 0 files firing over the `miniforge` tree.
 
 ## Deployment Plan
 
-**Merge the consumer PR first, then this one.** The order is not free, because
-merging here starts an automated chain.
+**The hard constraint is on step 3, not on the order of 1 and 2:** the automated
+bump PR must not merge until both feature PRs are in. Consumer-first is the
+*preferred* order, because it means the bump PR is safe the moment it appears.
 
-1. **miniforge-ai/miniforge#2025 merges** — the consumer: the compiler reads
+1. **miniforge-ai/miniforge#2025 merges** (preferred first) — the consumer: the
+   compiler reads
    `excludeGlobs` into `:rule/applies-to :exclude-globs`, and the workflow
    gate's rule applicability and the compliance scanner's file selection honour
    it. Inert on its own; no rule in its pinned pack declares the field.
@@ -136,10 +138,11 @@ merging here starts an automated chain.
    arms: `:std/bb-over-shell` flips to `:content-scan` / `:hard-halt` / `:high`
    **and** gains `:exclude-globs ["examples/**"]`.
 
-Merging here first does not corrupt anything, but it produces a bump PR whose
-pack has `bb-over-shell` live while the consumer cannot read the exclusion;
-merging *that* PR would block the gate on the three `examples/` files. It is a
-PR, not an auto-merge, so it is catchable — the order above removes the window.
+Merging here first breaks nothing on its own. It produces a bump PR whose pack
+has `bb-over-shell` live while the consumer cannot read the exclusion, and that
+PR sits there for review. The cost is a coordination window in which merging it
+would block the gate on the three `examples/` files. Consumer-first closes the
+window; this PR does not have to wait on the consumer.
 
 Pinning a pre-merge branch commit strands an orphaned pin when the PR is
 squashed, which is why the pin is left to the automation that runs after the
