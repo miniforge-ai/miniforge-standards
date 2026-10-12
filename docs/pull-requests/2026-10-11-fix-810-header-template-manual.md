@@ -1,3 +1,8 @@
+<!--
+  Title: Miniforge.ai
+  Author: Christopher Lester (christopher@miniforge.ai)
+  Copyright 2025-2026 Christopher Lester. Licensed under Apache 2.0.
+-->
 # fix(810): stop declaring a prepend template the frontmatter format cannot express
 
 ## Overview
@@ -59,8 +64,10 @@ reveal it and no warning emitted at compile time.
 - `remediation.strategy`: `mechanical` → `manual`.
 - `remediation.type: prepend`: removed. Nothing should claim this template is
   machine-applicable.
-- `remediation.template`: unchanged, and deliberately retained. It is the
-  canonical block to copy by hand.
+- `remediation.template`: **removed**. `meta/rule-format` scopes it to
+  `remediation.type` `prepend`/`append`, and this rule declares no type. The
+  canonical block moves into `## Requirements` as a fenced `html` block, where
+  real newlines work and it is actually copyable.
 - `remediation.autoFixable: false`: unchanged.
 - `<version>`: `1.1.0` → `2.0.0`. The remediation contract changed from
   mechanical to manual, which is a breaking change for any consumer that
@@ -117,21 +124,46 @@ Consumers dispatching on `remediation.strategy` see `:manual` instead of
 the presence of a `template` as a license to patch mechanically must now check
 `strategy` as well.
 
-## Open question for the reviewer
+## Review
 
-Rule 810's globs include `docs/**/*.md`, which covers this very file and the 29
-other documents in `docs/pull-requests/`. None of them carry the header block,
-and this PR follows that established convention rather than introducing a
-one-off. If PR docs are genuinely in scope the whole directory is in violation
-and should be fixed in one pass; if they are engineering records rather than
-published content — the reading the existing practice implies, and the same
-reasoning the rule already applies to root-level structural files — the globs
-should say so. Flagging rather than deciding unilaterally.
+Copilot raised two findings, both verified and both acted on.
+
+### 1. `remediation.template` has no valid contract without `remediation.type`
+
+Correct, and the better fix. [`meta/rule-format`](../../meta/rule-format.mdc)
+defines `remediation.template` as "Full text to insert when `remediation.type`
+is `prepend`/`append`". With `type` dropped, retaining the field left a scalar
+with no contract — and an escaped one-line scalar is not safely copyable as a
+multi-line block anyway, which was the whole complaint.
+
+So `remediation.template` is **removed** rather than retained as copy-text, and
+the canonical block now lives in `## Requirements` as a fenced `html` block,
+where real newlines work. Verified: the compiled rule's `:template` is `nil`,
+and the block appears in `:rule/knowledge-content` with genuine newlines.
+
+This also fixed a latent inconsistency — the `<example>` block showed a
+`Title / Subtitle / Author / Line / Copyright` shape that did not match the
+template it was supposedly illustrating. It now shows the actual header.
+
+### 2. This PR doc was itself in violation of rule 810
+
+Correct. The doc is matched by the `docs/**/*.md` glob and omitted the header,
+and the 29 existing headerless PR records do not excuse a new one. The header
+is now present on this file.
+
+That leaves those 29 as a real pre-existing violation of this repo's own rule.
+Fixing them is a separate sweep, not this stratum — flagged for follow-up. The
+alternative, narrowing the globs to exclude `docs/pull-requests/`, was
+considered and rejected: the frontmatter has no glob-exclude mechanism, so it
+would mean enumerating included subdirectories, and enumerated directory globs
+are exactly what caused `specs/**/*.md` to match zero files in another repo.
 
 ## Checklist
 
 - [x] Rule compiles with no warnings and no failures
 - [x] Compiled remediation config asserted field by field
+- [x] `remediation.template` removed; canonical block moved to the rule body
+- [x] This PR doc carries the 810 header
 - [x] Rule version bumped to reflect a breaking contract change
 - [x] Format limit documented at the rule, with the precondition for reversing it
 - [x] Template retained as the canonical hand-applied block
