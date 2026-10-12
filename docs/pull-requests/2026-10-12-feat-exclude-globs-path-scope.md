@@ -23,7 +23,7 @@ frontmatter grammar does not parse, so it compiled to `{:type :custom}` and
 
 Live, it matches three files in the consuming `miniforge` repo:
 
-```
+```text
 examples/demo-polyglot-repo/run-demo.sh
 examples/demo-polyglot-repo/scripts/setup.sh
 examples/demo/run-demo.sh
@@ -98,11 +98,11 @@ from the consuming `miniforge` repo, at its **current** submodule pin (the
 compiler that does not yet know the field):
 
 | Assertion | Result |
-|---|---|
+| --- | --- |
 | `success?` | `true` |
 | `compiled-count` / `failed-count` | `59` / `0` |
 | `warnings` | `[]` |
-| `:std/bb-over-shell` `:rule/applies-to` | `:file-globs` unchanged, no `:exclude-globs` |
+| `:std/bb-over-shell` `:rule/applies-to` | unchanged; no `:exclude-globs` |
 | Files firing `bb-over-shell` over the `miniforge` tree | 3 — the three above |
 
 An unknown frontmatter key is dropped without a warning. That is the expected
@@ -132,6 +132,19 @@ requires both.
 
 Pinning a pre-merge branch commit strands an orphaned pin when the PR is
 squashed, so the pin follows the merge rather than accompanying it.
+
+## Consumer coverage
+
+The consuming PR (miniforge-ai/miniforge#2025) honours `excludeGlobs` in the
+workflow gate's rule applicability and in the compliance scanner's file
+selection. It does **not** yet cover `semantic-analyzer`'s three
+file-selection sites, which are blocked behind a pre-existing rule 210 layer
+violation in that namespace; the follow-up is named in that PR.
+
+So the field's semantics as specified above are the contract, and one
+consumer path is not there yet. The gap is latent: `bb-over-shell` is the
+only rule using the field and it is `:content-scan`, so it never reaches the
+semantic judge.
 
 ## Related Issues/PRs
 
