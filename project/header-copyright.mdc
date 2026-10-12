@@ -9,15 +9,14 @@ globs:
 detection.mode: negative
 detection.pattern: 'Christopher Lester'
 detection.emailPattern: 'christopher@miniforge\.ai'
-remediation.strategy: mechanical
-remediation.type: prepend
+remediation.strategy: manual
 remediation.template: '<!--\n  Title: Miniforge.ai\n  Author: Christopher Lester (christopher@miniforge.ai)\n  Copyright 2025-2026 Christopher Lester. Licensed under Apache 2.0.\n-->'
 remediation.autoFixable: false
 ---
 
 # Miniforge.ai Header & Copyright
 
-<version>1.1.0</version>
+<version>2.0.0</version>
 
 ## Scope — OSS repositories only
 
@@ -25,7 +24,12 @@ remediation.autoFixable: false
 
 Detection: the repository root must contain a `LICENSE` file whose content includes the string `"Apache"`. If no such file exists, or the file contains `"Proprietary"` / `"All Rights Reserved"`, **do not apply this rule**.
 
-> **Why `remediation.autoFixable: false`:** The Apache-license gate above is a human-judgement check that cannot be encoded in the frontmatter's `detection.*` fields. An automated runner must not silently prepend a copyright block without confirming the target is an OSS repo. Apply this rule manually after verifying the `LICENSE` file.
+> **Why `remediation.strategy: manual` and `autoFixable: false`:** two independent reasons, both blocking.
+>
+> 1. The Apache-license gate above is a human-judgement check that cannot be encoded in the frontmatter's `detection.*` fields. An automated runner must not prepend a copyright block without confirming the target is an OSS repo.
+> 2. **The frontmatter format cannot express this template.** Quoted scalars are read literally — no escape processing, and no block-scalar (`|`) syntax. The `\n` sequences in `remediation.template` below stay as a literal backslash and `n`; they never become newlines. A `mechanical` prepend would therefore write the entire header as one line of literal `\n` characters, and because that line does contain both `Christopher Lester` and the email address, `detection` would then report the file **compliant**. The result is silent corruption that satisfies its own gate.
+>
+> The template below is retained as the canonical block to copy **by hand**, not as a machine-applicable patch. Do not set `strategy: mechanical` or `autoFixable: true` on this rule until the format can represent a multi-line literal.
 >
 > **Why `*.md` is not in the globs:** Root-level markdown files such as `CLAUDE.md`, `agents.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `SECURITY.md` are structural files, not published content. The `docs/` and `specs/` globs cover the content directories where published articles live.
 
