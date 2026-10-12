@@ -121,22 +121,39 @@ on `:rule/applies-to` and 0 files firing over the `miniforge` tree.
 
 ## Deployment Plan
 
-Three steps, in this order. Steps 1 and 2 are independent of each other; step 3
-requires both.
+**Merge the consumer PR first, then this one.** The order is not free, because
+merging here starts an automated chain.
 
-1. **Merge here.** The field is inert at the current pin — an unknown key, no
-   behaviour change, no warning. Safe to merge ahead of the consumer.
-2. **Consumer support.** A `miniforge` PR teaches the compiler to read
-   `excludeGlobs` into `:rule/applies-to :exclude-globs`, and makes every site
-   that computes a rule's path scope honour it (`applicability`,
-   `registry.support`, the compliance scanner's `file-pred`, the semantic
-   analyzer's file selection).
-3. **Re-pin.** `miniforge` moves `standards/miniforge` to this repo's `main`
-   SHA **after** both have merged. Pinning before step 2 arms the `hard-halt`
-   gate on the three `examples/` files with no exclusion in effect.
+1. **miniforge-ai/miniforge#2025 merges** — the consumer: the compiler reads
+   `excludeGlobs` into `:rule/applies-to :exclude-globs`, and the workflow
+   gate's rule applicability and the compliance scanner's file selection honour
+   it. Inert on its own; no rule in its pinned pack declares the field.
+2. **Merge here.** The push to `main` fires `notify-consumers.yml`, which sends
+   a `standards-updated` `repository_dispatch` to each consuming repo.
+3. **miniforge's `bump-standards.yml` runs automatically** — re-pins
+   `standards/miniforge` to this `main`, runs `bb standards:pack`, and opens a
+   PR. Review and merge that. Its recompiled pack is where the gate actually
+   arms: `:std/bb-over-shell` flips to `:content-scan` / `:hard-halt` / `:high`
+   **and** gains `:exclude-globs ["examples/**"]`.
+
+Merging here first does not corrupt anything, but it produces a bump PR whose
+pack has `bb-over-shell` live while the consumer cannot read the exclusion;
+merging *that* PR would block the gate on the three `examples/` files. It is a
+PR, not an auto-merge, so it is catchable — the order above removes the window.
 
 Pinning a pre-merge branch commit strands an orphaned pin when the PR is
-squashed, so the pin follows the merge rather than accompanying it.
+squashed, which is why the pin is left to the automation that runs after the
+merge rather than prepared alongside it.
+
+### Fan-out
+
+`notify-consumers.yml` dispatches to five consumers besides `miniforge`:
+`thesium-career`, `thesium`, `thesium-workflows`, `thesium-app-foundation`,
+`miniforge-control`. Each gets its own bump PR carrying the standards that make
+`bb-over-shell` a live `hard-halt`. Whether that is safe in each depends on its
+own `.sh`/`.py` inventory and on which compiler it uses — neither verified
+here. Flagged, not addressed: this PR only narrows the rule, it is not what
+makes it live.
 
 ## Consumer coverage
 
