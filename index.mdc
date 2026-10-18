@@ -49,8 +49,8 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 │   ├── runtime-require-image-digest-pin.mdc  # dewey: "033"  alwaysApply: true
 │   └── localization.mdc                      # dewey: "050"  alwaysApply: true
 ├── languages/
-│   ├── clojure.mdc                      # dewey: "210"  alwaysApply: true
-│   ├── clojure-exception-handling.mdc   # dewey: "211"  alwaysApply: true
+│   ├── clojure.mdc                      # dewey: "210"  globs: clj/cljc
+│   ├── clojure-exception-handling.mdc   # dewey: "211"  globs: clj/cljc
 │   ├── clojure-no-requiring-resolve.mdc # dewey: "212"  globs: clj/cljc
 │   ├── python.mdc                       # dewey: "220"
 │   ├── python-stratified-components.mdc # dewey: "221"
@@ -126,8 +126,8 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 
 | Dewey | File | Always | Description |
 |-------|------|--------|-------------|
-| 210 | `clojure` | ✓ | Polylith + per-file stratified design, map access patterns |
-| 211 | `clojure-exception-handling` | ✓ | Prefer slingshot `try+` / `throw+` (strict superset of `try`); plain `try` allowed in three narrow cases (no-slingshot-dep leaf catch, leaf inside `try+`, REPL/`(comment …)`) |
+| 210 | `clojure` | clj/cljc | Polylith + per-file stratified design, map access patterns |
+| 211 | `clojure-exception-handling` | clj/cljc | Prefer slingshot `try+` / `throw+` (strict superset of `try`); plain `try` allowed in three narrow cases (no-slingshot-dep leaf catch, leaf inside `try+`, REPL/`(comment …)`) |
 | 212 | `clojure-no-requiring-resolve` | clj/cljc | BLOCKING (`enforcement.action: hard-halt`): no `requiring-resolve` — use a direct `(:require …)`, fix load-order/design instead of lazy-resolving |
 | 220 | `python` |  | Poetry, functional Python |
 | 221 | `python-stratified-components` |  | Package = component: `interface.py` only surface, explicit-state functions, `@stratum(n)` monotonic ≤3 strata, flat leaves, DAG-among-impl-modules → extract component |
