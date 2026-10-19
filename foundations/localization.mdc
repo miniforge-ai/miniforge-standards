@@ -3,7 +3,7 @@ dewey: "050"
 description: Localization — every emitted prose string flows through a catalog; user-facing strings into a user locale (en-US, etc.), developer-facing strings into the system locale
 alwaysApply: true
 enforcement.action: hard-halt
-enforcement.message: "Raw string literal in emitted output. Route every user- or developer-facing string through a localization catalog via (msg/t :key); add the key to the matching catalog file first."
+enforcement.message: "Raw string literal in emitted output. Route every user- or developer-facing string through the component's localization catalog; add the key to the matching catalog file first. (Clojure: replace with (msg/t :key); other languages: use the equivalent catalog accessor in that language's localization module.)"
 ---
 
 # Localization (ALWAYS)
@@ -26,8 +26,8 @@ who will see the string:
 | **User locale** | `messages/en-US.edn` (plus future `fr-FR.edn`, `ja-JP.edn`, …) | A user will see in a UI, dashboard, formatted error response, or any other product surface |
 | **System locale** | `messages/system.edn` | A user will never see — logs, metric / span descriptions, internal error tags, debug prose, telemetry attributes, exception data shipped to observability pipelines |
 
-Both catalogs live under `resources/config/<component>/messages/`.
-Both are looked up via `(msg/t :key)`. The split is about **destination**,
+Both catalogs live under `resources/config/<component>/messages/` (Clojure components; other languages use the equivalent path in their localization module).
+Both are looked up via the component's catalog accessor — Clojure uses `(msg/t :key)`; other languages use the equivalent lookup in their localization module. The split is about **destination**,
 not about whether to localize.
 
 ## Why two locales (and not one + a "no" exemption)
@@ -185,15 +185,19 @@ developer-only assertion, or a rendered runtime value, it is out of scope.
 
 When writing or reviewing code:
 1. Every **prose** string literal in code that gets emitted is a violation —
-   replace with `(msg/t :key)`. (Machine dispatch tags, programmer-error /
+   replace it with a catalog lookup using the language's localization accessor
+   (Clojure: `(msg/t :key)`; other languages: use the equivalent accessor in
+   the component's localization module). (Machine dispatch tags, programmer-error /
    invariant assertion messages, and dynamically-rendered values are NOT prose;
    see "Not localizable" above.)
 2. When adding a new emitted **prose** string, decide locale by audience: any user (operator dashboard included) will see it → user locale; logs, metric descriptions, observability-bound anomaly text, and internal tags → system locale.
 3. Add the key to the matching catalog file FIRST, then reference it.
 4. When reviewing a PR, grep emit sites for raw prose string literals.
-   Each one is a missing catalog key. Patterns to scan (skip matches that
-   are dispatch tags, assertion messages, or dynamically-rendered values
-   per "Not localizable"):
+   Each one is a missing catalog key. Patterns to scan per language (skip
+   matches that are dispatch tags, assertion messages, or dynamically-rendered
+   values per "Not localizable"):
+
+   **Clojure:**
    - `(log/(info|warn|error|debug|trace) "` — log calls
    - `(otel/counter "` / `(otel/histogram "` / `(otel/gauge "` —
      metric-instrument descriptions (third arg)
@@ -201,8 +205,19 @@ When writing or reviewing code:
    - `(throw (ex-info "` — surviving ex-info text in boundary
      namespaces (per `foundations/exceptions-as-data`)
    - `[:p "` / `[:h1 "` / `[:button "` — view namespaces
-5. Format strings that combine a label + value use separate keys:
-   `(str (msg/t :label) value)` not `(str "Label: " value)`.
+
+   **Rust:**
+   - `tracing::(info|warn|error|debug|trace)!\("` — log macro calls
+   - `format!\("` / `to_string\(\)` in handler response bodies — prose in HTTP responses
+   - `println!\("` / `eprintln!\("` — CLI output (non-server path; still needs catalog)
+
+   **Swift:**
+   - `Text("` in SwiftUI views — UI labels and body copy
+   - `Logger\.(info|warning|error|debug)\("` — log calls
+   - `print("` / `NSLog("` — output calls
+5. Format strings that combine a label + value use separate catalog keys for the
+   label, not a raw prefix: Clojure — `(str (msg/t :label) value)` not `(str "Label: " value)`;
+   Rust — `format!("{} {value}", strings::LABEL)` not `format!("Label: {value}")`.
 6. When in doubt about audience, default to **system locale** —
    relocating to user locale later is a one-line catalog move; the
    reverse direction usually means a string a user already saw is
@@ -210,7 +225,7 @@ When writing or reviewing code:
 
 ## Anti-patterns to reject
 
-- Raw PROSE string literals in any emit site — Hiccup views, `log/` calls, metric descriptions, anomaly messages — are violations; replace with `(msg/t :key)`. (Dispatch tags, assertion messages, and dynamically-rendered values are exempt — see "Not localizable".)
+- Raw PROSE string literals in any emit site — Hiccup views, `log/` calls, metric descriptions, anomaly messages (Clojure), `tracing::info!` / `format!` / response strings (Rust), `Text(` / `Logger.info(` (Swift) — are violations; replace with the language's catalog accessor. (Dispatch tags, assertion messages, and dynamically-rendered values are exempt — see "Not localizable".)
 - "Developer-facing strings don't need l10n" — that exemption is removed; they go to the system locale.
 - Format strings with embedded units: `(format "%.1fs" n)` — extract the `s` suffix to a key.
 - Duplicate strings across files — one key, referenced in multiple places.
