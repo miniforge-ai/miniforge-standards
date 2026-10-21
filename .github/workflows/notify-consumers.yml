@@ -37,6 +37,8 @@ jobs:
             submodule_path: standards/miniforge
           - repo: miniforge-ai/thesium-workflows
             submodule_path: standards/miniforge
+          - repo: miniforge-ai/risk-dashboard
+            submodule_path: standards/miniforge
           - repo: miniforge-ai/thesium-app-foundation
             submodule_path: .standards
           - repo: miniforge-ai/miniforge-control
