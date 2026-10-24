@@ -164,7 +164,7 @@ meta/
   003      Result Handling (succeeded?/failed? predicates, factory fns over hand-built maps)
   004      Validation Boundaries (schemas at interfaces/external only)
   005      Exceptions as data (anomalies in flow; throw only at absolute boundaries)
-  006      Named Constants (no magic numbers/strings; intent-bearing `def` + docstring)
+  006      Named Constants (no magic numbers/strings; intent-bearing named constant + explanatory comment or docstring)
   007      Config as Data (operational values in .edn with Malli schema; defaults in code)
   008      No Dead Code (delete obsolete code in the same change; no legacy shims without removal plan)
   009      Self-Documenting Code (code is the artifact; comment WHY not WHAT; document the public boundary, keep impl light; headers + docstrings exempt)
