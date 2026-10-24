@@ -108,7 +108,7 @@ Dewey codes live in frontmatter (`dewey: "NNN"`), not filenames or paths.
 | 003 | `result-handling` | ✓ | succeeded?/failed? predicates; schema constructors; factory functions for any repeated map shape (event envelopes, task records, etc.) |
 | 004 | `validation-boundaries` | ✓ | Schemas at interface/external boundaries only |
 | 005 | `exceptions-as-data` | ✓ | Anomalies as data in flows; throw only at absolute boundaries |
-| 006 | `named-constants` | ✓ | No magic numbers / magic strings; every meaningful literal extracted to a `def` with an intent-bearing docstring |
+| 006 | `named-constants` | ✓ | No magic numbers / magic strings; every meaningful literal extracted to a well-named constant with an explanatory comment or docstring |
 | 007 | `config-as-data` | ✓ | Operational config lives in `.edn` files with a Malli schema; code holds only fallback defaults |
 | 008 | `no-dead-code` | ✓ | Delete unused code in the change that obsoletes it; no commented-out blocks, no `_legacy` shims without an explicit removal plan |
 | 009 | `self-documenting-code` | ✓ | Code is the artifact; comments explain WHY when non-obvious, never restate WHAT; self-document first; document the public boundary (interface), keep impl light (headers + docstrings exempt) |
