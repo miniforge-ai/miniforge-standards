@@ -79,7 +79,7 @@ A rule looks like this:
 ---
 dewey: "002"
 description: ACTION when TRIGGER to OUTCOME
-globs: **/*.clj
+globs: "**/*.clj"
 alwaysApply: true
 ---
 
