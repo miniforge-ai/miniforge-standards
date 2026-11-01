@@ -67,6 +67,7 @@ as a git submodule at `standards/miniforge/` in each repo.
 | **Review a PR before push** | **`workflows/code-review-rigor`** (CRITICAL — happy-path trace, bootstrap order, default-value scrutiny, compile-test claims, intent over symptoms, refactor-not-exempt) |
 | Use git worktrees | `workflows/git-worktrees` |
 | Plan a PR | `workflows/pr-layering` |
+| **Merge a PR** | **`workflows/pr-merge-gate`** (four gates on the current head; no drafts; the owning session merges) |
 | Document a PR | `workflows/pr-documentation` |
 | Version a release | `workflows/datever` |
 | Add a build / launch / package / sign / notarize / embed / lint / test / deploy / dev-loop task | `workflows/bb-over-shell` — a bb task in `bb.edn`; **never** a new `.sh` or `.py` beyond a thin bb-invoking shim |
@@ -142,6 +143,7 @@ standards/miniforge/                     # submodule root in consuming repos
 │   ├── code-review-rigor.mdc            # dewey: "720"  alwaysApply: true
 │   ├── pr-documentation.mdc             # dewey: "721"  alwaysApply: true
 │   ├── pr-layering.mdc                  # dewey: "722"  alwaysApply: true
+│   ├── pr-merge-gate.mdc                # dewey: "723"  alwaysApply: true
 │   ├── git-worktrees.mdc                # dewey: "725"  alwaysApply: true
 │   ├── datever.mdc                      # dewey: "730"
 │   └── bb-over-shell.mdc                # dewey: "740"

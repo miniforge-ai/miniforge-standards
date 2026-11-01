@@ -1,0 +1,88 @@
+---
+dewey: "723"
+description: Merge a PR only after adversarial review, rules review, green CI and a resolved Copilot review on its current head; the owning session then merges it
+alwaysApply: true
+---
+
+# PR Merge Gate (ALWAYS)
+
+## Agent behavior
+
+Open every PR ready for review, never as a draft. A PR merges only when all
+four gates below pass on its current head. When they do, the session that owns
+the PR squash-merges it without waiting for the operator. Green CI plus a clean
+Copilot review is not enough on its own.
+
+## Context
+
+- Applies to every PR in every repository that consumes these standards.
+- The owning session is the one that opened the PR, or the one the operator
+  handed it to.
+- A draft adds a manual step for the operator, and automatic Copilot review
+  skips drafts.
+
+## Requirements
+
+### The four gates, all on the PR's current head
+
+1. **Adversarial review**: every obligation in `workflows/code-review-rigor`
+   (dewey 720).
+2. **Rules review**: every rule in these standards that applies to the diff,
+   each read in full. Start from `index.mdc`. A pattern grep is not a review.
+3. **CI** green.
+4. **Copilot review** of the current head: every finding fixed, or answered
+   on its thread, and the threads resolved.
+
+### Timing
+
+- Gates 1 and 2 run before the PR opens and again before every later push, on
+  the commits being pushed.
+- After a push, re-request Copilot's review so gate 4 covers the new head.
+- A merge of the base branch into the PR is a new head: gates 3 and 4 run on it.
+
+### When a gate cannot pass
+
+- If gate 1 or 2 cannot be completed (the diff is too large to trace, or
+  context is missing), do not merge. Stop and ask the operator, as dewey 720
+  requires.
+- If Copilot posts no review (it declines very large diffs), do not merge.
+  Tell the operator.
+- If CI is red because the base branch is red, the PR is not ready. Say so once
+  on the PR, name the fix if one exists, and merge the base in once it lands.
+
+### Copilot findings that conflict with these standards
+
+When a Copilot finding asks for something one of these rules forbids (for
+example, restoring a function arity no caller uses, against `no-dead-code`),
+do not change the code. Answer the thread yourself: say what you traced and
+which rule applies, then resolve it. A Copilot finding the trace confirms is
+fixed, whatever its severity label.
+
+### Delegation
+
+The owning session runs gates 1 and 2 itself. A subagent's review is an extra,
+independent pass; its "clean" verdict is not a review on its own (dewey 720).
+
+### Scope
+
+Scope follows dewey 720: a typo-only or other trivial diff is exempt from
+gate 1. For a documentation-only PR, gate 1 means checking every factual claim
+against the repository.
+
+## Examples
+
+<example>
+A PR's CI is green and Copilot recommends approval, but no adversarial or rules
+review ran. The PR is not ready: run gates 1 and 2, fix what they find, push,
+re-request Copilot, and merge once all four pass on the new head.
+</example>
+
+<example type="invalid">
+Merging a PR because CI is green and Copilot raised nothing. Gates 1 and 2
+were skipped, and their findings ship to the base branch.
+</example>
+
+<example type="invalid">
+Opening the PR as a draft and asking the operator to mark it ready and click
+merge.
+</example>

@@ -71,6 +71,7 @@ Project-specific rules go in a local `project/` directory alongside `standards/m
 | **Review a PR before push** | **`workflows/code-review-rigor`** (CRITICAL — happy-path trace, bootstrap order, default-value scrutiny, compile-test claims, intent over symptoms, refactor-not-exempt) |
 | Use git worktrees | `workflows/git-worktrees` |
 | Plan a PR | `workflows/pr-layering` |
+| **Merge a PR** | **`workflows/pr-merge-gate`** (four gates on the current head; no drafts; the owning session merges) |
 | Document a PR | `workflows/pr-documentation` |
 | Version a release | `workflows/datever` |
 | Add a build / launch / package / sign / notarize / embed / lint / test / deploy / dev-loop task | `workflows/bb-over-shell` — a bb task in `bb.edn`; **never** a new `.sh` or `.py` beyond a thin bb-invoking shim |
@@ -145,6 +146,7 @@ workflows/
   code-review-rigor.mdc       dewey: "720"  alwaysApply: true
   pr-documentation.mdc        dewey: "721"  alwaysApply: true
   pr-layering.mdc             dewey: "722"  alwaysApply: true
+  pr-merge-gate.mdc           dewey: "723"  alwaysApply: true
   git-worktrees.mdc           dewey: "725"  alwaysApply: true
   datever.mdc                 dewey: "730"
   bb-over-shell.mdc           dewey: "740"
@@ -218,6 +220,7 @@ meta/
   720      Code Review Rigor (adversarial PR-review obligations — happy-path trace, bootstrap order, default-value scrutiny, compile-test fact-claims, intent over symptoms, refactor-not-exempt)
   721      PR Documentation
   722      PR Layering (DAG, stratified PRs)
+  723      PR Merge Gate (adversarial review, rules review, green CI, resolved Copilot review on the current head; no drafts; owning session merges)
   725      Git Worktrees
   730      Datever
   740      Bb Over Shell (all automation — build, launch, package, test, deploy, lint, sign — MUST be bb tasks in bb.edn; no .sh or .py beyond a thin bb-invoking shim)
