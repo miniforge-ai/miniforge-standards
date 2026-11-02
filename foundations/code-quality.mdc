@@ -102,14 +102,14 @@ components/temporal/src/ai/miniforge/temporal/interface.clj
 
 When writing or reviewing code:
 1. If a function exceeds one screen, ask: can this be split into named pipeline stages?
-2. If you see nested `if`/`when` blocks, refactor to `cond` or guard clauses.
+2. If you see nested conditionals, refactor to guard clauses or a flat dispatch form (Clojure: `cond`; Rust: `match`; Python: early-return guards; Swift: `guard`/`switch`).
 3. If you find yourself duplicating a function from another namespace, stop — create or identify the right component and add it to the interface.
 4. Composition is the design. Don't name composed pipelines "main" or "run" — name them for what they produce.
 
 ## Anti-patterns to reject
 
 - Functions with multiple concerns named after a verb (e.g., `process-and-save`, `load-and-validate`)
-- `let` bindings that grow to 10+ forms — split the function
-- `cond` branches with `let` bodies — extract each branch to a named function
+- Large binding blocks that grow to 10+ local names — split the function
+- Conditional branches with complex inline bodies — extract each branch to a named function
 - Utility functions copied between components instead of extracted
 - "Helper" files that grow without bound because no component owns them
