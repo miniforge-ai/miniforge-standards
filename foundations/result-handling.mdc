@@ -1,9 +1,9 @@
 ---
 dewey: "003"
-description: Result handling — use succeeded?/failed? predicates and success/anomaly constructors
+description: Result handling — use succeeded?/failed? predicates and success/failure constructors
 alwaysApply: true
 enforcement.action: hard-halt
-enforcement.message: "Hand-built result map or structural success/failure check. Use the success/anomaly constructors and the succeeded?/failed? predicates; never inspect a result's shape."
+enforcement.message: "Hand-built result map or structural success/failure check. Use the success/failure constructors and the succeeded?/failed? predicates; never inspect a result's shape."
 ---
 
 # Result Handling (ALWAYS)
@@ -124,9 +124,9 @@ When passing a result to a caller, propagate the result map — don't unwrap it 
     result))  ; return the failure as-is for the caller
 ```
 
-## What counts as an "anomaly"
+## When to use failure constructors
 
-Use anomaly constructors (failure forms) for:
+Use failure constructors for:
 - Validation failures (invalid input at a boundary)
 - Missing required resources (file not found, entity not found)
 - Downstream errors caught at a boundary
