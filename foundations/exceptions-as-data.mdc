@@ -36,13 +36,13 @@ Data-first errors fold into the same response-chain / evidence-bundle machinery 
 The canonical anomaly map. The shared implementation is the `ai.miniforge.anomaly` component in miniforge OSS (Apache 2); when miniforge is unavailable, repos may use a local helper that produces the same shape.
 
 ```clojure
-{:anomaly/type    :keyword     ;; one of the standard types below
- :anomaly/message "string"     ;; human-readable
- :anomaly/data    {...}        ;; structured context
- :anomaly/at      #inst "..."} ;; instant of construction
+{:anomaly/category :keyword     ;; one of the standard categories below (or a namespaced extension, e.g. :anomalies.budget/exceeded)
+ :anomaly/message  "string"    ;; human-readable
+ :anomaly/data     {...}       ;; structured context
+ :anomaly/at       #inst "..."} ;; instant of construction
 ```
 
-Standard type vocabulary (mirrors cognitect anomalies):
+Standard category vocabulary (mirrors cognitect anomalies; namespaced domain extensions are allowed):
 
 ```clojure
 #{:not-found
@@ -85,7 +85,7 @@ Anything *outside* those patterns should return anomalies.
       (throw (ex-info "Widget not found" {:id id}))))
 ```
 
-Three problems: caller has to wrap every call in try/catch; the anomaly's `:type` and `:data` are buried in `ex-data`; parallel `(map fetch-widget …)` fan-outs break on the first miss.
+Three problems: caller has to wrap every call in try/catch; the anomaly's `:category` and `:data` are buried in `ex-data`; parallel `(map fetch-widget …)` fan-outs break on the first miss.
 
 ### Correction — return an anomaly
 
