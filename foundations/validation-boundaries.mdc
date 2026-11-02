@@ -14,10 +14,10 @@ enforcement.message: "Schema or input validation in the interior. Validate only 
 
 Schemas and input validation belong at **two places only**:
 
-1. **Interface boundaries** — the `interface.clj` of a Polylith component. Data entering a component is validated here. Inside the component, trust the data.
-2. **External entry points** — HTTP handlers, CLI argument parsing, event ingestion, file reads. Anything arriving from outside the JVM process.
+1. **Interface boundaries** — the component's public interface module (e.g. `interface.clj` in Polylith/Clojure, `interface.py` in Python, a Rust crate's `lib.rs` facade). Data entering a component is validated here. Inside the component, trust the data.
+2. **External entry points** — HTTP handlers, CLI argument parsing, event ingestion, file reads. Anything arriving from outside the process.
 
-Everywhere else — inside components, between internal namespaces — **no validation**. Data flowing through internal calls is already valid by construction.
+Everywhere else — inside components, between internal modules — **no validation**. Data flowing through internal calls is already valid by construction.
 
 ## Why
 
@@ -30,6 +30,8 @@ Validation is expensive to read and to run. Redundant internal validation:
 If internal data is invalid, the bug is in the caller — not in the callee's missing check. Fix the caller. Don't hide it with a check.
 
 ## Interface boundary pattern
+
+Examples below are in Clojure/Polylith; see the language-specific rules for the equivalent in Python, Rust, or Swift.
 
 ```clojure
 ;; components/task/src/ai/miniforge/task/interface.clj
@@ -77,23 +79,23 @@ If internal data is invalid, the bug is in the caller — not in the callee's mi
 
 ## What does NOT need validation
 
-- Function calls between files within the same component
-- Function calls from `core.clj` to other internal namespaces
-- Data threading through a pipeline (`->`, `->>`, `as->`)
+- Function calls between modules within the same component
+- Data passing through internal implementation functions
+- Data threading through a pipeline
 - Return values of pure functions (they can't be invalid by construction)
 
 ## Agent behavior
 
 When writing code inside a component:
-1. Do NOT add `(when (nil? x) ...)` or schema checks on internal data.
-2. If you feel the urge to validate internal data, ask: is this arriving from outside the component? If no, delete the check.
-3. If arriving from outside (via `interface.clj`), add the validation there — and remove it from the internals.
-4. The schema lives in `schema.clj` or `spec.clj` — not scattered across `core.clj` with `when-let` guards.
+1. Do NOT add nil-checks or schema validation on data that originated inside the component.
+2. If you feel the urge to validate internal data, ask: is this arriving from outside the component boundary? If no, delete the check.
+3. If arriving from outside (via the component's interface module), add the validation there — and remove it from the internals.
+4. Schemas belong in the interface or a dedicated schema module — not scattered across internal implementation modules as defensive guards.
 
 ## Anti-patterns to reject
 
-- Validating in both `interface.clj` and `core.clj` — pick one (interface)
-- `(when (some? x) (do-thing x))` inside pure functions — caller is responsible
-- Schema validation inside pipeline stages (`->`) — validate before the pipeline
-- HTTP handler calling `valid?` AND the component interface calling `valid?` again
-- Defensive `(get m :key "default")` sprinkled through internals — that's validation in disguise
+- Validating in both the interface module and the internal implementation — pick one (interface)
+- Nil-guards on data that is always valid by construction at this call site
+- Schema validation inside internal pipeline stages — validate before the pipeline, at the boundary
+- An HTTP handler validating AND the component interface re-validating the same data
+- Defensive default-fallback accessors (`getOrDefault`, `or`, `??`) sprinkled through internals — that's validation in disguise
