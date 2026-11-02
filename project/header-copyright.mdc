@@ -9,15 +9,13 @@ globs:
 detection.mode: negative
 detection.pattern: 'Christopher Lester'
 detection.emailPattern: 'christopher@miniforge\.ai'
-remediation.strategy: mechanical
-remediation.type: prepend
-remediation.template: '<!--\n  Title: Miniforge.ai\n  Author: Christopher Lester (christopher@miniforge.ai)\n  Copyright 2025-2026 Christopher Lester. Licensed under Apache 2.0.\n-->'
+remediation.strategy: manual
 remediation.autoFixable: false
 ---
 
 # Miniforge.ai Header & Copyright
 
-<version>1.1.0</version>
+<version>2.0.0</version>
 
 ## Scope — OSS repositories only
 
@@ -25,7 +23,12 @@ remediation.autoFixable: false
 
 Detection: the repository root must contain a `LICENSE` file whose content includes the string `"Apache"`. If no such file exists, or the file contains `"Proprietary"` / `"All Rights Reserved"`, **do not apply this rule**.
 
-> **Why `remediation.autoFixable: false`:** The Apache-license gate above is a human-judgement check that cannot be encoded in the frontmatter's `detection.*` fields. An automated runner must not silently prepend a copyright block without confirming the target is an OSS repo. Apply this rule manually after verifying the `LICENSE` file.
+> **Why `remediation.strategy: manual` and `autoFixable: false`:** two independent reasons, both blocking.
+>
+> 1. The Apache-license gate above is a human-judgement check that cannot be encoded in the frontmatter's `detection.*` fields. An automated runner must not prepend a copyright block without confirming the target is an OSS repo.
+> 2. **The frontmatter format cannot express this header as a template.** Quoted scalars are read literally — no escape processing, and no block-scalar (`|`) syntax — so a multi-line value is inexpressible. A `\n` written in `remediation.template` stays a literal backslash and `n`, and a `mechanical` prepend would write the whole header as one line of literal `\n` characters. Because that line still contains both `Christopher Lester` and the email address, `detection` would then report the corrupted file **compliant** — silent corruption that satisfies its own gate.
+>
+> `remediation.template` is therefore **not set**: [`meta/rule-format`](../meta/rule-format.mdc) defines it as the text to insert when `remediation.type` is `prepend`/`append`, and this rule declares no `type`. The canonical block lives in [Requirements](#requirements) below, where real newlines work and it can be copied. Do not reintroduce `template`, `type: prepend`, `strategy: mechanical` or `autoFixable: true` until the format can represent a multi-line literal **and** the license-scope check above is machine-checkable.
 >
 > **Why `*.md` is not in the globs:** Root-level markdown files such as `CLAUDE.md`, `agents.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `SECURITY.md` are structural files, not published content. The `docs/` and `specs/` globs cover the content directories where published articles live.
 
@@ -35,17 +38,30 @@ Proprietary Thesium products use `standards/thesium/project/header-proprietary` 
 - Use when authoring or editing site, docs, blog, or README content in an Apache-licensed repo.
 
 ## Requirements
-- Include this header block verbatim at the top of content.
+
+- Copy this block verbatim to the very top of the file, before the first heading:
+
+```html
+<!--
+  Title: Miniforge.ai
+  Author: Christopher Lester (christopher@miniforge.ai)
+  Copyright 2025-2026 Christopher Lester. Licensed under Apache 2.0.
+-->
+```
+
 - Use copyright owner: Christopher Lester (christopher@miniforge.ai).
 - Do not attribute copyright to Miniforge.ai as an entity. ✅
 
+Apply it by hand. This rule is `strategy: manual` for the two reasons given
+above; there is no machine-applicable patch to run.
+
 ## Examples
 <example>
-  Title: Miniforge.ai
-  Subtitle: An agentic SDLC / fleet-control platform
-  Author: Christopher Lester
-  Line: Founder, Miniforge.ai (project)
-  Copyright 2025-2026 Christopher Lester (christopher@miniforge.ai)
+  <!--
+    Title: Miniforge.ai
+    Author: Christopher Lester (christopher@miniforge.ai)
+    Copyright 2025-2026 Christopher Lester. Licensed under Apache 2.0.
+  -->
 </example>
 
 <example type="invalid">
