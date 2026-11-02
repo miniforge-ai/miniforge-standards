@@ -10,6 +10,39 @@ enforcement.message: "Hand-built result map or structural success/failure check.
 
 Operations that can fail return a **result map**. Always use the provided predicates and constructors — never build result maps by hand or reach into their structure directly.
 
+## Scope — pipeline envelopes vs component anomaly returns
+
+This rule governs **result envelopes**: wrapper maps with `:success?` returned by
+pipeline or workflow operations to an orchestrator. There is a second,
+complementary failing-operation protocol — the anomaly-return pattern in rule 005
+(`foundations/exceptions-as-data`) — and the two rules apply at different layers.
+
+| Context | Pattern | Caller predicate |
+|---------|---------|------------------|
+| Component-level function (inner logic) | return raw value OR `(anomaly/anomaly …)` | `(anomaly/anomaly? x)` |
+| Pipeline / workflow operation | wrap in `(schema/success …)` / `(schema/failure …)` | `(schema/succeeded? result)` |
+
+The two tiers compose: a pipeline operation calls component functions, inspects
+their anomaly returns, then wraps the final outcome in a result envelope:
+
+```clojure
+;; component function — rule 005 pattern (returns raw value or anomaly)
+(defn fetch-widget [store id]
+  (if-let [w (get-widget store id)]
+    w
+    (anomaly/anomaly :not-found "Widget not found" {:id id})))
+
+;; pipeline operation wrapping the component — rule 003 pattern
+(defn load-and-validate-pack [store pack-id]
+  (let [w (fetch-widget store pack-id)]
+    (if (anomaly/anomaly? w)
+      (schema/failure :pack w)   ; anomaly becomes the :error inside the envelope
+      (schema/success :pack w))))
+```
+
+When writing **component logic**, reach for rule 005. When writing **pipeline
+operations** that compose results for an orchestrator, reach for this rule.
+
 ## Predicates over structure inspection
 
 **Never** examine the shape of a result to determine success or failure. Use the predicates.
@@ -136,10 +169,14 @@ Do NOT wrap expected nil return values as anomalies. A function that legitimatel
 ## Agent behavior
 
 When writing code that returns a result:
-1. Use `schema/success` or `schema/failure` — never `{:success? true ...}`.
-2. When checking a result from a called function, use `schema/succeeded?` or `schema/failed?` — never `:success?` key access.
-3. If the result type comes from a different component, check what predicates that component's interface exports. If none exist, that's a gap to flag.
-4. When propagating failures up the call stack, return the result map unchanged — don't add new keys or translate the error.
+1. **Determine context first** — component function or pipeline operation? Component
+   functions use the anomaly-return protocol (rule 005, `foundations/exceptions-as-data`).
+   Pipeline operations that compose results for an orchestrator use this rule's
+   `schema/*` constructors and predicates.
+2. Use `schema/success` or `schema/failure` — never `{:success? true ...}`.
+3. When checking a result from a called function, use `schema/succeeded?` or `schema/failed?` — never `:success?` key access.
+4. If the result type comes from a different component, check what predicates that component's interface exports. If none exist, that's a gap to flag.
+5. When propagating failures up the call stack, return the result map unchanged — don't add new keys or translate the error.
 
 ## Anti-patterns to reject
 
