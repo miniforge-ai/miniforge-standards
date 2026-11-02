@@ -1,14 +1,14 @@
 ---
 dewey: "007"
-description: Configuration is data — operational values live in .edn files, not as embedded literals in code, and never as runtime constructions of the configuration shape
+description: Configuration is data — operational values live in config files, not as embedded literals in code, and never as runtime constructions of the configuration shape
 alwaysApply: true
 enforcement.action: hard-halt
-enforcement.message: "Operator-tunable value hardcoded in code. Timeouts, retries, sizes, endpoints and similar operational values belong in an .edn config with a Malli schema; keep a named def only as the silent-config fallback, resolved through a config lookup."
+enforcement.message: "Operator-tunable value hardcoded in code. Timeouts, retries, sizes, endpoints and similar operational values belong in a config file with a schema/validation layer appropriate for the project's language (EDN+Malli for Clojure, TOML/JSON+serde for Rust, TOML/YAML+Pydantic for Python, plist/JSON for Swift); keep a named constant only as the silent-config fallback, resolved through a config lookup."
 ---
 
 # Configuration is Data (ALWAYS)
 
-**Operational configuration lives in `.edn` files, not in code.** If a value can be reasonably overridden at install time, run time, or per-environment — by an operator who is not editing source — it is configuration, and it goes in EDN.
+**Operational configuration lives in config files, not in code.** If a value can be reasonably overridden at install time, run time, or per-environment — by an operator who is not editing source — it is configuration, and it goes in a config file.
 
 ## The rule
 
@@ -18,7 +18,18 @@ Three signals that a value is configuration:
 2. **An operator should be able to change it without a code release.** Adjusting a retry policy, swapping a backend image digest, toggling a feature flag.
 3. **The value composes naturally with other related values.** A `:self-healing` block holds threshold + cooldown + backend allow-list, all tunable together.
 
-If a value matches any of (1), (2), or (3) — it is configuration. It lives in an `.edn` resource (or a layered profile of them), not in a `def` and not in a hand-built map in `(defn create-foo ...)`.
+If a value matches any of (1), (2), or (3) — it is configuration. It lives in a config file (or a layered profile of them), not in a named constant and not in a hand-built map inside a factory function.
+
+## Language-specific equivalents
+
+The Clojure examples below use EDN + Malli. The same principle applies in every language — use the idiomatic config format and schema/validation mechanism:
+
+| Language | Config format | Schema / validation |
+|---|---|---|
+| Clojure | EDN (`.edn`) | Malli |
+| Rust | TOML or JSON | `serde` + validation crate (e.g., `validator`) |
+| Python | TOML or YAML | Pydantic |
+| Swift | plist or JSON | `Codable` with validation |
 
 ```clojure
 ;; BAD — operational policy embedded in code; the per-backend table
@@ -49,23 +60,23 @@ If a value matches any of (1), (2), or (3) — it is configuration. It lives in 
                           (resolve-threshold config backend))))
 ```
 
-## EDN structure conventions
+## EDN structure conventions (Clojure)
 
 - **Namespaced keys** (`:agent/stream-gap-threshold-ms`, not `:threshold-ms`) so configs can be merged across components without collision.
 - **Units in the key name** (`-ms`, `-bytes`, `-percent`) — values shouldn't have to be guessed.
 - **One file per component or per domain** under `resources/config/`. A `default-user-config.edn` ships embedded defaults; per-deployment overrides layer on top via Aero or equivalent.
 - **No code execution at load time** — EDN reader literals only where the schema explicitly allows them. Reading config must not be Turing-complete.
 
-## Where named constants live (code) vs config values (EDN)
+## Where named constants live (code) vs config values (config file)
 
-| Belongs in code (`def`) | Belongs in EDN config |
+| Belongs in code (named constant) | Belongs in config file |
 |---|---|
 | Algorithmic constants (golden ratio, max-redirects guard) | Anything an operator might tune |
 | Protocol-level values (event-type keywords, schema field names) | Per-environment thresholds, timeouts, retries |
 | Test-only values used in fixtures | Production defaults the team agrees on |
 | The **fallback default** when config is absent | The **active value** the system uses |
 
-Pattern: code has a `default-X` named constant for "what to do when config is silent"; the EDN config carries the actual operational value:
+Pattern: code has a `default-X` named constant for "what to do when config is silent"; the config file carries the actual operational value:
 
 ```clojure
 (def default-gap-threshold-ms
@@ -79,7 +90,9 @@ Pattern: code has a `default-X` named constant for "what to do when config is si
 
 ## Schema and validation
 
-Every EDN config file has a Malli (or equivalent) schema. Validation runs at config load, NOT at every read. A bad config fails fast at startup with a clear error pointing at the offending key — not as a `NullPointerException` three layers deep at runtime.
+Every config file has a schema. Validation runs at config load, NOT at every read. A bad config fails fast at startup with a clear error pointing at the offending key — not as a null-pointer or missing-key error three layers deep at runtime.
+
+In Clojure, use Malli:
 
 ```clojure
 (def ConfigSchema
@@ -91,6 +104,26 @@ Every EDN config file has a Malli (or equivalent) schema. Validation runs at con
 
 (defn load-config [path]
   (-> (slurp path) edn/read-string (validate ConfigSchema)))
+```
+
+In Rust, use `serde` to deserialize directly into a typed struct and add field-level validation at the boundary:
+
+```rust
+#[derive(Debug, Deserialize)]
+struct AgentConfig {
+    stream_gap_threshold_ms: u64,
+    check_interval_ms: u64,
+    allowed_failover_backends: Vec<String>,
+}
+```
+
+In Python, use Pydantic:
+
+```python
+class AgentConfig(BaseModel):
+    stream_gap_threshold_ms: int = 90000
+    check_interval_ms: int = 5000
+    allowed_failover_backends: list[str] = []
 ```
 
 See [validation-boundaries](./validation-boundaries.mdc) for the broader principle: validate at the boundary, trust inside.
@@ -127,20 +160,20 @@ Default rule for agent/LLM backends:
 ## Agent behavior
 
 When writing or reviewing code:
-1. Every operational literal in code (timeouts, retry counts, thresholds, URLs, paths) — ask: would an operator want to change this without a code release? If yes → move to EDN.
-2. Reject PRs that add a feature flag, threshold, or backend list as a hard-coded `def`.
-3. When extracting to EDN, also add (or extend) the config's Malli schema.
-4. The code's `default-X` constant stays — it is the fallback if config is absent — but the operational value lives in EDN.
-5. Never use `eval`, `read-string` without binding `*read-eval* false`, or any other Turing-complete config-reading path.
+1. Every operational literal in code (timeouts, retry counts, thresholds, URLs, paths) — ask: would an operator want to change this without a code release? If yes → move to a config file using the project's language-appropriate format: EDN for Clojure, TOML/JSON for Rust, TOML/YAML for Python, plist/JSON for Swift.
+2. Reject PRs that add a feature flag, threshold, or backend list as a hard-coded constant.
+3. When extracting to a config file, also add (or extend) a schema/validation layer using the project's idiomatic mechanism: Malli for Clojure, a typed `serde`-deserialized struct (plus validation crate if needed) for Rust, a Pydantic model for Python, a `Codable` struct for Swift.
+4. The code's default constant stays — it is the fallback if config is absent — but the operational value lives in the config file.
+5. Config loading must be declarative and side-effect-free. In Clojure specifically: never use `eval`, `read-string` without binding `*read-eval* false`, or any other Turing-complete config-reading path.
 6. Reject new direct LLM provider-key wrappers for agent backends. The
    supported provider API-key path for miniforge agent runs is OpenCode.
 
 ## Anti-patterns to reject
 
-- Hard-coded URLs / paths / backend image digests in `defn` bodies
-- Per-deployment values gated by `if` on environment name (`(if (= env :prod) 90000 5000)`) — that's config disguised as code
-- Hand-built option maps inside `(defn create-X ...)` for what should be a passed-in config
-- EDN files that contain Clojure forms (`#=(...)`) instead of pure data
+- Hard-coded URLs / paths / backend image digests in function bodies
+- Per-deployment values gated by environment-name conditionals (`if env == "prod"`) — that's config disguised as code
+- Hand-built option maps inside factory/constructor functions for what should be a passed-in config
+- Config files that contain executable code instead of pure data (e.g., EDN `#=(...)` forms)
 - Config files with no schema — every config file MUST have one
-- "Magic numbers extracted to a `def`" when the value should have been EDN
-- Configuration spread across multiple `def`s instead of a single namespaced EDN map
+- "Magic numbers extracted to a named constant" when the value should have been in a config file
+- Configuration spread across multiple constants instead of a single structured config map/struct/object
