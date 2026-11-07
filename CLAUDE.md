@@ -289,7 +289,7 @@ The following are the highest-priority, always-on principles:
 - Centralize policy as data, not scattered conditionals
 
 ### PR Discipline
-- Each PR = one stratum, <400 lines, independently mergeable
+- Each PR = one stratum, <400 lines of meaningful change (tests excluded), independently mergeable
 - PR dependencies form a DAG — never a monolith
 - **NEVER** bypass pre-commit hooks — investigate failures, fix root causes
 

@@ -72,7 +72,7 @@ In summary:
 - One stratum per PR. Adding a new rule, updating the index, updating
   `agents.md`, and updating `CLAUDE.md` to reference it can be a single PR
   — but bundling unrelated rule changes is not OK.
-- Keep PRs under ~400 lines of diff where possible.
+- Keep PRs under 400 lines of meaningful change (tests do not count; see `workflows/pr-layering`).
 - Pre-commit hooks must pass. If a hook fails, fix the cause; don't
   `--no-verify`. See [`workflows/pre-commit-discipline`](./workflows/pre-commit-discipline.mdc).
 - Update [`index.mdc`](./index.mdc), [`agents.md`](./agents.md), and [`CLAUDE.md`](./CLAUDE.md) when
