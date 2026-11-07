@@ -33,7 +33,7 @@ Before opening the PR, please confirm:
 - [ ] `agents.md` updated (if rule added/renamed/removed)
 - [ ] `CLAUDE.md` quick-reference updated (if rule added/renamed/removed)
 - [ ] Both positive and negative examples included in the rule body
-- [ ] PR is under ~400 lines of diff
+- [ ] PR is under 400 lines of meaningful change (tests do not count; see `workflows/pr-layering`)
 - [ ] Pre-commit hooks pass without `--no-verify`
 
 ## Related issue(s)

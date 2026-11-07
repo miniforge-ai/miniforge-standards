@@ -186,7 +186,7 @@ For security guidance today, consult `foundations/runtime-*.mdc` (dewey 030–03
 | 716 | `tests-with-code` | ✓ | Code changes ship with test changes; "no test diff" requires an explicit pure-restructuring claim |
 | 720 | `code-review-rigor` | ✓ | Adversarial PR-review obligations — happy-path trace, bootstrap order, default-value scrutiny, compile-test fact-claims, intent over symptoms, refactor-not-exempt |
 | 721 | `pr-documentation` | ✓ | Living PR docs in `docs/pull-requests/` |
-| 722 | `pr-layering` | ✓ | Stratified PR DAG; <400 lines; independently mergeable |
+| 722 | `pr-layering` | ✓ | Stratified PR DAG; <400 lines of meaningful change (tests excluded); independently mergeable |
 | 723 | `pr-merge-gate` | ✓ | Merge only after adversarial review, rules review, green CI and a resolved Copilot review on the current head; the owning session merges |
 | 725 | `git-worktrees` | ✓ | Parallel workflows with worktrees, operator multi-loop |
 | 730 | `datever` |  | Date-based versioning strategy |
