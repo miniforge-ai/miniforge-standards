@@ -10,8 +10,10 @@ as a git submodule at `standards/miniforge/` in each repo.
 2. **Before branching** — consult `workflows/git-branch-management`
 3. **Before committing** — follow `workflows/pre-commit-discipline` (CRITICAL)
 4. **Before opening a PR** — follow `workflows/pr-layering` and `workflows/pr-documentation`
-5. **When creating a new rule** — follow `meta/rule-format` with Dewey frontmatter
-6. **When in doubt** — apply `foundations/stratified-design` and `foundations/simple-made-easy`
+5. **Before pushing a PR** — review the diff per `workflows/code-review-rigor` (CRITICAL)
+6. **Before merging a PR** — pass every gate in `workflows/pr-merge-gate`
+7. **When creating a new rule** — follow `meta/rule-format` with Dewey frontmatter
+8. **When in doubt** — apply `foundations/stratified-design` and `foundations/simple-made-easy`
 
 ## Quick Reference
 
