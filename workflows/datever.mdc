@@ -7,7 +7,7 @@ globs:
   - ".github/workflows/*.yml"
   - ".github/workflows/*.yaml"
 detection.mode: positive
-detection.pattern: '\b(\d+)\.(\d+)\.(\d+)\b(?!\.\d)'
+detection.pattern: '(?<![\d.])(\d+)\.(\d+)\.(\d+)(?![\d]|\.\d)'
 remediation.strategy: mechanical
 remediation.replacement: '$1.$2.$3.0'
 remediation.autoFixable: false
