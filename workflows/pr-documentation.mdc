@@ -143,12 +143,12 @@ When creating a PR or preparing to open one:
 
 ```bash
 # When user says: "Let's create a PR for this migration"
-1. Create: docs/pull-requests/2026-01-04-migrate-protocols-to-composition-pattern.md`
+1. Create: docs/pull-requests/2026-01-04-migrate-protocols-to-composition-pattern.md
 2. Write comprehensive PR description in that file
 3. Commit the file along with the changes:
-   git add docs/pull-requests/2026-01-04-migrate-protocols-to-composition-pattern.md`
+   git add docs/pull-requests/2026-01-04-migrate-protocols-to-composition-pattern.md
 4. Reference in commit message:
-   "feat: migrate protocols (see docs/pull-requests/2026-01-04-migrate-protocols-to-composition-pattern.md')"
+   "feat: migrate protocols (see docs/pull-requests/2026-01-04-migrate-protocols-to-composition-pattern.md)"
 ```
 
 ## Repository Maintenance
