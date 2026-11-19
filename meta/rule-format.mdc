@@ -211,7 +211,7 @@ under review.
 2. Provide concise positive and negative example of rule application in practice
 3. Optimize for AI context window efficiency
 4. Remove any non-essential or redundant information
-5. Use standard glob patterns without quotes (e.g., *.js, src/**/*.ts)
+5. Quote glob patterns in frontmatter (e.g., `"**/*.js"`, `"src/**/*.ts"`); unquoted patterns starting with `*` or `{` are invalid YAML
 
 ## AI Context Efficiency
 
