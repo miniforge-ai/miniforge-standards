@@ -145,10 +145,10 @@ When a file exceeds 3 layers:
 - **Prefer `(get m k default)` over `(or (:k m) default)`**
 
   ```clojure
-  ;; BAD — silently returns default for any falsy value (false, 0, "")
+  ;; BAD — silently returns the default when the value is false (only nil and false are falsy in Clojure; 0 and "" are truthy)
   (or (:timeout opts) 5000)
 
-  ;; GOOD — explicit default, survives falsy values
+  ;; GOOD — explicit default, applies only when the key is absent, so a false value survives
   (get opts :timeout 5000)
   ```
 
