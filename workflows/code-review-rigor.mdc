@@ -10,7 +10,7 @@ alwaysApply: true
 
 ## Why this exists
 
-`feedback_standards_review_per_pr` already says: run a standards audit on every PR before push. That memory specifies *which* rule files to scan against. It does not specify *how* the scan must be conducted.
+`workflows/pr-merge-gate` (dewey 723) already says: run a rules review on every PR before push. Its gate 2 specifies *which* rules to scan against. It does not specify *how* the scan must be conducted.
 
 Across a recent burst of subagent-authored PRs (miniforge-control #126, #127, #128) significant correctness bugs landed in the spot-check-passed diff and were caught only by GitHub Copilot's review. Pattern audit:
 
@@ -25,7 +25,7 @@ This rule codifies the obligations the reviewer MUST satisfy before declaring a 
 
 ## Scope
 
-Applies to every PR review pass — self-authored, subagent-delegated, Copilot-suggested, human-collaborator. Fires alongside `feedback_standards_review_per_pr` (which selects *what* to scan); this rule governs *how* to scan.
+Applies to every PR review pass — self-authored, subagent-delegated, Copilot-suggested, human-collaborator. Fires alongside `workflows/pr-merge-gate` gate 2 (which selects *what* to scan); this rule governs *how* to scan.
 
 ## The obligations
 
@@ -160,7 +160,7 @@ If any obligation surfaces a bug: fix it in a same-branch commit before push. Do
 
 ## Cross-references
 
-- `feedback_standards_review_per_pr` (operator memory) — the *what* to audit against. This rule is the *how*.
+- `pr-merge-gate` (dewey 723) — gate 2 is the *what* to audit against; gate 1 requires this rule. This rule is the *how*.
 - `pre-commit-discipline` (dewey 715) — what blocks the commit. This rule fires before the commit succeeds.
 - `tests-with-code` (dewey 716) — a no-test-diff PR must claim pure restructuring. Obligation 6 makes that claim cost a re-trace instead of buying a pass.
 - `pr-layering` (dewey 722) — what the PR contains. This rule reviews that content.
